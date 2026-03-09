@@ -11,7 +11,7 @@ const Profile = () => {
   const fullName = "Student";
   const ubId = "UB-000001";
   const master = "gyani";
-  const paymentStatus = "free";
+  const paymentStatus: string = "free";
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
