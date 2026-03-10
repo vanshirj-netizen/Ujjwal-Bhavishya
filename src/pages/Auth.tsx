@@ -62,7 +62,7 @@ const Auth = () => {
         });
         if (error) throw error;
         toast.success("Welcome to Ujjwal Bhavishya! 🦋");
-        navigate("/onboarding", { replace: true });
+        navigate("/", { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
