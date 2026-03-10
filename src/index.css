@@ -161,6 +161,23 @@
   animation: pulse-gold 2s ease-in-out infinite;
 }
 
+/* Profile hero shimmer */
+@keyframes profile-shimmer {
+  0% { opacity: 0; transform: translateX(-100%); }
+  50% { opacity: 0.08; }
+  100% { opacity: 0; transform: translateX(100%); }
+}
+
+.profile-hero-shimmer {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    hsl(44 99% 68% / 0.15) 50%,
+    transparent 60%
+  );
+  animation: profile-shimmer 4s ease-in-out infinite;
+}
+
 /* Gold shimmer sweep on buttons */
 @keyframes shimmer-sweep {
   0% { background-position: -200% center; }

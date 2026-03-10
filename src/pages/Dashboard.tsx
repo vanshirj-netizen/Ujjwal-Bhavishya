@@ -31,9 +31,12 @@ const Dashboard = () => {
         .maybeSingle();
 
       // Name fallback chain
-      const fullName = profile?.full_name && profile.full_name !== "Student"
+      const fullName = (profile?.full_name && profile.full_name !== "Student")
         ? profile.full_name
-        : user.user_metadata?.full_name || user.email?.split("@")[0] || "";
+        : user.user_metadata?.full_name
+          || user.user_metadata?.name
+          || user.email?.split("@")[0]
+          || "";
       setFirstName(fullName ? fullName.split(" ")[0] : "");
       setStreak(profile?.current_streak ?? 0);
 

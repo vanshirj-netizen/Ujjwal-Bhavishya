@@ -124,14 +124,26 @@ const Auth = () => {
         toast.success("Welcome to Ujjwal Bhavishya! 🦋");
         navigate("/", { replace: true });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
         console.log("[Auth] Login successful");
         toast.success("Welcome back! 🙏");
-        navigate("/", { replace: true });
+
+        // Route based on onboarding status
+        const userId = data.user?.id;
+        if (userId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_complete")
+            .eq("id", userId)
+            .single();
+          navigate(profile?.onboarding_complete ? "/dashboard" : "/onboarding", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       }
     } catch (error: any) {
       console.error("[Auth] Error:", error.message);
@@ -173,7 +185,7 @@ const Auth = () => {
             Ujjwal Bhavishya
           </h1>
           <p className="text-xs text-foreground/60 tracking-widest uppercase mt-1">
-            Bright Future
+            Your Gateway to Greatness
           </p>
         </div>
 
