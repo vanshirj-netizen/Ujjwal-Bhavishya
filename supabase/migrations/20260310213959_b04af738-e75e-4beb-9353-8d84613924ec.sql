@@ -1,0 +1,1 @@
+ALTER SEQUENCE ub_student_id_seq RESTART WITH 1;
