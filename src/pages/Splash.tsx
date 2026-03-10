@@ -55,6 +55,40 @@ const Splash = () => {
   const startTime = useRef(Date.now());
   const resolved = useRef(false);
 
+  const doNavigate = (path: string) => {
+    setFadingOut(true);
+    setTimeout(() => navigate(path, { replace: true }), 400);
+  };
+
+  const routeBasedOnProfile = async (userId: string) => {
+    const profile = await fetchProfileWithRetry(userId);
+    if (!profile) {
+      console.log("[Splash] No profile found → /onboarding");
+      doNavigate("/onboarding");
+      return;
+    }
+    if (profile.onboarding_complete) {
+      console.log("[Splash] Onboarding complete → /dashboard");
+      doNavigate("/dashboard");
+    } else {
+      console.log("[Splash] Onboarding NOT complete → /onboarding");
+      doNavigate("/onboarding");
+    }
+  };
+
+  // Listen for OAuth callback SIGNED_IN events
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session && !resolved.current) {
+        console.log("[Splash] onAuthStateChange SIGNED_IN for:", session.user.id);
+        resolved.current = true;
+        routeBasedOnProfile(session.user.id);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Progress bar animation
   useEffect(() => {
     const frame = () => {
       const elapsed = Date.now() - startTime.current;
@@ -67,9 +101,9 @@ const Splash = () => {
     requestAnimationFrame(frame);
   }, []);
 
+  // Fallback: check session after progress bar completes
   useEffect(() => {
     if (progress < 100 || resolved.current) return;
-    resolved.current = true;
 
     const route = async () => {
       console.log("[Splash] Progress complete, checking session...");
@@ -81,30 +115,14 @@ const Splash = () => {
         return;
       }
 
+      if (resolved.current) return;
+      resolved.current = true;
       console.log("[Splash] Session found for user:", session.user.id);
-      const profile = await fetchProfileWithRetry(session.user.id);
-
-      if (!profile) {
-        console.log("[Splash] No profile found even after retries → /onboarding");
-        doNavigate("/onboarding");
-        return;
-      }
-
-      if (profile.onboarding_complete) {
-        console.log("[Splash] Onboarding complete → /onboarding (brand video → dashboard)");
-      } else {
-        console.log("[Splash] Onboarding NOT complete → /onboarding (full flow)");
-      }
-      doNavigate("/onboarding");
+      await routeBasedOnProfile(session.user.id);
     };
 
     route();
   }, [progress]);
-
-  const doNavigate = (path: string) => {
-    setFadingOut(true);
-    setTimeout(() => navigate(path, { replace: true }), 400);
-  };
 
   const butterflies = [
     { delay: 0, x: 20 },

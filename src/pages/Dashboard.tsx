@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 
 const courseCards = [
@@ -9,11 +11,49 @@ const courseCards = [
 ];
 
 const Dashboard = () => {
-  const firstName = "Student";
-  const currentDay = 1;
-  const streak = 0;
-  const completedDays = 0;
-  const flamesSubmitted = 0;
+  const [firstName, setFirstName] = useState("");
+  const [streak, setStreak] = useState(0);
+  const [completedDays, setCompletedDays] = useState(0);
+  const [flamesSubmitted, setFlamesSubmitted] = useState(0);
+  const currentDay = completedDays + 1;
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const user = session.user;
+
+      // Fetch profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, current_streak")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      // Name fallback chain
+      const fullName = profile?.full_name && profile.full_name !== "Student"
+        ? profile.full_name
+        : user.user_metadata?.full_name || user.email?.split("@")[0] || "";
+      setFirstName(fullName ? fullName.split(" ")[0] : "");
+      setStreak(profile?.current_streak ?? 0);
+
+      // Fetch completed days
+      const { count: daysCount } = await supabase
+        .from("progress")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("day_complete", true);
+      setCompletedDays(daysCount ?? 0);
+
+      // Fetch flames submitted
+      const { count: flamesCount } = await supabase
+        .from("daily_flames")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      setFlamesSubmitted(flamesCount ?? 0);
+    };
+    fetchUserData();
+  }, []);
 
   // Entry animation orchestration
   const seq = {
@@ -62,7 +102,7 @@ const Dashboard = () => {
             className="h-8 w-auto"
           />
           <p className="text-sm text-foreground/60 mt-2">
-            Namaste, {firstName} 👋 &nbsp;•&nbsp; Day {currentDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
+            Namaste{firstName ? `, ${firstName}` : ""} 👋 &nbsp;•&nbsp; Day {currentDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
           </p>
         </motion.div>
 
