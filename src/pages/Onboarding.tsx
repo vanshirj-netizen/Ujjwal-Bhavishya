@@ -120,14 +120,15 @@ const Onboarding = () => {
         {step === 0 && (
           <motion.div key="video" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 bg-black flex items-center justify-center">
             <video
+              key={videoSrc}
               ref={videoRef}
               autoPlay
               playsInline
               muted={false}
               controls={false}
               onEnded={handleVideoEnd}
-              className="w-full h-full object-cover md:object-contain bg-black"
-              src={VIDEO_URL}
+              className="w-full h-full object-cover bg-black"
+              src={videoSrc}
             />
             <AnimatePresence>
               {showPlayOverlay && (
