@@ -8,6 +8,7 @@ const VIDEO_URL = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/pu
 const UB_LOGO = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo.png";
 const GYANI_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyani.webp";
 const GYANU_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyanu.webp";
+const VIDEO_URL_DESKTOP = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media//UB_Welcome_Video_Desktop.mp4";
 
 const courses = [
   { key: "aarambh", name: "Aarambh", subtitle: "The Beginning", desc: "60 days to transform your foundation from the ground up", live: true },
@@ -23,6 +24,7 @@ const Onboarding = () => {
   const [selectedMaster, setSelectedMaster] = useState<string | null>(null);
   const [showPlayOverlay, setShowPlayOverlay] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -38,6 +40,14 @@ const Onboarding = () => {
     };
     fetchProfile();
   }, [navigate]);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const videoSrc = isDesktop ? VIDEO_URL_DESKTOP : VIDEO_URL;
 
   useEffect(() => {
     if (step === 0 && videoRef.current) {
@@ -110,14 +120,15 @@ const Onboarding = () => {
         {step === 0 && (
           <motion.div key="video" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 bg-black flex items-center justify-center">
             <video
+              key={videoSrc}
               ref={videoRef}
               autoPlay
               playsInline
               muted={false}
               controls={false}
               onEnded={handleVideoEnd}
-              className="w-full h-full object-cover md:object-contain bg-black"
-              src={VIDEO_URL}
+              className="w-full h-full object-cover bg-black"
+              src={videoSrc}
             />
             <AnimatePresence>
               {showPlayOverlay && (
