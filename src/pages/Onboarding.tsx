@@ -278,13 +278,13 @@ const Onboarding = () => {
                   >
                     {/* Master photo */}
                     <div
-                      className="w-20 h-20 mx-auto rounded-2xl overflow-hidden mb-3 border-2"
+                      className="w-full h-[200px] rounded-2xl overflow-hidden mb-3 border-2"
                       style={{
                         borderColor: "#fed141",
                         boxShadow: isSelected ? "0 0 20px rgba(254,209,65,0.6)" : "none",
                       }}
                     >
-                      <img src={m.img} alt={m.key} className="w-full h-full object-cover" />
+                      <img src={m.img} alt={m.key} className="w-full h-full object-cover" style={m.key === "Gyani" ? { objectPosition: "center 30%" } : undefined} />
                     </div>
                     <p className="text-lg font-display font-bold text-primary">{m.key}</p>
                     <p className="text-xs font-body text-primary/80 mt-1">{m.traits}</p>
