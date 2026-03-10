@@ -121,9 +121,8 @@ const Profile = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="relative w-full overflow-hidden"
+        className="relative w-full overflow-hidden h-[160px] sm:h-[180px] lg:h-[200px]"
         style={{
-          height: "200px",
           background: "linear-gradient(180deg, hsl(161 96% 6%) 0%, hsl(161 96% 8%) 50%, hsl(161 96% 10%) 100%)",
           backdropFilter: "blur(10px)",
           WebkitBackdropFilter: "blur(10px)",
@@ -146,7 +145,7 @@ const Profile = () => {
           <img
             src="https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo-Horizontal.png"
             alt="Ujjwal Bhavishya"
-            className="w-[55%] max-w-[320px] h-auto object-contain drop-shadow-lg"
+            className="w-[65%] max-w-[400px] h-auto object-contain drop-shadow-lg"
           />
         </div>
       </motion.div>
