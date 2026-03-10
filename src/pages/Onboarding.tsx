@@ -103,25 +103,37 @@ const Onboarding = () => {
         {step === 0 && (
           <motion.div key="video" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 bg-black flex items-center justify-center">
             <video
+              ref={videoRef}
               autoPlay
               playsInline
               muted={false}
               controls={false}
-              onEnded={nextStep}
+              onEnded={handleVideoEnd}
               className="w-full h-full object-contain"
               src={VIDEO_URL}
             />
             <AnimatePresence>
-              {showSkip && (
-                <motion.button
+              {showPlayOverlay && (
+                <motion.div
+                  key="play-overlay"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  onClick={nextStep}
-                  className="absolute top-6 right-6 text-primary font-body text-sm font-medium z-10 hover:text-primary/80 transition-colors"
+                  transition={{ duration: 0.2 }}
+                  onClick={handlePlayOverlayTap}
+                  className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black cursor-pointer"
                 >
-                  Skip →
-                </motion.button>
+                  <motion.div
+                    animate={{ boxShadow: ["0 0 24px hsl(44 99% 68% / 0.3)", "0 0 48px hsl(44 99% 68% / 0.6)", "0 0 24px hsl(44 99% 68% / 0.3)"] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-[72px] h-[72px] rounded-full border-2 border-primary flex items-center justify-center"
+                  >
+                    <span className="text-primary text-3xl ml-1">▶</span>
+                  </motion.div>
+                  <p className="mt-6 text-base font-body text-secondary tracking-wide">
+                    Tap to Begin Your Journey
+                  </p>
+                </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
