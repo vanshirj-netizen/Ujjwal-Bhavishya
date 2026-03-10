@@ -79,7 +79,7 @@ const Splash = () => {
   // Listen for OAuth callback SIGNED_IN events
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session && !resolved.current) {
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session && !resolved.current) {
         console.log("[Splash] onAuthStateChange SIGNED_IN for:", session.user.id);
         resolved.current = true;
         routeBasedOnProfile(session.user.id);
@@ -109,16 +109,30 @@ const Splash = () => {
       console.log("[Splash] Progress complete, checking session...");
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session) {
-        console.log("[Splash] No session found → /auth");
-        doNavigate("/auth");
+      if (session) {
+        if (resolved.current) return;
+        resolved.current = true;
+        console.log("[Splash] Session found for user:", session.user.id);
+        await routeBasedOnProfile(session.user.id);
         return;
       }
 
-      if (resolved.current) return;
-      resolved.current = true;
-      console.log("[Splash] Session found for user:", session.user.id);
-      await routeBasedOnProfile(session.user.id);
+      // Retry once after 1s for OAuth callbacks still processing
+      console.log("[Splash] No session yet, retrying in 1s...");
+      await new Promise((r) => setTimeout(r, 1000));
+      const { data: { session: retrySession } } = await supabase.auth.getSession();
+
+      if (retrySession && !resolved.current) {
+        resolved.current = true;
+        console.log("[Splash] Session found on retry for user:", retrySession.user.id);
+        await routeBasedOnProfile(retrySession.user.id);
+        return;
+      }
+
+      if (!resolved.current) {
+        console.log("[Splash] No session found → /auth");
+        doNavigate("/auth");
+      }
     };
 
     route();
