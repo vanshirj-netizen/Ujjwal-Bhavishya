@@ -8,6 +8,7 @@ const VIDEO_URL = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/pu
 const UB_LOGO = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo.png";
 const GYANI_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyani.webp";
 const GYANU_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyanu.webp";
+const VIDEO_URL_DESKTOP = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media//UB_Welcome_Video_Desktop.mp4";
 
 const courses = [
   { key: "aarambh", name: "Aarambh", subtitle: "The Beginning", desc: "60 days to transform your foundation from the ground up", live: true },
