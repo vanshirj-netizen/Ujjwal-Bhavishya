@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 const LOAD_DURATION = 2500;
-const LOGO_GIF = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo-GIF.gif";
+const LOGO_URL = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo.png";
 
 const Butterfly = ({ delay, x }: { delay: number; x: number }) => (
   <motion.span
