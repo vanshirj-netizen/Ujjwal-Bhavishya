@@ -41,6 +41,7 @@ export type Database = {
       courses: {
         Row: {
           created_at: string | null
+          description: string | null
           id: string
           is_active: boolean | null
           name: string
@@ -49,6 +50,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -57,6 +59,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
@@ -71,6 +74,7 @@ export type Database = {
           biggest_challenge: string | null
           confidence_rating: number | null
           day_number: number
+          flame_date: string | null
           id: string
           spoke_about: string | null
           submitted_at: string | null
@@ -82,6 +86,7 @@ export type Database = {
           biggest_challenge?: string | null
           confidence_rating?: number | null
           day_number: number
+          flame_date?: string | null
           id?: string
           spoke_about?: string | null
           submitted_at?: string | null
@@ -93,6 +98,7 @@ export type Database = {
           biggest_challenge?: string | null
           confidence_rating?: number | null
           day_number?: number
+          flame_date?: string | null
           id?: string
           spoke_about?: string | null
           submitted_at?: string | null
@@ -196,6 +202,7 @@ export type Database = {
       progress: {
         Row: {
           completed_at: string | null
+          course_id: string | null
           created_at: string | null
           day_complete: boolean | null
           day_number: number
@@ -203,13 +210,17 @@ export type Database = {
           gyani_complete: boolean | null
           gyanu_complete: boolean | null
           id: string
+          lesson_id: string | null
+          master_watched: boolean | null
           practice_complete: boolean | null
           quiz_complete: boolean | null
+          quiz_score: number | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           completed_at?: string | null
+          course_id?: string | null
           created_at?: string | null
           day_complete?: boolean | null
           day_number: number
@@ -217,13 +228,17 @@ export type Database = {
           gyani_complete?: boolean | null
           gyanu_complete?: boolean | null
           id?: string
+          lesson_id?: string | null
+          master_watched?: boolean | null
           practice_complete?: boolean | null
           quiz_complete?: boolean | null
+          quiz_score?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           completed_at?: string | null
+          course_id?: string | null
           created_at?: string | null
           day_complete?: boolean | null
           day_number?: number
@@ -231,12 +246,30 @@ export type Database = {
           gyani_complete?: boolean | null
           gyanu_complete?: boolean | null
           id?: string
+          lesson_id?: string | null
+          master_watched?: boolean | null
           practice_complete?: boolean | null
           quiz_complete?: boolean | null
+          quiz_score?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
