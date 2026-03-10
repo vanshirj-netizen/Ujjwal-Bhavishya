@@ -4,7 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const VIDEO_URL = "https://tfnfsqgejkezoqbwdswo.supabase.co/storage/v1/object/public/Media/UB_Welcome_Video.mp4";
+const VIDEO_URL = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB_Welcome_Video.mp4";
+const UB_LOGO = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo.png";
+const GYANI_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyani.webp";
+const GYANU_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyanu.webp";
 
 const courses = [
   { key: "aarambh", name: "Aarambh", subtitle: "The Beginning", desc: "60 days to transform your foundation from the ground up", live: true },
@@ -36,7 +39,6 @@ const Onboarding = () => {
     fetchProfile();
   }, [navigate]);
 
-  // Attempt unmuted autoplay on mount
   useEffect(() => {
     if (step === 0 && videoRef.current) {
       videoRef.current.play().catch(() => {
@@ -96,6 +98,11 @@ const Onboarding = () => {
     exit: { opacity: 0, x: -60 },
   };
 
+  const masters = [
+    { key: "Gyani", img: GYANI_IMG, audio: "/audio/gyani-intro.mp3", traits: "Wisdom • Depth • Ancient Knowledge", desc: "The scholar who transforms how you think" },
+    { key: "Gyanu", img: GYANU_IMG, audio: "/audio/gyanu-intro.mp3", traits: "Energy • Action • Modern Mindset", desc: "The hustler who transforms how you act" },
+  ];
+
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
       <AnimatePresence mode="wait">
@@ -109,7 +116,7 @@ const Onboarding = () => {
               muted={false}
               controls={false}
               onEnded={handleVideoEnd}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
               src={VIDEO_URL}
             />
             <AnimatePresence>
@@ -124,13 +131,14 @@ const Onboarding = () => {
                   className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black cursor-pointer"
                 >
                   <motion.div
-                    animate={{ boxShadow: ["0 0 24px hsl(44 99% 68% / 0.3)", "0 0 48px hsl(44 99% 68% / 0.6)", "0 0 24px hsl(44 99% 68% / 0.3)"] }}
+                    animate={{ boxShadow: ["0 0 24px rgba(254,209,65,0.3)", "0 0 48px rgba(254,209,65,0.6)", "0 0 24px rgba(254,209,65,0.3)"] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-[72px] h-[72px] rounded-full border-2 border-primary flex items-center justify-center"
+                    className="w-[72px] h-[72px] rounded-full flex items-center justify-center"
+                    style={{ border: "2px solid #fed141" }}
                   >
-                    <span className="text-primary text-3xl ml-1">▶</span>
+                    <span className="text-3xl ml-1" style={{ color: "#fed141" }}>▶</span>
                   </motion.div>
-                  <p className="mt-6 text-base font-body text-secondary tracking-wide">
+                  <p className="mt-6 text-base font-body tracking-wide" style={{ color: "#fffcef" }}>
                     Tap to Begin Your Journey
                   </p>
                 </motion.div>
@@ -142,6 +150,15 @@ const Onboarding = () => {
         {/* STEP 1 — Namaste Welcome */}
         {step === 1 && (
           <motion.div key="namaste" {...slideVariants} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-6">
+            {/* UB Logo */}
+            <motion.img
+              src={UB_LOGO}
+              alt="UB"
+              className="w-20 h-20 object-contain mb-6"
+              animate={{ boxShadow: ["0 0 20px rgba(254,209,65,0.3)", "0 0 40px rgba(254,209,65,0.5)", "0 0 20px rgba(254,209,65,0.3)"] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+
             {/* Stars */}
             <div className="flex gap-4 mb-8">
               {[0, 1, 2, 3].map((i) => (
@@ -244,11 +261,9 @@ const Onboarding = () => {
             <p className="text-sm font-body text-secondary/70 mt-2 text-center">Your guide for the next 60 days</p>
 
             <div className="grid grid-cols-2 gap-4 mt-8 w-full max-w-sm">
-              {[
-                { key: "Gyani", img: "/images/gyani.jpg", audio: "/audio/gyani-intro.mp3", traits: "Wisdom • Depth • Ancient Knowledge", desc: "The scholar who transforms how you think" },
-                { key: "Gyanu", img: "/images/gyanu.jpg", audio: "/audio/gyanu-intro.mp3", traits: "Energy • Action • Modern Mindset", desc: "The hustler who transforms how you act" },
-              ].map((m) => {
+              {masters.map((m) => {
                 const isSelected = selectedMaster === m.key;
+                const otherSelected = selectedMaster && !isSelected;
                 return (
                   <button
                     key={m.key}
@@ -256,14 +271,20 @@ const Onboarding = () => {
                     className={`relative p-4 rounded-xl text-center transition-all ${
                       isSelected
                         ? "glass-card-gold border-2 border-primary bg-primary/5"
-                        : selectedMaster && !isSelected
+                        : otherSelected
                           ? "glass-card opacity-60"
                           : "glass-card hover:scale-[1.02]"
                     }`}
                   >
-                    {/* Placeholder image */}
-                    <div className="w-20 h-20 mx-auto rounded-full border-2 border-primary/40 bg-muted/30 overflow-hidden mb-3">
-                      <img src={m.img} alt={m.key} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    {/* Master photo */}
+                    <div
+                      className="w-20 h-20 mx-auto rounded-2xl overflow-hidden mb-3 border-2"
+                      style={{
+                        borderColor: "#fed141",
+                        boxShadow: isSelected ? "0 0 20px rgba(254,209,65,0.6)" : "none",
+                      }}
+                    >
+                      <img src={m.img} alt={m.key} className="w-full h-full object-cover" />
                     </div>
                     <p className="text-lg font-display font-bold text-primary">{m.key}</p>
                     <p className="text-xs font-body text-primary/80 mt-1">{m.traits}</p>

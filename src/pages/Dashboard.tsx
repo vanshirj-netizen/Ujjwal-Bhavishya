@@ -56,11 +56,13 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: seq.header.delay, duration: seq.header.duration }}
         >
-          <h1 className="text-2xl font-display font-bold text-primary gold-text-glow">
-            Namaste, {firstName} 👋
-          </h1>
-          <p className="text-sm text-foreground/60 mt-1">
-            Day {currentDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
+          <img
+            src="https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo-Horizontal.png"
+            alt="Ujjwal Bhavishya"
+            className="h-8 w-auto"
+          />
+          <p className="text-sm text-foreground/60 mt-2">
+            Namaste, {firstName} 👋 &nbsp;•&nbsp; Day {currentDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
           </p>
         </motion.div>
 

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 const LOAD_DURATION = 2500;
+const LOGO_GIF = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo-GIF.gif";
 
 const Butterfly = ({ delay, x }: { delay: number; x: number }) => (
   <motion.span
@@ -51,12 +52,6 @@ const Splash = () => {
         doNavigate("/auth");
         return;
       }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_complete")
-        .eq("id", session.user.id)
-        .single();
-
       doNavigate("/onboarding");
     };
 
@@ -83,7 +78,8 @@ const Splash = () => {
           key="splash"
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
-          className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden"
+          className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
+          style={{ background: "radial-gradient(circle, rgba(254,209,65,0.08) 0%, transparent 70%), #01271d" }}
         >
           {/* Butterflies */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -92,34 +88,44 @@ const Splash = () => {
             ))}
           </div>
 
-          {/* Logo */}
-          <motion.div
-            animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="w-20 h-20 rounded-2xl bg-primary/20 border border-primary/40 flex items-center justify-center mb-6 gold-glow"
-          >
-            <span className="text-3xl font-display font-bold text-primary">UB</span>
-          </motion.div>
+          {/* Animated GIF Logo */}
+          <img
+            src={LOGO_GIF}
+            alt="Ujjwal Bhavishya"
+            className="w-[280px] h-[280px] object-contain"
+            style={{ boxShadow: "0 0 40px rgba(254,209,65,0.4)" }}
+          />
 
           {/* Text */}
-          <h1 className="text-xl font-display font-bold text-secondary text-center px-8 gold-text-glow leading-relaxed">
+          <motion.h1
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
+            className="text-lg font-display font-bold text-center px-8 leading-relaxed tracking-[0.05em]"
+            style={{ color: "#fffcef" }}
+          >
             Your Gateway to Greatness{"\n"}is Loading
-          </h1>
+          </motion.h1>
 
           {/* Progress bar + counter */}
-          <div className="w-64 mt-10">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
+            className="w-64 mt-10"
+          >
             <div className="flex justify-end mb-1">
-              <span className="text-sm font-bold text-primary font-body">
+              <span className="text-sm font-bold font-body" style={{ color: "#fed141" }}>
                 {Math.round(progress)}%
               </span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-muted/40 overflow-hidden">
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(1,39,29,0.8)" }}>
               <motion.div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${progress}%` }}
+                className="h-full rounded-full"
+                style={{ width: `${progress}%`, backgroundColor: "#fed141" }}
               />
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       ) : (
         <motion.div
@@ -127,7 +133,8 @@ const Splash = () => {
           initial={{ opacity: 1 }}
           animate={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
-          className="fixed inset-0 bg-background"
+          className="fixed inset-0"
+          style={{ backgroundColor: "#01271d" }}
         />
       )}
     </AnimatePresence>
