@@ -185,7 +185,7 @@ const Auth = () => {
             Ujjwal Bhavishya
           </h1>
           <p className="text-xs text-foreground/60 tracking-widest uppercase mt-1">
-            Bright Future
+            Your Gateway to Greatness
           </p>
         </div>
 

@@ -116,7 +116,7 @@ const Onboarding = () => {
               muted={false}
               controls={false}
               onEnded={handleVideoEnd}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover md:object-contain bg-black"
               src={VIDEO_URL}
             />
             <AnimatePresence>
