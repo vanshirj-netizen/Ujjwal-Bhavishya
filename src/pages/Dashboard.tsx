@@ -102,7 +102,7 @@ const Dashboard = () => {
             className="h-8 w-auto"
           />
           <p className="text-sm text-foreground/60 mt-2">
-            Namaste, {firstName} 👋 &nbsp;•&nbsp; Day {currentDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
+            Namaste{firstName ? `, ${firstName}` : ""} 👋 &nbsp;•&nbsp; Day {currentDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
           </p>
         </motion.div>
 
