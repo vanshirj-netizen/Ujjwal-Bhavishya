@@ -50,7 +50,7 @@ const Profile = () => {
         // Fetch stats
         const { data: progressData } = await supabase
           .from("progress")
-          .select("day_complete, wayground_correct_answers")
+          .select("day_complete")
           .eq("user_id", user.id);
 
         const { data: flameData } = await supabase
