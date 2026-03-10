@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 const LOAD_DURATION = 2500;
-const LOGO_GIF = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo-GIF.gif";
+const LOGO_URL = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo.png";
 
 const Butterfly = ({ delay, x }: { delay: number; x: number }) => (
   <motion.span
@@ -89,10 +89,12 @@ const Splash = () => {
           </div>
 
           {/* Animated GIF Logo */}
-          <img
-            src={LOGO_GIF}
+          <motion.img
+            src={LOGO_URL}
             alt="Ujjwal Bhavishya"
-            className="w-[280px] h-[280px] object-contain"
+            className="w-[180px] h-[180px] object-contain"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{ boxShadow: "0 0 40px rgba(254,209,65,0.4)" }}
           />
 
