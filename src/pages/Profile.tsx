@@ -121,7 +121,7 @@ const Profile = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="relative w-full overflow-hidden h-[160px] sm:h-[180px] lg:h-[200px]"
+        className="relative w-full overflow-hidden h-[130px] sm:h-[150px] lg:h-[180px]"
         style={{
           background: "linear-gradient(180deg, hsl(161 96% 6%) 0%, hsl(161 96% 8%) 50%, hsl(161 96% 10%) 100%)",
           backdropFilter: "blur(10px)",
