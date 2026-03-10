@@ -42,6 +42,14 @@ const Onboarding = () => {
   }, [navigate]);
 
   useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const videoSrc = isDesktop ? VIDEO_URL_DESKTOP : VIDEO_URL;
+
+  useEffect(() => {
     if (step === 0 && videoRef.current) {
       videoRef.current.play().catch(() => {
         setShowPlayOverlay(true);
