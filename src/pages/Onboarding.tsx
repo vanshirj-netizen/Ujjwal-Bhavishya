@@ -18,28 +18,31 @@ const Onboarding = () => {
   const [fullName, setFullName] = useState("Student");
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [selectedMaster, setSelectedMaster] = useState<string | null>(null);
-  const [showSkip, setShowSkip] = useState(false);
+  const [showPlayOverlay, setShowPlayOverlay] = useState(false);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const onboardingCompleteRef = useRef(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth", { replace: true }); return; }
-      const { data } = await supabase.from("profiles").select("full_name").eq("id", session.user.id).single();
+      const { data } = await supabase.from("profiles").select("full_name, onboarding_complete").eq("id", session.user.id).single();
       if (data?.full_name) setFullName(data.full_name);
+      if (data?.onboarding_complete) onboardingCompleteRef.current = true;
     };
     fetchProfile();
   }, [navigate]);
 
-  // Show skip button after 2s on video step
+  // Attempt unmuted autoplay on mount
   useEffect(() => {
-    if (step === 0) {
-      const t = setTimeout(() => setShowSkip(true), 2000);
-      return () => clearTimeout(t);
+    if (step === 0 && videoRef.current) {
+      videoRef.current.play().catch(() => {
+        setShowPlayOverlay(true);
+      });
     }
-    setShowSkip(false);
   }, [step]);
 
   const nextStep = () => setStep((s) => s + 1);

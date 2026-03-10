@@ -57,11 +57,7 @@ const Splash = () => {
         .eq("id", session.user.id)
         .single();
 
-      if (profile?.onboarding_complete) {
-        doNavigate("/dashboard");
-      } else {
-        doNavigate("/onboarding");
-      }
+      doNavigate("/onboarding");
     };
 
     route();
