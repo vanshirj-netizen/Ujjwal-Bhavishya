@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,47 @@ const BokehBackground = () => {
   );
 };
 
+const ensureProfileExists = async (userId: string, fullName: string, email: string) => {
+  console.log("[Auth] Checking if profile exists for user:", userId);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profile) {
+    console.log("[Auth] Profile already exists");
+    return;
+  }
+
+  console.log("[Auth] Profile not found, waiting for trigger...");
+  await new Promise((r) => setTimeout(r, 1000));
+
+  const { data: retryProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (retryProfile) {
+    console.log("[Auth] Profile found after retry");
+    return;
+  }
+
+  console.log("[Auth] Profile still missing, creating fallback profile");
+  const { error } = await supabase.from("profiles").insert({
+    id: userId,
+    full_name: fullName || "Student",
+    email,
+    onboarding_complete: false,
+  });
+  if (error) {
+    console.error("[Auth] Fallback profile creation failed:", error.message);
+  } else {
+    console.log("[Auth] Fallback profile created successfully");
+  }
+};
+
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -46,13 +87,25 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const navigate = useNavigate();
 
+  // Session guard: redirect logged-in users to Splash
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log("[Auth] Active session found, redirecting to Splash");
+        navigate("/", { replace: true });
+      }
+    };
+    checkSession();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -61,6 +114,12 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+        console.log("[Auth] Signup successful, user:", data.user?.id);
+
+        if (data.user) {
+          await ensureProfileExists(data.user.id, fullName, email);
+        }
+
         toast.success("Welcome to Ujjwal Bhavishya! 🦋");
         navigate("/", { replace: true });
       } else {
@@ -69,10 +128,12 @@ const Auth = () => {
           password,
         });
         if (error) throw error;
+        console.log("[Auth] Login successful");
         toast.success("Welcome back! 🙏");
         navigate("/", { replace: true });
       }
     } catch (error: any) {
+      console.error("[Auth] Error:", error.message);
       toast.error(error.message || "Something went wrong");
     } finally {
       setLoading(false);

@@ -23,6 +23,31 @@ const Butterfly = ({ delay, x }: { delay: number; x: number }) => (
   </motion.span>
 );
 
+const fetchProfileWithRetry = async (userId: string, retries = 3, delayMs = 500): Promise<any> => {
+  for (let i = 0; i < retries; i++) {
+    console.log(`[Splash] Profile fetch attempt ${i + 1}/${retries}`);
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("onboarding_complete")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profile) {
+      console.log("[Splash] Profile found:", profile);
+      return profile;
+    }
+    if (error) {
+      console.error("[Splash] Profile fetch error:", error.message);
+    }
+    if (i < retries - 1) {
+      console.log(`[Splash] Profile not found, retrying in ${delayMs}ms...`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  console.warn("[Splash] Profile not found after all retries");
+  return null;
+};
+
 const Splash = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
@@ -47,10 +72,28 @@ const Splash = () => {
     resolved.current = true;
 
     const route = async () => {
+      console.log("[Splash] Progress complete, checking session...");
       const { data: { session } } = await supabase.auth.getSession();
+
       if (!session) {
+        console.log("[Splash] No session found → /auth");
         doNavigate("/auth");
         return;
+      }
+
+      console.log("[Splash] Session found for user:", session.user.id);
+      const profile = await fetchProfileWithRetry(session.user.id);
+
+      if (!profile) {
+        console.log("[Splash] No profile found even after retries → /onboarding");
+        doNavigate("/onboarding");
+        return;
+      }
+
+      if (profile.onboarding_complete) {
+        console.log("[Splash] Onboarding complete → /onboarding (brand video → dashboard)");
+      } else {
+        console.log("[Splash] Onboarding NOT complete → /onboarding (full flow)");
       }
       doNavigate("/onboarding");
     };
@@ -88,7 +131,7 @@ const Splash = () => {
             ))}
           </div>
 
-          {/* Animated GIF Logo */}
+          {/* Logo */}
           <motion.img
             src={LOGO_URL}
             alt="Ujjwal Bhavishya"
