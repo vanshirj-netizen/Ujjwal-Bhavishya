@@ -89,10 +89,12 @@ const Splash = () => {
           </div>
 
           {/* Animated GIF Logo */}
-          <img
-            src={LOGO_GIF}
+          <motion.img
+            src={LOGO_URL}
             alt="Ujjwal Bhavishya"
-            className="w-[280px] h-[280px] object-contain"
+            className="w-[180px] h-[180px] object-contain"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{ boxShadow: "0 0 40px rgba(254,209,65,0.4)" }}
           />
 
