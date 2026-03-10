@@ -83,12 +83,14 @@ const Onboarding = () => {
         {/* STEP 0 — Brand Video */}
         {step === 0 && (
           <motion.div key="video" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 bg-black flex items-center justify-center">
-            <iframe
+            <video
+              autoPlay
+              playsInline
+              muted={false}
+              controls={false}
+              onEnded={nextStep}
+              className="w-full h-full object-contain"
               src={VIDEO_URL}
-              className="w-full h-full"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              style={{ border: 0 }}
             />
             <AnimatePresence>
               {showSkip && (
