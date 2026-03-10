@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const VIDEO_URL = "https://www.youtube.com/embed/35LDd-nJsa0?autoplay=1&controls=0&rel=0&showinfo=0&mute=0&playsinline=1";
+const VIDEO_URL = "https://tfnfsqgejkezoqbwdswo.supabase.co/storage/v1/object/public/Media/UB_Welcome_Video.mp4";
 
 const courses = [
   { key: "aarambh", name: "Aarambh", subtitle: "The Beginning", desc: "60 days to transform your foundation from the ground up", live: true },
