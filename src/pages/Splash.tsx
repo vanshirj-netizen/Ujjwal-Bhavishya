@@ -79,7 +79,7 @@ const Splash = () => {
   // Listen for OAuth callback SIGNED_IN events
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session && !resolved.current) {
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session && !resolved.current) {
         console.log("[Splash] onAuthStateChange SIGNED_IN for:", session.user.id);
         resolved.current = true;
         routeBasedOnProfile(session.user.id);
