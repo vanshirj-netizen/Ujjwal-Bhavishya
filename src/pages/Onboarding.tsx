@@ -24,6 +24,7 @@ const Onboarding = () => {
   const [selectedMaster, setSelectedMaster] = useState<string | null>(null);
   const [showPlayOverlay, setShowPlayOverlay] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
