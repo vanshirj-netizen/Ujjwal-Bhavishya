@@ -1,148 +1,261 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const pageVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
-};
+const VIDEO_URL = "https://www.youtube.com/embed/35LDd-nJsa0?autoplay=1&controls=0&rel=0&showinfo=0&mute=0&playsinline=1";
+
+const courses = [
+  { key: "aarambh", name: "Aarambh", subtitle: "The Beginning", desc: "60 days to transform your foundation from the ground up", live: true },
+  { key: "vikas", name: "Vikas", subtitle: "Growth", desc: "Personal development mastery", live: false },
+  { key: "utkarsh", name: "Utkarsh", subtitle: "Excellence", desc: "Tech & AI skills", live: false },
+  { key: "margdarshan", name: "Margdarshan", subtitle: "Guidance", desc: "Career counselling", live: false },
+];
 
 const Onboarding = () => {
   const [step, setStep] = useState(0);
-  const [selectedMaster, setSelectedMaster] = useState<"gyani" | "gyanu" | null>(null);
+  const [fullName, setFullName] = useState("Student");
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [selectedMaster, setSelectedMaster] = useState<string | null>(null);
+  const [showSkip, setShowSkip] = useState(false);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Placeholder — will come from DB after signup
-  const firstName = "Student";
-  const ubId = "UB-000001";
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { navigate("/auth", { replace: true }); return; }
+      const { data } = await supabase.from("profiles").select("full_name").eq("id", session.user.id).single();
+      if (data?.full_name) setFullName(data.full_name);
+    };
+    fetchProfile();
+  }, [navigate]);
 
-  const copyId = () => {
-    navigator.clipboard.writeText(ubId);
-    toast.success("Copied! ✅");
-  };
+  // Show skip button after 2s on video step
+  useEffect(() => {
+    if (step === 0) {
+      const t = setTimeout(() => setShowSkip(true), 2000);
+      return () => clearTimeout(t);
+    }
+    setShowSkip(false);
+  }, [step]);
 
-  const nextStep = () => {
-    if (step === 2) {
+  const nextStep = () => setStep((s) => s + 1);
+
+  const handleFinish = async () => {
+    if (!selectedMaster) return;
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const { error } = await supabase.from("profiles").update({
+        selected_master: selectedMaster,
+        onboarding_complete: true,
+      }).eq("id", session.user.id);
+      if (error) throw error;
       navigate("/dashboard", { replace: true });
-    } else {
-      setStep((s) => s + 1);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save");
+    } finally {
+      setSaving(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background px-6">
-      <div className="w-full max-w-sm">
-        <AnimatePresence mode="wait">
-          {step === 0 && (
-            <motion.div key="step0" {...pageVariants} transition={{ duration: 0.3 }} className="glass-card-gold p-6 text-center">
-              <h1 className="text-2xl font-display font-bold text-foreground">
-                Namaste, {firstName}! 🙏
-              </h1>
-              <p className="text-sm text-foreground/70 mt-2">Welcome to Ujjwal Bhavishya.</p>
-              <p className="text-xs text-foreground/50 mt-4">Your UB ID:</p>
-              <button onClick={copyId} className="mt-2 flex items-center justify-center gap-2 mx-auto group">
-                <span className="text-2xl font-mono-ub font-bold text-primary gold-text-glow">{ubId}</span>
-                <span className="text-foreground/40 group-hover:text-foreground/70 text-sm">📋</span>
-              </button>
-              <p className="text-xs text-foreground/40 mt-3">
-                This is your permanent learning identity. Use it every time you take a quiz.
-              </p>
-              <button onClick={nextStep} className="w-full mt-6 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm gold-glow active:scale-[0.98] transition-transform">
-                Got it, let's go →
-              </button>
-            </motion.div>
-          )}
+  const playAudio = (src: string) => {
+    try {
+      if (audioRef.current) { audioRef.current.pause(); }
+      audioRef.current = new Audio(src);
+      audioRef.current.play().catch(() => {});
+    } catch {}
+  };
 
-          {step === 1 && (
-            <motion.div key="step1" {...pageVariants} transition={{ duration: 0.3 }}>
-              <h2 className="text-xl font-display font-bold text-foreground text-center mb-2">
-                Choose Your Guru
-              </h2>
-              <p className="text-xs text-foreground/50 text-center mb-6">
-                Which master speaks to you?
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { key: "gyani" as const, emoji: "📖", title: "GYANI", subtitle: "The Wisdom Master", desc: "Deep understanding. Grammar clarity. The 'why' behind English." },
-                  { key: "gyanu" as const, emoji: "⚡", title: "GYANU", subtitle: "The Hacks Master", desc: "Smart shortcuts. Exam tricks. Speak before you overthink." },
-                ].map((m) => (
+  const slideVariants = {
+    initial: { opacity: 0, x: 60 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -60 },
+  };
+
+  return (
+    <div className="fixed inset-0 bg-background overflow-hidden">
+      <AnimatePresence mode="wait">
+        {/* STEP 0 — Brand Video */}
+        {step === 0 && (
+          <motion.div key="video" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 bg-black flex items-center justify-center">
+            <iframe
+              src={VIDEO_URL}
+              className="w-full h-full"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              style={{ border: 0 }}
+            />
+            <AnimatePresence>
+              {showSkip && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={nextStep}
+                  className="absolute top-6 right-6 text-primary font-body text-sm font-medium z-10 hover:text-primary/80 transition-colors"
+                >
+                  Skip →
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* STEP 1 — Namaste Welcome */}
+        {step === 1 && (
+          <motion.div key="namaste" {...slideVariants} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-6">
+            {/* Stars */}
+            <div className="flex gap-4 mb-8">
+              {[0, 1, 2, 3].map((i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.12, duration: 0.3, type: "spring" }}
+                  className="text-2xl text-primary"
+                >
+                  ✦
+                </motion.span>
+              ))}
+            </div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.78, duration: 0.5 }}
+              className="text-[32px] font-display font-bold text-primary gold-text-glow text-center"
+            >
+              Namaste, {fullName} 🙏
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.18, duration: 0.4 }}
+              className="mt-4 text-base font-body text-secondary text-center max-w-[320px] leading-relaxed"
+            >
+              Before you start your journey to Greatness — let's finish setting up your account.
+            </motion.p>
+
+            <motion.button
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.68, duration: 0.4 }}
+              onClick={nextStep}
+              className="mt-10 h-12 px-10 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform"
+            >
+              Let's Begin →
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* STEP 2 — Choose Course */}
+        {step === 2 && (
+          <motion.div key="course" {...slideVariants} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5">
+            <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Choose Your Path</h2>
+            <p className="text-sm font-body text-secondary/70 mt-2 text-center">Your 60-day transformation begins here</p>
+
+            <div className="grid grid-cols-2 gap-3 mt-8 w-full max-w-sm">
+              {courses.map((c) => (
+                <button
+                  key={c.key}
+                  disabled={!c.live}
+                  onClick={() => c.live && setSelectedCourse(c.key)}
+                  className={`relative p-4 rounded-xl text-left transition-all ${
+                    c.live
+                      ? selectedCourse === c.key
+                        ? "glass-card-gold border-2 border-primary"
+                        : "glass-card-gold hover:scale-[1.02]"
+                      : "glass-card overflow-hidden cursor-not-allowed"
+                  }`}
+                >
+                  {!c.live && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] rounded-xl z-10 flex items-start justify-end p-2">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/20 text-foreground/60 font-body">Coming Soon</span>
+                    </div>
+                  )}
+                  {c.live && (
+                    <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-bold font-body">
+                      Now Live ✦
+                    </span>
+                  )}
+                  {selectedCourse === c.key && (
+                    <span className="absolute top-2 left-2 text-primary text-lg">✓</span>
+                  )}
+                  <p className={`text-base font-display font-bold mt-4 ${c.live ? "text-primary" : "text-foreground/40"}`}>{c.name}</p>
+                  <p className="text-xs font-body text-secondary/60 mt-0.5">{c.subtitle}</p>
+                  <p className="text-xs font-body text-foreground/40 mt-2 leading-relaxed">{c.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={nextStep}
+              disabled={!selectedCourse}
+              className="mt-8 w-full max-w-sm h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Begin My Journey →
+            </button>
+          </motion.div>
+        )}
+
+        {/* STEP 3 — Choose Master */}
+        {step === 3 && (
+          <motion.div key="master" {...slideVariants} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5">
+            <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Choose Your Master</h2>
+            <p className="text-sm font-body text-secondary/70 mt-2 text-center">Your guide for the next 60 days</p>
+
+            <div className="grid grid-cols-2 gap-4 mt-8 w-full max-w-sm">
+              {[
+                { key: "Gyani", img: "/images/gyani.jpg", audio: "/audio/gyani-intro.mp3", traits: "Wisdom • Depth • Ancient Knowledge", desc: "The scholar who transforms how you think" },
+                { key: "Gyanu", img: "/images/gyanu.jpg", audio: "/audio/gyanu-intro.mp3", traits: "Energy • Action • Modern Mindset", desc: "The hustler who transforms how you act" },
+              ].map((m) => {
+                const isSelected = selectedMaster === m.key;
+                return (
                   <button
                     key={m.key}
                     onClick={() => setSelectedMaster(m.key)}
-                    className={`p-4 rounded-xl text-left transition-all active:scale-[0.97] ${
-                      selectedMaster === m.key ? "glass-card-gold" : "glass-card"
+                    className={`relative p-4 rounded-xl text-center transition-all ${
+                      isSelected
+                        ? "glass-card-gold border-2 border-primary bg-primary/5"
+                        : selectedMaster && !isSelected
+                          ? "glass-card opacity-60"
+                          : "glass-card hover:scale-[1.02]"
                     }`}
                   >
-                    <span className="text-2xl">{m.emoji}</span>
-                    {selectedMaster === m.key && <span className="float-right text-primary">✓</span>}
-                    <p className="text-sm font-bold text-foreground mt-2">{m.title}</p>
-                    <p className="text-xs text-primary mt-0.5">{m.subtitle}</p>
-                    <p className="text-xs text-foreground/50 mt-2 leading-relaxed">{m.desc}</p>
+                    {/* Placeholder image */}
+                    <div className="w-20 h-20 mx-auto rounded-full border-2 border-primary/40 bg-muted/30 overflow-hidden mb-3">
+                      <img src={m.img} alt={m.key} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    </div>
+                    <p className="text-lg font-display font-bold text-primary">{m.key}</p>
+                    <p className="text-xs font-body text-primary/80 mt-1">{m.traits}</p>
+                    <p className="text-xs font-body text-foreground/50 mt-2 leading-relaxed">{m.desc}</p>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); playAudio(m.audio); }}
+                      className="mt-3 text-xs font-body text-primary/70 hover:text-primary transition-colors"
+                    >
+                      ▶ Play Intro
+                    </button>
                   </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-foreground/40 text-center mt-3">
-                You'll see BOTH masters daily — this is just your spirit guide.
-              </p>
-              <button
-                onClick={nextStep}
-                disabled={!selectedMaster}
-                className="w-full mt-6 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm gold-glow active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                This is my master →
-              </button>
-            </motion.div>
-          )}
+                );
+              })}
+            </div>
 
-          {step === 2 && (
-            <motion.div key="step2" {...pageVariants} transition={{ duration: 0.3 }} className="text-center">
-              <h2 className="text-xl font-display font-bold text-foreground mb-2">
-                Your Journey Awaits
-              </h2>
-              <p className="text-sm text-foreground/60 mb-8">Here's your daily routine, {firstName}:</p>
-              <div className="flex items-center justify-center gap-6">
-                {[
-                  { emoji: "🎬", label: "WATCH" },
-                  { emoji: "📖", label: "LEARN" },
-                  { emoji: "🔥", label: "FLAME" },
-                ].map((item, i) => (
-                  <motion.div
-                    key={item.label}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + i * 0.2, duration: 0.4 }}
-                    className="flex flex-col items-center gap-1"
-                  >
-                    <span className="text-3xl">{item.emoji}</span>
-                    <span className="text-[10px] font-semibold text-foreground/60 tracking-wider">{item.label}</span>
-                  </motion.div>
-                ))}
-              </div>
-              <p className="text-xs text-foreground/40 mt-6">60 days. One lesson. One flame. Every day.</p>
-              <button
-                onClick={nextStep}
-                className="w-full mt-8 h-12 rounded-lg bg-primary text-primary-foreground font-bold text-base gold-glow active:scale-[0.98] transition-transform"
-              >
-                Start Day 1 →
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Step dots */}
-        <div className="flex items-center justify-center gap-2 mt-8">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === step ? "bg-primary w-6" : "bg-foreground/20"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
+            <button
+              onClick={handleFinish}
+              disabled={!selectedMaster || saving}
+              className="mt-8 w-full max-w-sm h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {saving ? "Saving..." : `I Choose ${selectedMaster || "..."} →`}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -9,21 +9,52 @@ const courseCards = [
 ];
 
 const Dashboard = () => {
-  // Placeholder data — will be replaced with real DB queries
   const firstName = "Student";
   const currentDay = 1;
   const streak = 0;
   const completedDays = 0;
   const flamesSubmitted = 0;
 
+  // Entry animation orchestration
+  const seq = {
+    butterfly: { delay: 0, duration: 0.6 },
+    header: { delay: 0.3, duration: 0.3 },
+    ring: { delay: 0.5, duration: 0.4 },
+    lesson: { delay: 0.7, duration: 0.35 },
+    courseBase: 0.9,
+    courseStagger: 0.15,
+    nav: { delay: 1.2, duration: 0.3 },
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-24 safe-top">
+    <div className="min-h-screen bg-background pb-24 safe-top relative overflow-hidden">
+      {/* Butterfly entry */}
+      <motion.div
+        className="absolute left-1/2 -translate-x-1/2 text-3xl z-20 pointer-events-none"
+        initial={{ bottom: -40, opacity: 0 }}
+        animate={{ bottom: "50%", opacity: [0, 1, 1, 0] }}
+        transition={{ delay: seq.butterfly.delay, duration: seq.butterfly.duration, ease: "easeOut" }}
+      >
+        🦋
+      </motion.div>
+
+      {/* Gold particle trail behind butterfly */}
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary pointer-events-none z-10"
+          initial={{ bottom: -40, opacity: 0 }}
+          animate={{ bottom: "48%", opacity: [0, 0.6, 0] }}
+          transition={{ delay: seq.butterfly.delay + 0.1 * i, duration: seq.butterfly.duration * 0.8, ease: "easeOut" }}
+        />
+      ))}
+
       <div className="px-5 pt-6 max-w-lg mx-auto">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ delay: seq.header.delay, duration: seq.header.duration }}
         >
           <h1 className="text-2xl font-display font-bold text-primary gold-text-glow">
             Namaste, {firstName} 👋
@@ -35,9 +66,9 @@ const Dashboard = () => {
 
         {/* Progress Ring */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15, duration: 0.4 }}
+          transition={{ delay: seq.ring.delay, duration: seq.ring.duration }}
           className="flex flex-col items-center mt-8"
         >
           <div className="relative w-40 h-40">
@@ -51,7 +82,7 @@ const Dashboard = () => {
                 strokeDasharray={2 * Math.PI * 52}
                 initial={{ strokeDashoffset: 2 * Math.PI * 52 }}
                 animate={{ strokeDashoffset: 2 * Math.PI * 52 * (1 - completedDays / 60) }}
-                transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: seq.ring.delay + 0.1 }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -64,9 +95,9 @@ const Dashboard = () => {
 
         {/* Today's Lesson Card */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
+          transition={{ delay: seq.lesson.delay, duration: seq.lesson.duration }}
           className="glass-card-gold p-5 mt-8"
         >
           <p className="text-xs text-primary font-semibold tracking-wide uppercase">Today — Day {currentDay}</p>
@@ -76,29 +107,30 @@ const Dashboard = () => {
               <span key={i} className="opacity-40">{emoji}</span>
             ))}
           </div>
-          <button
-            className="w-full mt-4 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm gold-glow transition-transform active:scale-[0.98]"
-          >
+          <button className="w-full mt-4 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm gold-glow transition-transform active:scale-[0.98]">
             Continue Day {currentDay} →
           </button>
         </motion.div>
 
         {/* Course Cards */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.45 }}
-          className="mt-8"
-        >
-          <h3 className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3">Your UB Journey</h3>
+        <div className="mt-8">
+          <motion.h3
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: seq.courseBase }}
+            className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3"
+          >
+            Your UB Journey
+          </motion.h3>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
-            {courseCards.map((course) => (
-              <div
+            {courseCards.map((course, i) => (
+              <motion.div
                 key={course.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: seq.courseBase + i * seq.courseStagger, duration: 0.3 }}
                 className={`flex-shrink-0 w-40 p-4 rounded-xl ${
-                  course.active
-                    ? "glass-card-gold"
-                    : "glass-card opacity-50"
+                  course.active ? "glass-card-gold" : "glass-card opacity-50"
                 }`}
               >
                 <span className="text-2xl">{course.icon}</span>
@@ -111,16 +143,16 @@ const Dashboard = () => {
                     Coming Soon
                   </span>
                 )}
-              </div>
+              </motion.div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* 60-Day Grid */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 1.3 }}
           className="mt-8"
         >
           <h3 className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3">60-Day Map</h3>
@@ -153,7 +185,14 @@ const Dashboard = () => {
         </motion.div>
       </div>
 
-      <BottomNav />
+      {/* Bottom Nav with entry animation */}
+      <motion.div
+        initial={{ y: 80 }}
+        animate={{ y: 0 }}
+        transition={{ delay: seq.nav.delay, duration: seq.nav.duration, ease: "easeOut" }}
+      >
+        <BottomNav />
+      </motion.div>
     </div>
   );
 };

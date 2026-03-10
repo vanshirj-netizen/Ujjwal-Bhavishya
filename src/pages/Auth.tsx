@@ -70,7 +70,7 @@ const Auth = () => {
         });
         if (error) throw error;
         toast.success("Welcome back! 🙏");
-        navigate("/dashboard", { replace: true });
+        navigate("/", { replace: true });
       }
     } catch (error: any) {
       toast.error(error.message || "Something went wrong");
