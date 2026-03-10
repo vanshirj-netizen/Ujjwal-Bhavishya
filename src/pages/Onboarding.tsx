@@ -47,6 +47,22 @@ const Onboarding = () => {
 
   const nextStep = () => setStep((s) => s + 1);
 
+  const handleVideoEnd = () => {
+    if (onboardingCompleteRef.current) {
+      navigate("/dashboard", { replace: true });
+    } else {
+      nextStep();
+    }
+  };
+
+  const handlePlayOverlayTap = () => {
+    setShowPlayOverlay(false);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play();
+    }
+  };
+
   const handleFinish = async () => {
     if (!selectedMaster) return;
     setSaving(true);
