@@ -145,7 +145,7 @@ const Profile = () => {
           <img
             src="https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo-Horizontal.png"
             alt="Ujjwal Bhavishya"
-            className="w-[55%] max-w-[320px] h-auto object-contain drop-shadow-lg"
+            className="w-[65%] max-w-[400px] h-auto object-contain drop-shadow-lg"
           />
         </div>
       </motion.div>
