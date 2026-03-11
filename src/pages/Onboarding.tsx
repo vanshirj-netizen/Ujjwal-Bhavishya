@@ -36,8 +36,8 @@ const Onboarding = () => {
   const [mtiProfileType, setMtiProfileType] = useState("single");
   const [mtiPrimaryZone, setMtiPrimaryZone] = useState("");
   const [mtiSecondaryZone, setMtiSecondaryZone] = useState("");
-  const [chosenWorld, setChosenWorld] = useState<string | null>(null);
-  const [primaryGoal, setPrimaryGoal] = useState<string | null>(null);
+  const [chosenWorlds, setChosenWorlds] = useState<string[]>([]);
+  const [primaryGoals, setPrimaryGoals] = useState<string[]>([]);
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   const [consentGiven, setConsentGiven] = useState(false);
   const [ageVerified, setAgeVerified] = useState(false);
