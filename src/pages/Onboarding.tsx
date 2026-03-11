@@ -521,11 +521,12 @@ const Onboarding = () => {
                       setMotherTongue(e.target.value);
                       if (e.target.value && childhoodState) detectMTIZone(e.target.value, childhoodState);
                     }}
-                    className="w-full h-12 rounded-lg px-4 text-sm font-body bg-foreground/5 border border-foreground/20 text-foreground focus:outline-none focus:border-primary transition-colors appearance-none"
+                    className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
+                    style={{ backgroundColor: '#01271d', color: '#fffcef' }}
                   >
-                    <option value="" disabled>Select your mother tongue</option>
+                    <option value="" disabled style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Select your mother tongue</option>
                     {["Hindi","Bhojpuri","Maithili","Awadhi","Chhattisgarhi","Bengali","Tamil","Telugu","Kannada","Malayalam","Marathi","Gujarati","Punjabi","Odia","Assamese","Urdu","Haryanvi","Rajasthani","Konkani","Sindhi","Kashmiri","Manipuri","Nepali","Dogri","Bodo","Tulu","Other"].map((l) => (
-                      <option key={l} value={l}>{l}</option>
+                      <option key={l} value={l} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{l}</option>
                     ))}
                   </select>
                 </div>
