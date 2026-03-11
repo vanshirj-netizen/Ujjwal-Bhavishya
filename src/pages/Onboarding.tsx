@@ -624,8 +624,8 @@ const Onboarding = () => {
             <button onClick={() => setStep(6)} className="absolute top-6 left-5 text-sm font-body text-foreground/40 hover:text-foreground/70 transition-colors">← Back</button>
             <div className="absolute top-6 right-5"><StepDots current={7} /></div>
             <div className="w-full max-w-sm">
-              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">What's your biggest goal?</h2>
-              <p className="text-sm font-body text-foreground/50 mt-2 text-center">One honest answer shapes everything your AI coach focuses on</p>
+              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">What are your goals?</h2>
+              <p className="text-sm font-body text-foreground/50 mt-2 text-center">Select all that apply</p>
               <div className="mt-8 grid grid-cols-2 gap-3">
                 {[
                   { key: "workplace_confidence", label: "Speak confidently at work" },
@@ -637,9 +637,9 @@ const Onboarding = () => {
                 ].map((g) => (
                   <button
                     key={g.key}
-                    onClick={() => setPrimaryGoal(g.key)}
+                    onClick={() => setPrimaryGoals(prev => prev.includes(g.key) ? prev.filter(x => x !== g.key) : [...prev, g.key])}
                     className={`p-4 rounded-xl text-left text-sm font-body font-medium leading-snug transition-all duration-200 ${
-                      primaryGoal === g.key
+                      primaryGoals.includes(g.key)
                         ? "glass-card-gold border-2 border-primary text-primary"
                         : "glass-card text-foreground/60"
                     }`}
@@ -650,7 +650,7 @@ const Onboarding = () => {
               </div>
               <button
                 onClick={nextStep}
-                disabled={!primaryGoal}
+                disabled={primaryGoals.length === 0}
                 className="mt-8 w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Almost there →
