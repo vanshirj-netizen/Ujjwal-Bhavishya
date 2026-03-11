@@ -666,11 +666,10 @@ const Onboarding = () => {
             <div className="fixed top-6 right-5 z-10"><StepDots current={8} /></div>
             <div className="w-full max-w-sm mt-4">
               <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Our promise to you 🦋</h2>
-              <p className="text-sm font-body text-foreground/50 mt-2 text-center">Before we begin — here is what Ujjwal Bhavishya commits to you</p>
               <div className="mt-8 space-y-3">
                 {[
                   { symbol: "✦", heading: "Your data belongs to you", body: "We never sell, share, or misuse your personal information. Ever." },
-                  { symbol: "🦋", heading: "Your transformation is our goal", body: "If we fail to transform you, we refund every rupee. No questions asked." },
+                  { symbol: "✦", heading: "Your transformation is our goal", body: "Built with one question at every step: will this transform the student? If the answer was no — we didn't build it." },
                   { symbol: "✦", heading: "You are seen as an individual", body: "Your coaching is built for you — your language, your region, your goals. Never generic." },
                 ].map((p) => (
                   <div key={p.heading} className="glass-card p-4 flex gap-3 items-start">
