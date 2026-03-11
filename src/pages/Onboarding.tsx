@@ -312,7 +312,7 @@ const Onboarding = () => {
               transition={{ delay: 0.78, duration: 0.5 }}
               className="text-[32px] font-display font-bold text-primary gold-text-glow text-center"
             >
-              Namaste, {fullName} 🙏
+              Namaste, {welcomeName || "Friend"}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 12 }}

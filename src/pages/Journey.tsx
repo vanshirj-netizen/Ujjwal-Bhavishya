@@ -76,7 +76,7 @@ const Journey = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-2xl font-display font-bold text-primary gold-text-glow"
         >
-          Your Journey 🦋
+          {journeyName} Journey 🦋
         </motion.h1>
 
         {/* Stats Row */}
