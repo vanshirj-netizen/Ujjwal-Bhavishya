@@ -275,6 +275,45 @@ export type Database = {
           },
         ]
       }
+      learning_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          lesson_day: number | null
+          master_used: string | null
+          raw_conversation: Json | null
+          session_summary: string | null
+          session_type: string
+          started_at: string | null
+          user_id: string | null
+          world_used: string | null
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          lesson_day?: number | null
+          master_used?: string | null
+          raw_conversation?: Json | null
+          session_summary?: string | null
+          session_type: string
+          started_at?: string | null
+          user_id?: string | null
+          world_used?: string | null
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          lesson_day?: number | null
+          master_used?: string | null
+          raw_conversation?: Json | null
+          session_summary?: string | null
+          session_type?: string
+          started_at?: string | null
+          user_id?: string | null
+          world_used?: string | null
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           course_id: string | null
@@ -635,6 +674,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      training_plan: {
+        Row: {
+          ai_recommendation: string | null
+          based_on_day: number | null
+          current_focus: string | null
+          generated_at: string | null
+          id: string
+          user_id: string | null
+          week_goal: string | null
+        }
+        Insert: {
+          ai_recommendation?: string | null
+          based_on_day?: number | null
+          current_focus?: string | null
+          generated_at?: string | null
+          id?: string
+          user_id?: string | null
+          week_goal?: string | null
+        }
+        Update: {
+          ai_recommendation?: string | null
+          based_on_day?: number | null
+          current_focus?: string | null
+          generated_at?: string | null
+          id?: string
+          user_id?: string | null
+          week_goal?: string | null
+        }
+        Relationships: []
       }
       transformation_scores: {
         Row: {
