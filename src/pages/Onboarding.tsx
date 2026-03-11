@@ -540,17 +540,18 @@ const Onboarding = () => {
                         setChildhoodState(e.target.value);
                         if (e.target.value && motherTongue) detectMTIZone(motherTongue, e.target.value);
                       }}
-                      className="w-full h-12 rounded-lg px-4 text-sm font-body bg-foreground/5 border border-foreground/20 text-foreground focus:outline-none focus:border-primary transition-colors appearance-none"
+                      className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
+                      style={{ backgroundColor: '#01271d', color: '#fffcef' }}
                     >
-                      <option value="" disabled>Select your state or UT</option>
-                      <optgroup label="States">
+                      <option value="" disabled style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Select your state or UT</option>
+                      <optgroup label="States" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
                         {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"].map((s) => (
-                          <option key={s}>{s}</option>
+                          <option key={s} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{s}</option>
                         ))}
                       </optgroup>
-                      <optgroup label="Union Territories">
+                      <optgroup label="Union Territories" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
                         {["Andaman & Nicobar","Chandigarh","Dadra & Nagar Haveli","Daman & Diu","Delhi","Jammu & Kashmir","Ladakh","Lakshadweep","Puducherry"].map((s) => (
-                          <option key={s}>{s}</option>
+                          <option key={s} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{s}</option>
                         ))}
                       </optgroup>
                     </select>
