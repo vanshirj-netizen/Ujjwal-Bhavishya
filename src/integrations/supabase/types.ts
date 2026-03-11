@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      certificates: {
+        Row: {
+          badges_earned: string[] | null
+          certificate_image_url: string | null
+          certificate_number: string | null
+          certificate_pdf_url: string | null
+          consistency_score: number | null
+          course_id: string | null
+          enrollment_id: string | null
+          fluency_score: number | null
+          grammar_score: number | null
+          id: string
+          is_verified: boolean | null
+          issued_at: string | null
+          mti_score: number | null
+          photo_url: string | null
+          tier: string
+          transformation_score: number | null
+          user_id: string | null
+        }
+        Insert: {
+          badges_earned?: string[] | null
+          certificate_image_url?: string | null
+          certificate_number?: string | null
+          certificate_pdf_url?: string | null
+          consistency_score?: number | null
+          course_id?: string | null
+          enrollment_id?: string | null
+          fluency_score?: number | null
+          grammar_score?: number | null
+          id?: string
+          is_verified?: boolean | null
+          issued_at?: string | null
+          mti_score?: number | null
+          photo_url?: string | null
+          tier: string
+          transformation_score?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          badges_earned?: string[] | null
+          certificate_image_url?: string | null
+          certificate_number?: string | null
+          certificate_pdf_url?: string | null
+          consistency_score?: number | null
+          course_id?: string | null
+          enrollment_id?: string | null
+          fluency_score?: number | null
+          grammar_score?: number | null
+          id?: string
+          is_verified?: boolean | null
+          issued_at?: string | null
+          mti_score?: number | null
+          photo_url?: string | null
+          tier?: string
+          transformation_score?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_notes: {
         Row: {
           coach_id: string | null
@@ -107,6 +182,99 @@ export type Database = {
         }
         Relationships: []
       }
+      enrollments: {
+        Row: {
+          completion_date: string | null
+          course_id: string
+          current_day: number | null
+          days_completed: number | null
+          enrolled_at: string | null
+          enrollment_type: string | null
+          id: string
+          is_active: boolean | null
+          offline_payment_marked_by: string | null
+          offline_payment_reference: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_mode: string | null
+          payment_status: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_refund_id: string | null
+          refund_completed_at: string | null
+          refund_initiated_at: string | null
+          refund_reason: string | null
+          second_attempt_eligible: boolean | null
+          trial_completed: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          completion_date?: string | null
+          course_id?: string
+          current_day?: number | null
+          days_completed?: number | null
+          enrolled_at?: string | null
+          enrollment_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          offline_payment_marked_by?: string | null
+          offline_payment_reference?: string | null
+          paid_at?: string | null
+          payment_amount?: number | null
+          payment_mode?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_refund_id?: string | null
+          refund_completed_at?: string | null
+          refund_initiated_at?: string | null
+          refund_reason?: string | null
+          second_attempt_eligible?: boolean | null
+          trial_completed?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          completion_date?: string | null
+          course_id?: string
+          current_day?: number | null
+          days_completed?: number | null
+          enrolled_at?: string | null
+          enrollment_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          offline_payment_marked_by?: string | null
+          offline_payment_reference?: string | null
+          paid_at?: string | null
+          payment_amount?: number | null
+          payment_mode?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_refund_id?: string | null
+          refund_completed_at?: string | null
+          refund_initiated_at?: string | null
+          refund_reason?: string | null
+          second_attempt_eligible?: boolean | null
+          trial_completed?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_offline_payment_marked_by_fkey"
+            columns: ["offline_payment_marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           course_id: string | null
@@ -156,46 +324,103 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age_verified: boolean | null
+          childhood_state: string | null
+          chosen_world: string | null
+          consent_given: boolean | null
+          consent_timestamp: string | null
+          country: string | null
           created_at: string | null
           current_streak: number | null
+          date_of_birth: string | null
           email: string | null
           enrollment_date: string | null
           full_name: string
+          gender: string | null
           id: string
+          is_under_18: boolean | null
           longest_streak: number | null
+          mother_tongue: string | null
+          mti_primary_zone: string | null
+          mti_profile_type: string | null
+          mti_secondary_zone: string | null
+          mti_zone: string | null
           onboarding_complete: boolean | null
+          onboarding_step: number | null
+          parental_consent: boolean | null
           payment_status: string | null
+          photo_url: string | null
+          primary_goal: string | null
           selected_master: string | null
           ub_student_id: string | null
           updated_at: string | null
+          whatsapp_opted_in: boolean | null
         }
         Insert: {
+          age_verified?: boolean | null
+          childhood_state?: string | null
+          chosen_world?: string | null
+          consent_given?: boolean | null
+          consent_timestamp?: string | null
+          country?: string | null
           created_at?: string | null
           current_streak?: number | null
+          date_of_birth?: string | null
           email?: string | null
           enrollment_date?: string | null
           full_name?: string
+          gender?: string | null
           id: string
+          is_under_18?: boolean | null
           longest_streak?: number | null
+          mother_tongue?: string | null
+          mti_primary_zone?: string | null
+          mti_profile_type?: string | null
+          mti_secondary_zone?: string | null
+          mti_zone?: string | null
           onboarding_complete?: boolean | null
+          onboarding_step?: number | null
+          parental_consent?: boolean | null
           payment_status?: string | null
+          photo_url?: string | null
+          primary_goal?: string | null
           selected_master?: string | null
           ub_student_id?: string | null
           updated_at?: string | null
+          whatsapp_opted_in?: boolean | null
         }
         Update: {
+          age_verified?: boolean | null
+          childhood_state?: string | null
+          chosen_world?: string | null
+          consent_given?: boolean | null
+          consent_timestamp?: string | null
+          country?: string | null
           created_at?: string | null
           current_streak?: number | null
+          date_of_birth?: string | null
           email?: string | null
           enrollment_date?: string | null
           full_name?: string
+          gender?: string | null
           id?: string
+          is_under_18?: boolean | null
           longest_streak?: number | null
+          mother_tongue?: string | null
+          mti_primary_zone?: string | null
+          mti_profile_type?: string | null
+          mti_secondary_zone?: string | null
+          mti_zone?: string | null
           onboarding_complete?: boolean | null
+          onboarding_step?: number | null
+          parental_consent?: boolean | null
           payment_status?: string | null
+          photo_url?: string | null
+          primary_goal?: string | null
           selected_master?: string | null
           ub_student_id?: string | null
           updated_at?: string | null
+          whatsapp_opted_in?: boolean | null
         }
         Relationships: []
       }
@@ -271,24 +496,285 @@ export type Database = {
           },
         ]
       }
+      shabd_shakti: {
+        Row: {
+          antonyms: string[] | null
+          created_at: string | null
+          day_number: number
+          example_sentence: string | null
+          id: string
+          is_active: boolean | null
+          meaning: string
+          memory_trick: string | null
+          pronunciation_guide: string | null
+          synonyms: string[] | null
+          word: string
+        }
+        Insert: {
+          antonyms?: string[] | null
+          created_at?: string | null
+          day_number: number
+          example_sentence?: string | null
+          id?: string
+          is_active?: boolean | null
+          meaning: string
+          memory_trick?: string | null
+          pronunciation_guide?: string | null
+          synonyms?: string[] | null
+          word: string
+        }
+        Update: {
+          antonyms?: string[] | null
+          created_at?: string | null
+          day_number?: number
+          example_sentence?: string | null
+          id?: string
+          is_active?: boolean | null
+          meaning?: string
+          memory_trick?: string | null
+          pronunciation_guide?: string | null
+          synonyms?: string[] | null
+          word?: string
+        }
+        Relationships: []
+      }
+      shabd_shakti_progress: {
+        Row: {
+          id: string
+          learned_at: string | null
+          mastered: boolean | null
+          quiz_attempts: number | null
+          quiz_correct: number | null
+          shabd_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          learned_at?: string | null
+          mastered?: boolean | null
+          quiz_attempts?: number | null
+          quiz_correct?: number | null
+          shabd_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          learned_at?: string | null
+          mastered?: boolean | null
+          quiz_attempts?: number | null
+          quiz_correct?: number | null
+          shabd_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shabd_shakti_progress_shabd_id_fkey"
+            columns: ["shabd_id"]
+            isOneToOne: false
+            referencedRelation: "shabd_shakti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shabd_shakti_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_errors: {
+        Row: {
+          correct_form: string | null
+          detected_at: string | null
+          error_category: string | null
+          error_subtype: string | null
+          error_word: string | null
+          id: string
+          lesson_day: number | null
+          resolved: boolean | null
+          resolved_at: string | null
+          session_type: string | null
+          student_version: string | null
+          user_id: string | null
+        }
+        Insert: {
+          correct_form?: string | null
+          detected_at?: string | null
+          error_category?: string | null
+          error_subtype?: string | null
+          error_word?: string | null
+          id?: string
+          lesson_day?: number | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          session_type?: string | null
+          student_version?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          correct_form?: string | null
+          detected_at?: string | null
+          error_category?: string | null
+          error_subtype?: string | null
+          error_word?: string | null
+          id?: string
+          lesson_day?: number | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          session_type?: string | null
+          student_version?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_errors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transformation_scores: {
+        Row: {
+          certificate_tier: string | null
+          consistency_score: number | null
+          created_at: string | null
+          enrollment_id: string | null
+          fluency_score: number | null
+          grammar_score: number | null
+          id: string
+          intervention_assigned_to: string | null
+          intervention_flag: string | null
+          intervention_notes: string | null
+          last_calculated_at: string | null
+          mti_score: number | null
+          overall_score: number | null
+          refund_eligible: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          certificate_tier?: string | null
+          consistency_score?: number | null
+          created_at?: string | null
+          enrollment_id?: string | null
+          fluency_score?: number | null
+          grammar_score?: number | null
+          id?: string
+          intervention_assigned_to?: string | null
+          intervention_flag?: string | null
+          intervention_notes?: string | null
+          last_calculated_at?: string | null
+          mti_score?: number | null
+          overall_score?: number | null
+          refund_eligible?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          certificate_tier?: string | null
+          consistency_score?: number | null
+          created_at?: string | null
+          enrollment_id?: string | null
+          fluency_score?: number | null
+          grammar_score?: number | null
+          id?: string
+          intervention_assigned_to?: string | null
+          intervention_flag?: string | null
+          intervention_notes?: string | null
+          last_calculated_at?: string | null
+          mti_score?: number | null
+          overall_score?: number | null
+          refund_eligible?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_scores_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_scores_intervention_assigned_to_fkey"
+            columns: ["intervention_assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
+          assigned_at: string | null
+          assigned_by: string | null
           created_at: string | null
           id: string
+          is_active: boolean | null
           role: string
           user_id: string
         }
         Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
           role?: string
           user_id: string
         }
         Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
           role?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      weeks: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          days_in_week: number | null
+          id: string
+          is_active: boolean | null
+          theme_name: string
+          theme_subtitle: string | null
+          week_number: number
+          week_type: string | null
+        }
+        Insert: {
+          course_id?: string
+          created_at?: string | null
+          days_in_week?: number | null
+          id?: string
+          is_active?: boolean | null
+          theme_name: string
+          theme_subtitle?: string | null
+          week_number: number
+          week_type?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          days_in_week?: number | null
+          id?: string
+          is_active?: boolean | null
+          theme_name?: string
+          theme_subtitle?: string | null
+          week_number?: number
+          week_type?: string | null
         }
         Relationships: []
       }
