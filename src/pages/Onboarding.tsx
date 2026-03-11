@@ -502,14 +502,14 @@ const Onboarding = () => {
               <div className="mt-8 space-y-5">
                 <div className="space-y-2">
                   <label className="text-sm font-body text-foreground/70 block">Country</label>
-                  <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full h-12 rounded-lg px-4 text-sm font-body bg-foreground/5 border border-foreground/20 text-foreground focus:outline-none focus:border-primary transition-colors appearance-none">
-                    <option value="India">India</option>
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="United Arab Emirates">United Arab Emirates</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
-                    <option value="Other">Other</option>
+                  <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
+                    <option value="India" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>India</option>
+                    <option value="United States" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United States</option>
+                    <option value="United Kingdom" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United Kingdom</option>
+                    <option value="United Arab Emirates" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United Arab Emirates</option>
+                    <option value="Canada" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Canada</option>
+                    <option value="Australia" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Australia</option>
+                    <option value="Other" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Other</option>
                   </select>
                 </div>
                 <div className="space-y-2">
