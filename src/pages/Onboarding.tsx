@@ -577,6 +577,7 @@ const Onboarding = () => {
             <div className="w-full max-w-sm">
               <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Which world do you want to master?</h2>
               <p className="text-sm font-body text-foreground/50 mt-2 text-center">Every lesson, every practice, every session — tailored to the English you actually need</p>
+              <p className="text-xs font-body text-primary/60 mt-1 text-center">Select one or both</p>
               <div className="mt-8 space-y-3">
                 {[
                   { key: "professional", title: "Professional", subtitle: "Workplace English", lines: ["Client meetings & presentations", "Emails, reports, leadership", "Interviews & corporate life"], quote: "Speak like a leader" },
@@ -584,9 +585,9 @@ const Onboarding = () => {
                 ].map((w) => (
                   <button
                     key={w.key}
-                    onClick={() => setChosenWorld(w.key)}
+                    onClick={() => setChosenWorlds(prev => prev.includes(w.key) ? prev.filter(x => x !== w.key) : [...prev, w.key])}
                     className={`w-full p-5 rounded-xl text-left transition-all duration-200 ${
-                      chosenWorld === w.key ? "glass-card-gold border-2 border-primary" : "glass-card"
+                      chosenWorlds.includes(w.key) ? "glass-card-gold border-2 border-primary" : "glass-card"
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -594,7 +595,7 @@ const Onboarding = () => {
                         <p className="text-base font-display font-bold text-primary">{w.title}</p>
                         <p className="text-xs font-body text-foreground/50 mt-0.5">{w.subtitle}</p>
                       </div>
-                      {chosenWorld === w.key && <span className="text-primary text-lg">✓</span>}
+                      {chosenWorlds.includes(w.key) && <span className="text-primary text-lg">✓</span>}
                     </div>
                     <ul className="mt-3 space-y-1">
                       {w.lines.map((line) => (
@@ -608,7 +609,7 @@ const Onboarding = () => {
               <p className="text-center text-xs font-body text-foreground/30 mt-4">You can change this anytime in your profile</p>
               <button
                 onClick={nextStep}
-                disabled={!chosenWorld}
+                disabled={chosenWorlds.length === 0}
                 className="mt-6 w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Continue →
