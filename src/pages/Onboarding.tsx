@@ -36,8 +36,8 @@ const Onboarding = () => {
   const [mtiProfileType, setMtiProfileType] = useState("single");
   const [mtiPrimaryZone, setMtiPrimaryZone] = useState("");
   const [mtiSecondaryZone, setMtiSecondaryZone] = useState("");
-  const [chosenWorld, setChosenWorld] = useState<string | null>(null);
-  const [primaryGoal, setPrimaryGoal] = useState<string | null>(null);
+  const [chosenWorlds, setChosenWorlds] = useState<string[]>([]);
+  const [primaryGoals, setPrimaryGoals] = useState<string[]>([]);
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   const [consentGiven, setConsentGiven] = useState(false);
   const [ageVerified, setAgeVerified] = useState(false);
@@ -160,8 +160,8 @@ const Onboarding = () => {
           mti_profile_type: mtiProfileType,
           mti_primary_zone: mtiPrimaryZone,
           mti_secondary_zone: mtiSecondaryZone,
-          chosen_world: chosenWorld,
-          primary_goal: primaryGoal,
+          chosen_world: chosenWorlds.join(','),
+          primary_goal: primaryGoals.join(','),
           whatsapp_opted_in: whatsappOptIn,
           consent_given: true,
           consent_timestamp: new Date().toISOString(),
@@ -502,14 +502,14 @@ const Onboarding = () => {
               <div className="mt-8 space-y-5">
                 <div className="space-y-2">
                   <label className="text-sm font-body text-foreground/70 block">Country</label>
-                  <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full h-12 rounded-lg px-4 text-sm font-body bg-foreground/5 border border-foreground/20 text-foreground focus:outline-none focus:border-primary transition-colors appearance-none">
-                    <option value="India">India</option>
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="United Arab Emirates">United Arab Emirates</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
-                    <option value="Other">Other</option>
+                  <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
+                    <option value="India" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>India</option>
+                    <option value="United States" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United States</option>
+                    <option value="United Kingdom" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United Kingdom</option>
+                    <option value="United Arab Emirates" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United Arab Emirates</option>
+                    <option value="Canada" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Canada</option>
+                    <option value="Australia" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Australia</option>
+                    <option value="Other" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Other</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -521,11 +521,12 @@ const Onboarding = () => {
                       setMotherTongue(e.target.value);
                       if (e.target.value && childhoodState) detectMTIZone(e.target.value, childhoodState);
                     }}
-                    className="w-full h-12 rounded-lg px-4 text-sm font-body bg-foreground/5 border border-foreground/20 text-foreground focus:outline-none focus:border-primary transition-colors appearance-none"
+                    className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
+                    style={{ backgroundColor: '#01271d', color: '#fffcef' }}
                   >
-                    <option value="" disabled>Select your mother tongue</option>
+                    <option value="" disabled style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Select your mother tongue</option>
                     {["Hindi","Bhojpuri","Maithili","Awadhi","Chhattisgarhi","Bengali","Tamil","Telugu","Kannada","Malayalam","Marathi","Gujarati","Punjabi","Odia","Assamese","Urdu","Haryanvi","Rajasthani","Konkani","Sindhi","Kashmiri","Manipuri","Nepali","Dogri","Bodo","Tulu","Other"].map((l) => (
-                      <option key={l} value={l}>{l}</option>
+                      <option key={l} value={l} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{l}</option>
                     ))}
                   </select>
                 </div>
@@ -539,17 +540,18 @@ const Onboarding = () => {
                         setChildhoodState(e.target.value);
                         if (e.target.value && motherTongue) detectMTIZone(motherTongue, e.target.value);
                       }}
-                      className="w-full h-12 rounded-lg px-4 text-sm font-body bg-foreground/5 border border-foreground/20 text-foreground focus:outline-none focus:border-primary transition-colors appearance-none"
+                      className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
+                      style={{ backgroundColor: '#01271d', color: '#fffcef' }}
                     >
-                      <option value="" disabled>Select your state or UT</option>
-                      <optgroup label="States">
+                      <option value="" disabled style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Select your state or UT</option>
+                      <optgroup label="States" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
                         {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"].map((s) => (
-                          <option key={s}>{s}</option>
+                          <option key={s} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{s}</option>
                         ))}
                       </optgroup>
-                      <optgroup label="Union Territories">
+                      <optgroup label="Union Territories" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
                         {["Andaman & Nicobar","Chandigarh","Dadra & Nagar Haveli","Daman & Diu","Delhi","Jammu & Kashmir","Ladakh","Lakshadweep","Puducherry"].map((s) => (
-                          <option key={s}>{s}</option>
+                          <option key={s} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{s}</option>
                         ))}
                       </optgroup>
                     </select>
@@ -575,6 +577,7 @@ const Onboarding = () => {
             <div className="w-full max-w-sm">
               <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Which world do you want to master?</h2>
               <p className="text-sm font-body text-foreground/50 mt-2 text-center">Every lesson, every practice, every session — tailored to the English you actually need</p>
+              <p className="text-xs font-body text-primary/60 mt-1 text-center">Select one or both</p>
               <div className="mt-8 space-y-3">
                 {[
                   { key: "professional", title: "Professional", subtitle: "Workplace English", lines: ["Client meetings & presentations", "Emails, reports, leadership", "Interviews & corporate life"], quote: "Speak like a leader" },
@@ -582,9 +585,9 @@ const Onboarding = () => {
                 ].map((w) => (
                   <button
                     key={w.key}
-                    onClick={() => setChosenWorld(w.key)}
+                    onClick={() => setChosenWorlds(prev => prev.includes(w.key) ? prev.filter(x => x !== w.key) : [...prev, w.key])}
                     className={`w-full p-5 rounded-xl text-left transition-all duration-200 ${
-                      chosenWorld === w.key ? "glass-card-gold border-2 border-primary" : "glass-card"
+                      chosenWorlds.includes(w.key) ? "glass-card-gold border-2 border-primary" : "glass-card"
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -592,7 +595,7 @@ const Onboarding = () => {
                         <p className="text-base font-display font-bold text-primary">{w.title}</p>
                         <p className="text-xs font-body text-foreground/50 mt-0.5">{w.subtitle}</p>
                       </div>
-                      {chosenWorld === w.key && <span className="text-primary text-lg">✓</span>}
+                      {chosenWorlds.includes(w.key) && <span className="text-primary text-lg">✓</span>}
                     </div>
                     <ul className="mt-3 space-y-1">
                       {w.lines.map((line) => (
@@ -606,7 +609,7 @@ const Onboarding = () => {
               <p className="text-center text-xs font-body text-foreground/30 mt-4">You can change this anytime in your profile</p>
               <button
                 onClick={nextStep}
-                disabled={!chosenWorld}
+                disabled={chosenWorlds.length === 0}
                 className="mt-6 w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Continue →
@@ -621,8 +624,8 @@ const Onboarding = () => {
             <button onClick={() => setStep(6)} className="absolute top-6 left-5 text-sm font-body text-foreground/40 hover:text-foreground/70 transition-colors">← Back</button>
             <div className="absolute top-6 right-5"><StepDots current={7} /></div>
             <div className="w-full max-w-sm">
-              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">What's your biggest goal?</h2>
-              <p className="text-sm font-body text-foreground/50 mt-2 text-center">One honest answer shapes everything your AI coach focuses on</p>
+              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">What are your goals?</h2>
+              <p className="text-sm font-body text-foreground/50 mt-2 text-center">Select all that apply</p>
               <div className="mt-8 grid grid-cols-2 gap-3">
                 {[
                   { key: "workplace_confidence", label: "Speak confidently at work" },
@@ -634,9 +637,9 @@ const Onboarding = () => {
                 ].map((g) => (
                   <button
                     key={g.key}
-                    onClick={() => setPrimaryGoal(g.key)}
+                    onClick={() => setPrimaryGoals(prev => prev.includes(g.key) ? prev.filter(x => x !== g.key) : [...prev, g.key])}
                     className={`p-4 rounded-xl text-left text-sm font-body font-medium leading-snug transition-all duration-200 ${
-                      primaryGoal === g.key
+                      primaryGoals.includes(g.key)
                         ? "glass-card-gold border-2 border-primary text-primary"
                         : "glass-card text-foreground/60"
                     }`}
@@ -647,7 +650,7 @@ const Onboarding = () => {
               </div>
               <button
                 onClick={nextStep}
-                disabled={!primaryGoal}
+                disabled={primaryGoals.length === 0}
                 className="mt-8 w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Almost there →
@@ -663,11 +666,10 @@ const Onboarding = () => {
             <div className="fixed top-6 right-5 z-10"><StepDots current={8} /></div>
             <div className="w-full max-w-sm mt-4">
               <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Our promise to you 🦋</h2>
-              <p className="text-sm font-body text-foreground/50 mt-2 text-center">Before we begin — here is what Ujjwal Bhavishya commits to you</p>
               <div className="mt-8 space-y-3">
                 {[
                   { symbol: "✦", heading: "Your data belongs to you", body: "We never sell, share, or misuse your personal information. Ever." },
-                  { symbol: "🦋", heading: "Your transformation is our goal", body: "If we fail to transform you, we refund every rupee. No questions asked." },
+                  { symbol: "✦", heading: "Your transformation is our goal", body: "Built with one question at every step: will this transform the student? If the answer was no — we didn't build it." },
                   { symbol: "✦", heading: "You are seen as an individual", body: "Your coaching is built for you — your language, your region, your goals. Never generic." },
                 ].map((p) => (
                   <div key={p.heading} className="glass-card p-4 flex gap-3 items-start">
@@ -684,9 +686,9 @@ const Onboarding = () => {
                   <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 accent-primary flex-shrink-0" />
                   <span className="text-xs font-body text-foreground/60 leading-relaxed">
                     I have read and agree to the{" "}
-                    <a href="/privacy" target="_blank" className="text-primary underline">Privacy Policy</a>
+                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.com")} className="text-primary underline hover:text-primary/80 transition-colors">Privacy Policy</button>
                     {" "}and{" "}
-                    <a href="/terms" target="_blank" className="text-primary underline">Terms of Service</a>
+                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.com")} className="text-primary underline hover:text-primary/80 transition-colors">Terms of Service</button>
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
