@@ -1,7 +1,36 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 
 const Journey = () => {
+  const [journeyName, setJourneyName] = useState("Your");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+        const name =
+          data?.full_name ||
+          user?.user_metadata?.full_name ||
+          user?.user_metadata?.name ||
+          null;
+        if (name) {
+          setJourneyName(name.split(" ")[0] + "'s");
+        }
+      } catch {
+        // silent — keeps "Your"
+      }
+    };
+    load();
+  }, []);
+
   // Placeholder data
   const stats = [
     { icon: "🔥", value: "0", label: "Day Streak" },
@@ -47,7 +76,7 @@ const Journey = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-2xl font-display font-bold text-primary gold-text-glow"
         >
-          Your Journey 🦋
+          {journeyName} Journey 🦋
         </motion.h1>
 
         {/* Stats Row */}

@@ -49,13 +49,27 @@ const Onboarding = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const onboardingCompleteRef = useRef(false);
 
+  const [welcomeName, setWelcomeName] = useState("");
+
   useEffect(() => {
     const fetchProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth", { replace: true }); return; }
-      const { data } = await supabase.from("profiles").select("full_name, onboarding_complete").eq("id", session.user.id).single();
-      if (data?.full_name) setFullName(data.full_name);
-      if (data?.onboarding_complete) onboardingCompleteRef.current = true;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { navigate("/auth", { replace: true }); return; }
+        const { data } = await supabase.from("profiles").select("full_name, onboarding_complete").eq("id", session.user.id).single();
+        if (data?.full_name) setFullName(data.full_name);
+        if (data?.onboarding_complete) onboardingCompleteRef.current = true;
+
+        const name =
+          data?.full_name ||
+          session.user.user_metadata?.full_name ||
+          session.user.user_metadata?.name ||
+          session.user.email?.split("@")[0] ||
+          "Friend";
+        setWelcomeName(name.split(" ")[0]);
+      } catch {
+        setWelcomeName("Friend");
+      }
     };
     fetchProfile();
   }, [navigate]);
@@ -298,7 +312,7 @@ const Onboarding = () => {
               transition={{ delay: 0.78, duration: 0.5 }}
               className="text-[32px] font-display font-bold text-primary gold-text-glow text-center"
             >
-              Namaste, {fullName} 🙏
+              Namaste, {welcomeName || "Friend"}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 12 }}

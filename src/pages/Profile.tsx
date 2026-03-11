@@ -34,6 +34,7 @@ const Profile = () => {
     avgConfidence: "–",
   });
   const [loading, setLoading] = useState(true);
+  const [displayName, setDisplayName] = useState("Student");
 
   const [selectedMasterLocal, setSelectedMasterLocal] = useState("gyani");
   const [showMasterModal, setShowMasterModal] = useState(false);
@@ -57,6 +58,16 @@ const Profile = () => {
 
         if (error) throw error;
         setProfile(profileData);
+
+        // Google login fallback chain
+        const resolvedName =
+          profileData?.full_name ||
+          user?.user_metadata?.full_name ||
+          user?.user_metadata?.name ||
+          user?.email?.split("@")[0] ||
+          "Student";
+        setDisplayName(resolvedName);
+
         setSelectedMasterLocal(profileData?.selected_master ?? "gyani");
         setChosenWorldDisplay(profileData?.chosen_world ?? "");
         setWhatsappOn(profileData?.whatsapp_opted_in ?? true);
@@ -120,7 +131,7 @@ const Profile = () => {
         .eq("id", user.id);
       setSelectedMasterLocal(newMaster);
       setShowMasterModal(false);
-      toast.success("Master updated");
+      toast.success("Master updated ✦");
     } catch {
       toast.error("Could not save. Try again.");
     } finally {
@@ -151,12 +162,10 @@ const Profile = () => {
     );
   }
 
-  const fullName = profile?.full_name ?? "Student";
   const ubId = profile?.ub_student_id ?? "UB-000001";
-  const master = profile?.selected_master ?? "gyani";
   const paymentStatus = profile?.payment_status ?? "free";
 
-  const initials = fullName
+  const initials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -191,10 +200,10 @@ const Profile = () => {
           <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center mx-auto">
             <span className="text-lg font-bold text-primary">{initials}</span>
           </div>
-          <h2 className="text-lg font-display font-bold text-foreground mt-3">{fullName}</h2>
+          <h2 className="text-lg font-display font-bold text-foreground mt-3">{displayName}</h2>
           <p className="text-sm font-mono-ub text-primary mt-1 tracking-widest">{ubId}</p>
           <span className="inline-block mt-2 text-xs px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-            {master === "gyani" ? "📖 Gyani's Student" : "⚡ Gyanu's Student"}
+            {selectedMasterLocal === "gyani" ? "📖 Gyani's Student" : "⚡ Gyanu's Student"}
           </span>
           <div className="mt-3">
             <span className={`inline-block text-xs px-3 py-1 rounded-full ${paymentStatus === "paid" ? "bg-primary/20 text-primary border border-primary/30" : "bg-foreground/10 text-foreground/60"}`}>
@@ -253,9 +262,13 @@ const Profile = () => {
                       const updated = current.includes(w) ? current.filter(x => x !== w) : [...current, w];
                       const val = updated.join(",");
                       setChosenWorldDisplay(val);
-                      const { data: { user } } = await supabase.auth.getUser();
-                      if (user) {
-                        await supabase.from("profiles").update({ chosen_world: val } as any).eq("id", user.id);
+                      try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (user) {
+                          await supabase.from("profiles").update({ chosen_world: val } as any).eq("id", user.id);
+                        }
+                      } catch {
+                        // silent
                       }
                     }}
                     className={`flex-1 py-2 rounded-lg text-sm font-body font-medium capitalize transition-all ${
@@ -317,7 +330,14 @@ const Profile = () => {
       {/* Master Modal */}
       {showMasterModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-5" onClick={() => setShowMasterModal(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm glass-card-gold p-6">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm glass-card-gold p-6"
+            style={{
+              backgroundColor: '#01271d',
+              border: '1px solid rgba(254,209,65,0.3)',
+            }}
+          >
             <h3 className="text-lg font-display font-bold text-primary text-center mb-4">Choose Your Master</h3>
             <div className="grid grid-cols-2 gap-3">
               {[
@@ -332,10 +352,18 @@ const Profile = () => {
                     selectedMasterLocal === m.key ? "glass-card-gold border-2 border-primary" : "glass-card"
                   }`}
                 >
-                  <div className="w-full h-24 rounded-lg overflow-hidden mb-2">
-                    <img src={m.img} alt={m.key} className="w-full h-full object-cover" />
+                  <div className="w-full h-32 rounded-xl overflow-hidden bg-foreground/10 border border-primary/30 flex items-center justify-center">
+                    <img
+                      src={m.img}
+                      alt={m.key}
+                      className="w-full h-full object-cover"
+                      style={{ objectFit: 'cover', objectPosition: 'top' }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
                   </div>
-                  <p className="text-sm font-display font-bold text-primary capitalize">{m.key}</p>
+                  <p className="text-sm font-display font-bold text-primary capitalize mt-2">{m.key}</p>
                   <p className="text-xs font-body text-foreground/50 mt-0.5">{m.traits}</p>
                 </button>
               ))}
