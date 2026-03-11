@@ -686,9 +686,9 @@ const Onboarding = () => {
                   <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 accent-primary flex-shrink-0" />
                   <span className="text-xs font-body text-foreground/60 leading-relaxed">
                     I have read and agree to the{" "}
-                    <a href="/privacy" target="_blank" className="text-primary underline">Privacy Policy</a>
+                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.com")} className="text-primary underline hover:text-primary/80 transition-colors">Privacy Policy</button>
                     {" "}and{" "}
-                    <a href="/terms" target="_blank" className="text-primary underline">Terms of Service</a>
+                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.com")} className="text-primary underline hover:text-primary/80 transition-colors">Terms of Service</button>
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
