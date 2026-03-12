@@ -61,11 +61,12 @@ const Profile = () => {
 
         // Google login fallback chain
         const resolvedName =
-          profileData?.full_name ||
-          user?.user_metadata?.full_name ||
-          user?.user_metadata?.name ||
-          user?.email?.split("@")[0] ||
-          "Student";
+          (profileData?.full_name && profileData.full_name !== "Student")
+            ? profileData.full_name
+            : user?.user_metadata?.full_name ||
+              user?.user_metadata?.name ||
+              user?.email?.split("@")[0] ||
+              "Student";
         setDisplayName(resolvedName);
 
         setSelectedMasterLocal(profileData?.selected_master ?? "gyani");

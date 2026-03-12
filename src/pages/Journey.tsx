@@ -1,43 +1,73 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 
 const Journey = () => {
+  const location = useLocation();
   const [journeyName, setJourneyName] = useState("Your");
+  const [stats, setStats] = useState([
+    { icon: "🔥", value: "0", label: "Day Streak" },
+    { icon: "🦋", value: "0", label: "Flames" },
+    { icon: "⭐", value: "–", label: "Avg Confidence" },
+    { icon: "📅", value: "0", label: "Days Active" },
+  ]);
 
   useEffect(() => {
     const load = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { data } = await supabase
+
+        // Fetch profile
+        const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name")
+          .select("full_name, current_streak")
           .eq("id", user.id)
           .single();
+
         const name =
-          data?.full_name ||
-          user?.user_metadata?.full_name ||
-          user?.user_metadata?.name ||
-          null;
+          (profile?.full_name && profile.full_name !== "Student")
+            ? profile.full_name
+            : user?.user_metadata?.full_name ||
+              user?.user_metadata?.name ||
+              null;
         if (name) {
           setJourneyName(name.split(" ")[0] + "'s");
         }
+
+        // Fetch flames
+        const { data: flameData } = await supabase
+          .from("daily_flames")
+          .select("confidence_rating")
+          .eq("user_id", user.id);
+
+        // Fetch days active from progress
+        const { data: progressData } = await supabase
+          .from("progress")
+          .select("day_complete")
+          .eq("user_id", user.id);
+
+        const flames = flameData?.length ?? 0;
+        const ratings = flameData?.map(f => f.confidence_rating).filter(Boolean) as number[] ?? [];
+        const avgConfidence = ratings.length > 0
+          ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+          : "–";
+        const daysActive = progressData?.filter(p => p.day_complete).length ?? 0;
+
+        setStats([
+          { icon: "🔥", value: String(profile?.current_streak ?? 0), label: "Day Streak" },
+          { icon: "🦋", value: String(flames), label: "Flames" },
+          { icon: "⭐", value: avgConfidence, label: "Avg Confidence" },
+          { icon: "📅", value: String(daysActive), label: "Days Active" },
+        ]);
       } catch {
         // silent — keeps "Your"
       }
     };
     load();
-  }, []);
-
-  // Placeholder data
-  const stats = [
-    { icon: "🔥", value: "0", label: "Day Streak" },
-    { icon: "🦋", value: "0", label: "Flames" },
-    { icon: "⭐", value: "–", label: "Avg Confidence" },
-    { icon: "📅", value: "1", label: "Days Active" },
-  ];
+  }, [location.key]);
 
   return (
     <div className="min-h-screen bg-background pb-24 safe-top">
