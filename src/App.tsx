@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import FlameRedirect from "./pages/FlameRedirect";
 import FlamePage from "./pages/FlamePage";
 import DayScreen from "./pages/DayScreen";
+import AnubhavPage from "./pages/AnubhavPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
