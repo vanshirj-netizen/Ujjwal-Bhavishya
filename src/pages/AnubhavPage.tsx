@@ -184,6 +184,7 @@ const AnubhavPage = () => {
       setWasCorrect(result.wasCorrect);
       setCorrectedSentence(result.correctedSentence);
       setSessionScore((s) => s + (result.score ?? 0));
+      speakFeedback(result.feedback);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user && sessionId) {
