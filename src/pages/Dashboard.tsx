@@ -6,13 +6,27 @@ import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 
 const courseCards = [
-  { name: "Aarambh", icon: "🗣️", tagline: "English Communication", active: true, progress: "0/60" },
+  { name: "Aarambh", icon: "🗣️", tagline: "English Communication", active: true },
   { name: "Vikas", icon: "📈", tagline: "Personal Development", active: false },
   { name: "Utkarsh", icon: "💻", tagline: "Tech & AI Skills", active: false },
   { name: "Margdarshan", icon: "🧭", tagline: "Career Counselling", active: false },
 ];
 
 const COURSE_ID = "6a860163-ea3c-4205-89b3-74a3e9be098f";
+
+type DayProgress = {
+  day_number: number;
+  day_complete: boolean | null;
+  gamma_complete: boolean | null;
+  gyani_complete: boolean | null;
+  gyanu_complete: boolean | null;
+  quiz_complete: boolean | null;
+};
+
+type LessonInfo = {
+  day_number: number;
+  title: string;
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,7 +38,9 @@ const Dashboard = () => {
   const [todayLesson, setTodayLesson] = useState<any>(null);
   const [todayProgress, setTodayProgress] = useState<any>(null);
   const [enrollmentData, setEnrollmentData] = useState<any>(null);
-  const [currentDay, setCurrentDay] = useState(1);
+  const [displayDay, setDisplayDay] = useState(1);
+  const [allProgress, setAllProgress] = useState<DayProgress[]>([]);
+  const [allLessons, setAllLessons] = useState<LessonInfo[]>([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -39,23 +55,41 @@ const Dashboard = () => {
 
       const { data: enrollData } = await supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).maybeSingle();
       setEnrollmentData(enrollData);
-      const day = enrollData?.current_day ?? 1;
-      setCurrentDay(day > 0 ? day : 1);
+      const day = (enrollData?.current_day ?? 0) > 0 ? enrollData!.current_day! : 1;
+      setDisplayDay(day);
       setCompletedDays(enrollData?.days_completed ?? 0);
 
       // Fetch today's lesson
-      const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number").eq("day_number", day > 0 ? day : 1).eq("course_id", COURSE_ID).maybeSingle();
+      const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number").eq("day_number", day).eq("course_id", COURSE_ID).maybeSingle();
       setTodayLesson(lessonData);
 
       // Fetch today's progress
-      const { data: progressData } = await supabase.from("progress").select("gamma_complete, gyani_complete, gyanu_complete, quiz_complete, day_complete").eq("user_id", user.id).eq("day_number", day > 0 ? day : 1).maybeSingle();
+      const { data: progressData } = await supabase.from("progress").select("gamma_complete, gyani_complete, gyanu_complete, quiz_complete, day_complete").eq("user_id", user.id).eq("day_number", day).maybeSingle();
       setTodayProgress(progressData);
 
       const { count: flamesCount } = await supabase.from("daily_flames").select("id", { count: "exact", head: true }).eq("user_id", user.id);
       setFlamesSubmitted(flamesCount ?? 0);
+
+      // Fetch all progress for day grid
+      try {
+        const { data: allProg } = await supabase.from("progress").select("day_number, day_complete, gamma_complete, gyani_complete, gyanu_complete, quiz_complete").eq("user_id", user.id);
+        setAllProgress(allProg ?? []);
+      } catch { /* ignore */ }
+
+      // Fetch all lesson titles
+      try {
+        const { data: allLess } = await supabase.from("lessons").select("day_number, title").eq("course_id", COURSE_ID);
+        setAllLessons(allLess ?? []);
+      } catch { /* ignore */ }
     };
     fetchUserData();
   }, [location.key]);
+
+  const getDayProgress = (dayNum: number) => allProgress.find(p => p.day_number === dayNum);
+  const getDayTitle = (dayNum: number) => {
+    const l = allLessons.find(l => l.day_number === dayNum);
+    return l?.title?.replace(/^Day\s*\d+:\s*/i, "") || "";
+  };
 
   // Entry animation orchestration
   const seq = {
@@ -128,7 +162,7 @@ const Dashboard = () => {
           transition={{ delay: seq.header.delay, duration: seq.header.duration }}
         >
           <p className="text-sm text-foreground/60 mt-2">
-            Namaste{firstName ? `, ${firstName}` : ""} 👋 &nbsp;•&nbsp; Day {currentDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
+            Namaste{firstName ? `, ${firstName}` : ""} 👋 &nbsp;•&nbsp; Day {displayDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
           </p>
         </motion.div>
 
@@ -168,15 +202,15 @@ const Dashboard = () => {
           transition={{ delay: seq.lesson.delay, duration: seq.lesson.duration }}
           className="glass-card-gold p-5 mt-8 relative overflow-hidden cursor-pointer"
           onClick={() => {
-            if (currentDay > 5 && enrollmentData?.payment_status === "free") {
-              toast("🔒 Upgrade to unlock Day " + currentDay);
+            if (displayDay > 5 && enrollmentData?.payment_status === "free") {
+              toast("🔒 Upgrade to unlock Day " + displayDay);
               return;
             }
-            navigate("/day/" + currentDay);
+            navigate("/day/" + displayDay);
           }}
         >
           {/* Free tier lock overlay */}
-          {currentDay > 5 && enrollmentData?.payment_status === "free" && (
+          {displayDay > 5 && enrollmentData?.payment_status === "free" && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-xl">
               <span className="text-3xl">🔒</span>
               <span className="text-xs text-foreground/50 mt-1">Upgrade to unlock</span>
@@ -188,7 +222,7 @@ const Dashboard = () => {
             </p>
             {streak > 0 && <span className="text-xs text-primary font-bold">🔥 {streak}</span>}
           </div>
-          <p className="text-3xl font-display font-bold text-primary mt-1">Day {currentDay}</p>
+          <p className="text-3xl font-display font-bold text-primary mt-1">Day {displayDay}</p>
           <h2 className="text-lg font-display font-bold text-foreground mt-1 line-clamp-2">
             {todayLesson?.title?.replace(/^Day\s*\d+:\s*/i, "") || "Loading..."}
           </h2>
@@ -205,7 +239,7 @@ const Dashboard = () => {
             ))}
           </div>
           <button className="w-full mt-4 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm gold-glow transition-transform active:scale-[0.98]">
-            {todayProgress?.day_complete ? "Day Complete ✦" : todayProgress?.gamma_complete ? "Continue →" : `Start Day ${currentDay} →`}
+            {todayProgress?.day_complete ? "Day Complete ✦" : todayProgress?.gamma_complete ? "Continue →" : `Start Day ${displayDay} →`}
           </button>
         </motion.div>
 
@@ -234,7 +268,7 @@ const Dashboard = () => {
                 <p className="text-sm font-semibold text-foreground mt-2">{course.name}</p>
                 <p className="text-xs text-foreground/50 mt-0.5">{course.tagline}</p>
                 {course.active ? (
-                  <p className="text-xs text-primary mt-2 font-medium">{course.progress} days</p>
+                  <p className="text-xs text-primary mt-2 font-medium">{completedDays}/60 days</p>
                 ) : (
                   <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-foreground/10 text-foreground/50">
                     Coming Soon
@@ -245,7 +279,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 60-Day Grid */}
+        {/* 60-Day Map — Rich Cards */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -253,29 +287,88 @@ const Dashboard = () => {
           className="mt-8"
         >
           <h3 className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3">60-Day Map</h3>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({ length: 60 }, (_, i) => {
               const day = i + 1;
-              const isToday = day === currentDay;
-              const isCompleted = day < currentDay;
+              const prog = getDayProgress(day);
+              const title = getDayTitle(day);
+              const isCompleted = prog?.day_complete === true;
+              const isInProgress = prog && !prog.day_complete && (prog.gamma_complete || prog.gyani_complete || prog.gyanu_complete || prog.quiz_complete);
               const isFree = day <= 5;
-              const isLocked = !isFree && day > currentDay;
+              const isLockedFree = !isFree && enrollmentData?.payment_status === "free";
 
+              const handleClick = () => {
+                if (isLockedFree) {
+                  toast("🔒 Upgrade to unlock Day " + day);
+                  return;
+                }
+                navigate("/day/" + day);
+              };
+
+              // STATE 1 — COMPLETED
+              if (isCompleted) {
+                return (
+                  <div
+                    key={day}
+                    onClick={handleClick}
+                    className="glass-card p-3 rounded-xl cursor-pointer relative transition-transform active:scale-[0.97]"
+                  >
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                      <span className="text-[10px] text-primary-foreground">✓</span>
+                    </div>
+                    <p className="text-sm font-display font-bold text-foreground">Day {day}</p>
+                    {title && <p className="text-[10px] text-foreground/40 mt-0.5 line-clamp-1">{title}</p>}
+                    <p className="text-[10px] text-primary/40 mt-2">Completed ✦</p>
+                  </div>
+                );
+              }
+
+              // STATE 2 — IN PROGRESS
+              if (isInProgress) {
+                return (
+                  <div
+                    key={day}
+                    onClick={handleClick}
+                    className="glass-card-gold p-3 rounded-xl cursor-pointer relative transition-transform active:scale-[0.97]"
+                  >
+                    <div className="absolute top-2 right-2">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
+                      </span>
+                    </div>
+                    <p className="text-sm font-display font-bold text-foreground">Day {day}</p>
+                    {title && <p className="text-[10px] text-foreground/40 mt-0.5 line-clamp-1">{title}</p>}
+                    <div className="flex gap-1 mt-2">
+                      {[prog?.gamma_complete, prog?.gyani_complete, prog?.gyanu_complete, prog?.quiz_complete].map((done, j) => (
+                        <div key={j} className={`w-1.5 h-1.5 rounded-full ${done ? "bg-primary" : "bg-foreground/20"}`} />
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-primary mt-1 font-medium">Continue →</p>
+                  </div>
+                );
+              }
+
+              // STATE 3 — LOCKED / UPCOMING
               return (
-                <button
+                <div
                   key={day}
-                  className={`w-full aspect-square rounded-full flex items-center justify-center text-xs font-medium transition-all ${
-                    isCompleted
-                      ? "bg-primary text-primary-foreground"
-                      : isToday
-                        ? "border-2 border-primary text-primary pulse-gold"
-                        : isLocked
-                          ? "bg-muted/30 text-foreground/20"
-                          : "border border-foreground/20 text-foreground/40"
+                  onClick={handleClick}
+                  className={`glass-card p-3 rounded-xl relative transition-transform ${
+                    isLockedFree ? "opacity-40" : "opacity-60 cursor-pointer active:scale-[0.97]"
                   }`}
                 >
-                  {isCompleted ? "✓" : isLocked ? "🔒" : day}
-                </button>
+                  {isLockedFree && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <span className="text-lg">🔒</span>
+                    </div>
+                  )}
+                  <p className="text-sm font-display font-bold text-foreground">Day {day}</p>
+                  {title && <p className="text-[10px] text-foreground/40 mt-0.5 line-clamp-1">{title}</p>}
+                  <p className="text-[10px] text-foreground/30 mt-2">
+                    {isLockedFree ? "" : "Upcoming"}
+                  </p>
+                </div>
               );
             })}
           </div>

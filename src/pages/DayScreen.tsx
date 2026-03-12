@@ -101,6 +101,7 @@ const DayScreen = () => {
   const [isLandscape, setIsLandscape] = useState(false);
   const [showRotatePrompt, setShowRotatePrompt] = useState(false);
   const [rotatePromptDismissed, setRotatePromptDismissed] = useState(false);
+  const [isReplay, setIsReplay] = useState(false);
   const streakRef = useRef<HTMLSpanElement>(null);
 
   // Hide bottom nav
@@ -155,7 +156,7 @@ const DayScreen = () => {
         setEnrollment(enrollRes.data);
         setCurrentStreak(profileRes.data?.current_streak ?? 0);
 
-        // Resume logic — explicit 3-branch guard
+        // Resume logic
         const p = progressRes.data;
         if (p && !p.day_complete) {
           const done: number[] = [];
@@ -165,13 +166,15 @@ const DayScreen = () => {
           else if (p.gamma_complete) { setCurrentStep(2); done.push(1); }
           else { setCurrentStep(1); }
           setCompletedSteps(done);
+          setIsReplay(false);
         } else if (p?.day_complete) {
           setCurrentStep(6);
           setCompletedSteps([1, 2, 3, 4, 5]);
+          setIsReplay(false);
         } else {
-          // No progress at all — fresh start
           setCurrentStep(1);
           setCompletedSteps([]);
+          setIsReplay(false);
         }
       } catch {
         toast.error("Could not load lesson");
@@ -225,6 +228,28 @@ const DayScreen = () => {
       setCurrentStep(6);
     } catch {
       toast.error("Could not complete day");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const replayCompleteDay = async () => {
+    if (!quizScore) { toast.error("Please enter your score"); return; }
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      // Update score ONLY — do NOT touch enrollment, streak, or current_day
+      await supabase.from("progress").update({
+        quiz_score: Number(quizScore),
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", user.id).eq("day_number", Number(dayNumber));
+      setIsReplay(false);
+      setCurrentStep(6);
+      setCompletedSteps([1, 2, 3, 4, 5]);
+      toast.success("Score updated ✦");
+    } catch {
+      toast.error("Could not update score");
     } finally {
       setSaving(false);
     }
@@ -322,6 +347,19 @@ const DayScreen = () => {
         >
           ← Back to Home
         </motion.button>
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4 }}
+          onClick={() => {
+            setIsReplay(true);
+            setCurrentStep(1);
+            setCompletedSteps([]);
+          }}
+          className="mt-3 text-sm font-body text-foreground/30 underline underline-offset-4 hover:text-foreground/50 transition-colors"
+        >
+          ↺ Replay Day {dayNumber}
+        </motion.button>
       </motion.div>
     </div>
   );
@@ -332,7 +370,11 @@ const DayScreen = () => {
     2: { label: "I Watched Gyani ✦", onClick: () => completeStep(2) },
     3: { label: "I Watched Gyanu ✦", onClick: () => completeStep(3) },
     4: null,
-    5: { label: "Submit & Complete Day 🔥", onClick: completeDay, disabled: !quizScore },
+    5: {
+      label: isReplay ? "Update My Score ✦" : "Submit & Complete Day 🔥",
+      onClick: isReplay ? replayCompleteDay : completeDay,
+      disabled: !quizScore,
+    },
   };
   const btn = buttonConfig[currentStep];
 
