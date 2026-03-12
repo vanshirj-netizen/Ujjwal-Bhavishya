@@ -276,7 +276,7 @@ const DayScreen = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/dashboard")}
         className="absolute top-5 right-5 z-10 glass-card px-3 py-2 text-xs font-body text-foreground/50 hover:text-foreground flex items-center gap-1.5 transition-colors"
       >
         🏠 Home
