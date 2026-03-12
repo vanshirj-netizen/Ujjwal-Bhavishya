@@ -462,59 +462,86 @@ const AnubhavPage = () => {
                     </p>
                   </div>
 
-                  {/* Mic Button */}
+                  {/* === MIC BUTTON === */}
                   <motion.button
-                    whileTap={{ scale: 0.96 }}
                     onClick={isListening ? stopListening : startListening}
                     disabled={isEvaluating}
-                    className={`w-full mt-3 py-6 rounded-3xl font-body font-bold text-lg flex flex-col items-center justify-center gap-1 transition-all duration-300 ${
+                    className={`w-full py-5 rounded-3xl font-body font-bold text-lg flex items-center justify-center gap-3 transition-all duration-300 ${
                       isListening
                         ? "bg-red-500/20 border border-red-400 text-red-400 animate-pulse"
                         : response
-                        ? "bg-green-500/10 border border-green-500/30 text-green-400"
-                        : "bg-primary text-primary-foreground"
+                          ? "bg-green-500/10 border border-green-500/40 text-green-400"
+                          : "bg-primary text-background"
                     }`}
+                    whileTap={{ scale: 0.97 }}
                   >
-                    <span className="flex items-center gap-3">
-                      {isListening ? "🔴 Listening... tap to stop" : response ? `✅ ${response.slice(0, 60)}${response.length > 60 ? "..." : ""}` : "🎤 Tap to Speak"}
-                    </span>
-                    {!isListening && response && (
-                      <span className="text-xs font-normal opacity-60">(tap to re-record)</span>
-                    )}
+                    {isListening
+                      ? <><span className="text-xl">🔴</span> Listening... (tap to stop)</>
+                      : response
+                        ? <><span className="text-xl">✅</span> Tap to re-record</>
+                        : <><span className="text-xl">🎤</span> Tap to Speak</>
+                    }
                   </motion.button>
 
-                  {/* Divider */}
-                  <p className="text-xs text-foreground/20 text-center my-3">— or type below —</p>
+                  {/* === LIVE TRANSCRIPT BOX === */}
+                  {(isListening || response || interimTranscript) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="min-h-[64px] p-4 rounded-2xl bg-foreground/5 border border-foreground/10 font-body text-sm text-foreground/80 leading-relaxed mt-3"
+                    >
+                      {response && <span>{response}</span>}
+                      {interimTranscript && (
+                        <span className="text-foreground/30 italic">{" "}{interimTranscript}</span>
+                      )}
+                      {!response && !interimTranscript && (
+                        <span className="text-foreground/30 italic">Start speaking...</span>
+                      )}
+                    </motion.div>
+                  )}
 
-                  {/* Textarea fallback */}
+                  {/* === OR DIVIDER === */}
+                  <div className="flex items-center gap-3 my-3">
+                    <div className="flex-1 h-px bg-foreground/10" />
+                    <span className="text-xs text-foreground/20 font-body">— or type below —</span>
+                    <div className="flex-1 h-px bg-foreground/10" />
+                  </div>
+
+                  {/* === TEXTAREA FALLBACK === */}
                   <textarea
                     ref={textareaRef}
-                    className="w-full min-h-[60px] bg-foreground/5 rounded-2xl border border-foreground/10 focus:border-primary p-4 text-sm font-body text-foreground placeholder:text-foreground/30 outline-none resize-none"
-                    placeholder="Type if mic not working..."
                     value={response}
-                    onChange={(e) => setResponse(e.target.value)}
+                    onChange={(e) => {
+                      setResponse(e.target.value);
+                      responseRef.current = e.target.value;
+                    }}
                     disabled={isEvaluating}
+                    placeholder="Type if mic is not working..."
+                    className="w-full min-h-[60px] p-3 rounded-2xl bg-foreground/5 border border-foreground/10 focus:border-primary outline-none resize-none font-body text-sm text-foreground placeholder:text-foreground/20 transition-colors duration-200"
                   />
 
-                  {/* Submit */}
-                  <button
-                    onClick={submitResponse}
-                    disabled={!response.trim() || isEvaluating}
-                    className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-body font-bold mt-3 disabled:opacity-40 flex items-center justify-center gap-2"
+                  {/* === SUBMIT BUTTON === */}
+                  <motion.button
+                    onClick={() => submitResponse()}
+                    disabled={(!response.trim() && !responseRef.current.trim()) || isEvaluating || isListening}
+                    className={`w-full py-4 rounded-2xl font-body font-bold text-base mt-3 transition-all duration-200 ${
+                      response.trim() && !isEvaluating && !isListening
+                        ? "bg-primary text-background shadow-[0_0_20px_rgba(254,209,65,0.25)]"
+                        : "bg-foreground/10 text-foreground/30 cursor-not-allowed"
+                    }`}
+                    whileTap={response.trim() && !isEvaluating ? { scale: 0.98 } : {}}
                   >
                     {isEvaluating ? (
-                      <>
-                        <motion.span
-                          animate={{ rotate: 360 }}
-                          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                          className="inline-block w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
-                        />
-                        {masterName} is reading...
-                      </>
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 rounded-full border-2 border-background/40 border-t-background animate-spin" />
+                        {masterName} is thinking...
+                      </span>
+                    ) : isListening ? (
+                      "🔴 Stop speaking first"
                     ) : (
-                      "Submit →"
+                      `Submit to ${masterName} →`
                     )}
-                  </button>
+                  </motion.button>
                 </>
               ) : (
                 /* ═══ FEEDBACK ═══ */
