@@ -321,7 +321,7 @@ const DayScreen = () => {
 
   // Step 6 — full celebration
   if (currentStep === 6) return (
-    <div className="w-screen h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center px-6">
+    <div className="fixed inset-0 z-50 bg-background overflow-hidden flex flex-col items-center justify-center px-6">
       {rotateOverlay}
       <motion.button
         initial={{ opacity: 0 }}
