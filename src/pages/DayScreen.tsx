@@ -219,11 +219,25 @@ const DayScreen = () => {
       if (!user) return;
       await supabase.from("progress").update({ quiz_score: Number(quizScore), day_complete: true, completed_at: new Date().toISOString() }).eq("user_id", user.id).eq("day_number", Number(dayNumber));
       const nextDay = Number(dayNumber) + 1;
-      await supabase.from("enrollments").update({ current_day: nextDay, days_completed: Number(dayNumber) }).eq("user_id", user.id).eq("is_active", true);
-      const { data: profileData } = await supabase.from("profiles").select("current_streak").eq("id", user.id).single();
+
+      // Upsert enrollment
+      const { data: existingEnroll } = await supabase.from("enrollments").select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+      if (existingEnroll) {
+        await supabase.from("enrollments").update({ current_day: nextDay, days_completed: Number(dayNumber) }).eq("id", existingEnroll.id);
+      } else {
+        await supabase.from("enrollments").insert({ user_id: user.id, current_day: nextDay, days_completed: Number(dayNumber), is_active: true, course_id: COURSE_ID });
+      }
+
+      // Upsert profile streak
+      const { data: profileData } = await supabase.from("profiles").select("current_streak").eq("id", user.id).maybeSingle();
       const newStreak = (profileData?.current_streak ?? 0) + 1;
       setCurrentStreak(newStreak);
-      await supabase.from("profiles").update({ current_streak: newStreak }).eq("id", user.id);
+      if (profileData) {
+        await supabase.from("profiles").update({ current_streak: newStreak }).eq("id", user.id);
+      } else {
+        await supabase.from("profiles").insert({ id: user.id, full_name: user.user_metadata?.full_name || 'Student', email: user.email, current_streak: newStreak });
+      }
+
       setCompletedSteps(prev => [...prev, 5]);
       setCurrentStep(6);
     } catch {
