@@ -306,6 +306,15 @@ const DayScreen = () => {
             </div>
           </motion.div>
         )}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          onClick={() => navigate("/")}
+          className="mt-4 text-sm font-body text-foreground/30 underline underline-offset-4 hover:text-foreground/60 transition-colors"
+        >
+          ← Back to Home
+        </motion.button>
       </motion.div>
     </div>
   );
