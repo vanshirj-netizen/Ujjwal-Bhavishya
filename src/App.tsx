@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import FlameRedirect from "./pages/FlameRedirect";
 import FlamePage from "./pages/FlamePage";
 import DayScreen from "./pages/DayScreen";
+import AnubhavPage from "./pages/AnubhavPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +31,8 @@ const App = () => (
           <Route path="/journey" element={<Journey />} />
           <Route path="/day/:dayNumber" element={<DayScreen />} />
           <Route path="/flame" element={<FlameRedirect />} />
-          <Route path="/flame/:dayNumber" element={<FlamePage />} />
+           <Route path="/flame/:dayNumber" element={<FlamePage />} />
+           <Route path="/anubhav/:dayNumber" element={<AnubhavPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

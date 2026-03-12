@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      anubhav_attempts: {
+        Row: {
+          ai_feedback: string | null
+          attempted_at: string | null
+          day_number: number
+          id: string
+          mti_target: string | null
+          score_awarded: number | null
+          sentence: string
+          session_id: string
+          student_response: string
+          user_id: string
+          was_correct: boolean | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          attempted_at?: string | null
+          day_number: number
+          id?: string
+          mti_target?: string | null
+          score_awarded?: number | null
+          sentence: string
+          session_id: string
+          student_response: string
+          user_id: string
+          was_correct?: boolean | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          attempted_at?: string | null
+          day_number?: number
+          id?: string
+          mti_target?: string | null
+          score_awarded?: number | null
+          sentence?: string
+          session_id?: string
+          student_response?: string
+          user_id?: string
+          was_correct?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anubhav_attempts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "anubhav_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anubhav_sessions: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          day_number: number
+          id: string
+          score: number | null
+          sentence_index: number | null
+          started_at: string | null
+          total_attempted: number | null
+          user_id: string
+          world_type: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          day_number: number
+          id?: string
+          score?: number | null
+          sentence_index?: number | null
+          started_at?: string | null
+          total_attempted?: number | null
+          user_id: string
+          world_type: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          day_number?: number
+          id?: string
+          score?: number | null
+          sentence_index?: number | null
+          started_at?: string | null
+          total_attempted?: number | null
+          user_id?: string
+          world_type?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           badges_earned: string[] | null
@@ -383,31 +472,49 @@ export type Database = {
         Row: {
           course_id: string | null
           difficulty: number | null
+          expected_keywords: string | null
+          grammar_pattern: string | null
           id: string
           is_active: boolean | null
           lesson_day: number
+          mti_target: string | null
+          scenario_context: string | null
           sentence: string
+          sentence_hindi: string | null
           sequence_order: number | null
+          vocabulary_words: string | null
           world_type: string
         }
         Insert: {
           course_id?: string | null
           difficulty?: number | null
+          expected_keywords?: string | null
+          grammar_pattern?: string | null
           id?: string
           is_active?: boolean | null
           lesson_day: number
+          mti_target?: string | null
+          scenario_context?: string | null
           sentence: string
+          sentence_hindi?: string | null
           sequence_order?: number | null
+          vocabulary_words?: string | null
           world_type: string
         }
         Update: {
           course_id?: string | null
           difficulty?: number | null
+          expected_keywords?: string | null
+          grammar_pattern?: string | null
           id?: string
           is_active?: boolean | null
           lesson_day?: number
+          mti_target?: string | null
+          scenario_context?: string | null
           sentence?: string
+          sentence_hindi?: string | null
           sequence_order?: number | null
+          vocabulary_words?: string | null
           world_type?: string
         }
         Relationships: []
