@@ -18,6 +18,8 @@ const AnubhavPage = () => {
 
   const [worldType, setWorldType] = useState<"professional" | "casual" | null>(null);
   const [response, setResponse] = useState("");
+  const [interimTranscript, setInterimTranscript] = useState("");
+  const responseRef = useRef("");
 
   const [feedback, setFeedback] = useState("");
   const [correctedSentence, setCorrectedSentence] = useState("");
