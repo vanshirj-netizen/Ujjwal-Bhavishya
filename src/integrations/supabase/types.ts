@@ -320,36 +320,42 @@ export type Database = {
           created_at: string | null
           day_number: number
           gamma_url: string | null
+          gyani_timestamps: string | null
           gyani_youtube_url: string | null
+          gyanu_timestamps: string | null
           gyanu_youtube_url: string | null
           id: string
-          practice_sentence: string | null
           title: string
           wayground_quiz_url: string | null
+          week_number: number | null
         }
         Insert: {
           course_id?: string | null
           created_at?: string | null
           day_number: number
           gamma_url?: string | null
+          gyani_timestamps?: string | null
           gyani_youtube_url?: string | null
+          gyanu_timestamps?: string | null
           gyanu_youtube_url?: string | null
           id?: string
-          practice_sentence?: string | null
           title: string
           wayground_quiz_url?: string | null
+          week_number?: number | null
         }
         Update: {
           course_id?: string | null
           created_at?: string | null
           day_number?: number
           gamma_url?: string | null
+          gyani_timestamps?: string | null
           gyani_youtube_url?: string | null
+          gyanu_timestamps?: string | null
           gyanu_youtube_url?: string | null
           id?: string
-          practice_sentence?: string | null
           title?: string
           wayground_quiz_url?: string | null
+          week_number?: number | null
         }
         Relationships: [
           {
@@ -360,6 +366,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      practice_sentences: {
+        Row: {
+          course_id: string | null
+          difficulty: number | null
+          id: string
+          is_active: boolean | null
+          lesson_day: number
+          sentence: string
+          sequence_order: number | null
+          world_type: string
+        }
+        Insert: {
+          course_id?: string | null
+          difficulty?: number | null
+          id?: string
+          is_active?: boolean | null
+          lesson_day: number
+          sentence: string
+          sequence_order?: number | null
+          world_type: string
+        }
+        Update: {
+          course_id?: string | null
+          difficulty?: number | null
+          id?: string
+          is_active?: boolean | null
+          lesson_day?: number
+          sentence?: string
+          sequence_order?: number | null
+          world_type?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
