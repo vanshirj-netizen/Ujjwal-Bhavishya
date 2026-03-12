@@ -408,31 +408,35 @@ const DayScreen = () => {
     <AnimatePresence mode="wait">
       <motion.div key={currentStep} initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: 0.3 }} className="flex-1 overflow-y-auto">
         {currentStep === 1 && (
-          <div className="relative w-full h-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)]">
-            <iframe src={lesson?.gamma_url || ""} className="w-full h-full border-none" style={{ minHeight: isLandscape ? "100%" : 400 }} allow="fullscreen" allowFullScreen title="Gamma Lesson" />
-            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+          <div className={isLandscape ? "relative w-full h-full overflow-hidden" : "relative w-full h-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)]"}>
+            <iframe src={lesson?.gamma_url || ""} className="w-full h-full border-none block" style={{ minHeight: isLandscape ? "100%" : 400 }} allow="fullscreen" allowFullScreen title="Gamma Lesson" />
+            {!isLandscape && <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />}
           </div>
         )}
         {currentStep === 2 && (
           <div className="flex flex-col gap-3 h-full">
-            <div className="glass-card px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
-              <div><p className="text-sm font-display font-bold text-primary">Gyani's Perspective</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
-            </div>
-            <div className="relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1" style={{ minHeight: isLandscape ? 0 : 210 }}>
-              <iframe src={toEmbedUrl(lesson?.gyani_youtube_url || "")} className="w-full h-full border-none" allow="autoplay; fullscreen" allowFullScreen title="Gyani Video" />
+            {!isLandscape && (
+              <div className="glass-card px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
+                <div><p className="text-sm font-display font-bold text-primary">Gyani's Perspective</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
+              </div>
+            )}
+            <div className={isLandscape ? "relative w-full flex-1 overflow-hidden" : "relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1"} style={{ minHeight: isLandscape ? 0 : 210 }}>
+              <iframe src={toEmbedUrl(lesson?.gyani_youtube_url || "")} className="w-full h-full border-none" style={isLandscape ? { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" } : undefined} allow="autoplay; fullscreen" allowFullScreen title="Gyani Video" />
             </div>
             {!isLandscape && <p className="text-xs text-center text-foreground/30 mt-2">✦ Watch fully — Gyanu's video unlocks after this</p>}
           </div>
         )}
         {currentStep === 3 && (
           <div className="flex flex-col gap-3 h-full">
-            <div className="glass-card px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
-              <div><p className="text-sm font-display font-bold text-primary">Gyanu's Energy</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
-            </div>
-            <div className="relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1" style={{ minHeight: isLandscape ? 0 : 210 }}>
-              <iframe src={toEmbedUrl(lesson?.gyanu_youtube_url || "")} className="w-full h-full border-none" allow="autoplay; fullscreen" allowFullScreen title="Gyanu Video" />
+            {!isLandscape && (
+              <div className="glass-card px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
+                <div><p className="text-sm font-display font-bold text-primary">Gyanu's Energy</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
+              </div>
+            )}
+            <div className={isLandscape ? "relative w-full flex-1 overflow-hidden" : "relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1"} style={{ minHeight: isLandscape ? 0 : 210 }}>
+              <iframe src={toEmbedUrl(lesson?.gyanu_youtube_url || "")} className="w-full h-full border-none" style={isLandscape ? { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" } : undefined} allow="autoplay; fullscreen" allowFullScreen title="Gyanu Video" />
             </div>
           </div>
         )}
