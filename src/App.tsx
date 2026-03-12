@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Journey from "./pages/Journey";
 import Profile from "./pages/Profile";
 import FlameRedirect from "./pages/FlameRedirect";
+import DayScreen from "./pages/DayScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
