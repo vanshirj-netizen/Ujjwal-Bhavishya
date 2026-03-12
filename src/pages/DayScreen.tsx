@@ -155,16 +155,23 @@ const DayScreen = () => {
         setEnrollment(enrollRes.data);
         setCurrentStreak(profileRes.data?.current_streak ?? 0);
 
-        // Resume logic
-        if (progressRes.data) {
-          const p = progressRes.data;
+        // Resume logic — explicit 3-branch guard
+        const p = progressRes.data;
+        if (p && !p.day_complete) {
           const done: number[] = [];
-          if (p.day_complete) { setCurrentStep(6); done.push(1, 2, 3, 4, 5); }
-          else if (p.quiz_complete) { setCurrentStep(5); done.push(1, 2, 3, 4); }
+          if (p.quiz_complete) { setCurrentStep(5); done.push(1, 2, 3, 4); }
           else if (p.gyanu_complete) { setCurrentStep(4); done.push(1, 2, 3); }
           else if (p.gyani_complete) { setCurrentStep(3); done.push(1, 2); }
           else if (p.gamma_complete) { setCurrentStep(2); done.push(1); }
+          else { setCurrentStep(1); }
           setCompletedSteps(done);
+        } else if (p?.day_complete) {
+          setCurrentStep(6);
+          setCompletedSteps([1, 2, 3, 4, 5]);
+        } else {
+          // No progress at all — fresh start
+          setCurrentStep(1);
+          setCompletedSteps([]);
         }
       } catch {
         toast.error("Could not load lesson");
