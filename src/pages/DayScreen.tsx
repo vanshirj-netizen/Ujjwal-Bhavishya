@@ -109,6 +109,12 @@ const DayScreen = () => {
     return () => document.body.classList.remove("hide-bottom-nav");
   }, []);
 
+  useEffect(() => {
+    if (currentStep === 6) {
+      document.body.classList.remove("hide-bottom-nav");
+    }
+  }, [currentStep]);
+
   // Orientation
   useEffect(() => {
     const check = () => setIsLandscape(window.innerWidth > window.innerHeight);
