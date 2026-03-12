@@ -98,6 +98,7 @@ const AnubhavPage = () => {
   const stopListening = () => {
     recognitionRef.current?.stop();
     setIsListening(false);
+    setInterimTranscript("");
   };
 
   const speakFeedback = async (text: string) => {
