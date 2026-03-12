@@ -29,7 +29,7 @@ const App = () => (
           <Route path="/journey" element={<Journey />} />
           <Route path="/day/:dayNumber" element={<DayScreen />} />
           <Route path="/flame" element={<FlameRedirect />} />
-          <Route path="/flame/:dayNumber" element={<div className="min-h-screen bg-background flex items-center justify-center text-foreground/40">Flame Coming Soon</div>} />
+          <Route path="/flame/:dayNumber" element={<div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6 px-8 text-center"><div className="text-6xl animate-pulse">🔥</div><div><p className="text-xl font-display font-bold text-primary mb-2">Daily Flame</p><p className="text-sm font-body text-foreground/40 leading-relaxed max-w-[260px]">Your Daily Flame is being crafted. It will be ready very soon. ✦</p></div><a href="/" className="mt-2 bg-primary text-primary-foreground font-body font-semibold px-6 py-3 rounded-xl text-sm">← Back to Home</a></div>} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
