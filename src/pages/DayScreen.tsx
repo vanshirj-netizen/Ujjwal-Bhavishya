@@ -501,8 +501,8 @@ const DayScreen = () => {
   return (
     <div className="w-screen h-screen bg-background overflow-hidden flex flex-col">
       {rotateOverlay}
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/10 shrink-0">
+      {/* Header — hidden in landscape */}
+      <div className={isLandscape ? "hidden" : "flex items-center justify-between px-4 py-3 border-b border-foreground/10 shrink-0"}>
         <button onClick={() => navigate("/dashboard")} className="text-sm text-foreground/40 hover:text-foreground transition">← Back</button>
         <div className="text-center">
           <p className="text-[10px] text-foreground/40 uppercase tracking-wider">Week {lesson?.week_number} · Day {dayNumber}</p>
@@ -513,11 +513,12 @@ const DayScreen = () => {
 
       {isLandscape ? (
         <div className="flex flex-row flex-1 overflow-hidden">
-          <div className="flex-1 h-full overflow-hidden flex flex-col p-3">{stepContent}</div>
-          <div className="w-72 h-full flex flex-col border-l border-foreground/10 px-5 py-6 gap-5 overflow-y-auto">
-            <div>
-              <p className="text-xs text-foreground/40 uppercase tracking-wider">Week {lesson?.week_number} · Day {dayNumber}</p>
-              <p className="text-sm font-display font-bold text-foreground mt-1">{cleanTitle(lesson?.title)}</p>
+          <div className="flex-1 h-full overflow-hidden flex flex-col p-0">{stepContent}</div>
+          <div className="w-[26%] min-w-[180px] max-w-[210px] h-full flex flex-col border-l border-foreground/10 px-3 py-3 gap-3 overflow-y-auto shrink-0">
+            <div className="mb-2 pb-2 border-b border-foreground/10">
+              <button onClick={() => navigate("/dashboard")} className="text-[10px] font-body text-foreground/30 hover:text-foreground/60 mb-2 block">← Home</button>
+              <p className="text-[9px] font-body text-foreground/30 uppercase tracking-wider">W{lesson?.week_number} · Day {dayNumber}</p>
+              <p className="text-xs font-display font-semibold text-foreground leading-tight mt-0.5 line-clamp-2">{cleanTitle(lesson?.title)}</p>
             </div>
             {stepperRow}
             <div className="mt-auto">{actionButton}</div>
