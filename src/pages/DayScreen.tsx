@@ -424,7 +424,7 @@ const DayScreen = () => {
       {rotateOverlay}
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/10 shrink-0">
-        <button onClick={() => navigate(-1)} className="text-sm text-foreground/40 hover:text-foreground transition">← Back</button>
+        <button onClick={() => navigate("/")} className="text-sm text-foreground/40 hover:text-foreground transition">← Back</button>
         <div className="text-center">
           <p className="text-[10px] text-foreground/40 uppercase tracking-wider">Week {lesson?.week_number} · Day {dayNumber}</p>
           <p className="text-sm font-display font-bold text-foreground mt-0.5 max-w-[200px] truncate">{cleanTitle(lesson?.title)}</p>
