@@ -383,31 +383,49 @@ export type Database = {
         Row: {
           course_id: string | null
           difficulty: number | null
+          expected_keywords: string | null
+          grammar_pattern: string | null
           id: string
           is_active: boolean | null
           lesson_day: number
+          mti_target: string | null
+          scenario_context: string | null
           sentence: string
+          sentence_hindi: string | null
           sequence_order: number | null
+          vocabulary_words: string | null
           world_type: string
         }
         Insert: {
           course_id?: string | null
           difficulty?: number | null
+          expected_keywords?: string | null
+          grammar_pattern?: string | null
           id?: string
           is_active?: boolean | null
           lesson_day: number
+          mti_target?: string | null
+          scenario_context?: string | null
           sentence: string
+          sentence_hindi?: string | null
           sequence_order?: number | null
+          vocabulary_words?: string | null
           world_type: string
         }
         Update: {
           course_id?: string | null
           difficulty?: number | null
+          expected_keywords?: string | null
+          grammar_pattern?: string | null
           id?: string
           is_active?: boolean | null
           lesson_day?: number
+          mti_target?: string | null
+          scenario_context?: string | null
           sentence?: string
+          sentence_hindi?: string | null
           sequence_order?: number | null
+          vocabulary_words?: string | null
           world_type?: string
         }
         Relationships: []
