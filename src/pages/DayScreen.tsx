@@ -265,6 +265,15 @@ const DayScreen = () => {
   if (currentStep === 6) return (
     <div className="w-screen h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center px-6">
       {rotateOverlay}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        onClick={() => navigate("/")}
+        className="absolute top-5 right-5 z-10 glass-card px-3 py-2 text-xs font-body text-foreground/50 hover:text-foreground flex items-center gap-1.5 transition-colors"
+      >
+        🏠 Home
+      </motion.button>
       <Particles />
       <motion.div initial={{ opacity: 0, scale: 0.8, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, type: "spring" }} className="relative z-10 flex flex-col items-center text-center">
         <motion.span className="text-8xl text-primary font-display font-bold" style={{ filter: "drop-shadow(0 0 40px hsl(var(--primary)))" }} initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ type: "spring", delay: 0.4 }}>✦</motion.span>
