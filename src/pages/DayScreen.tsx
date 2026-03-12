@@ -53,13 +53,15 @@ const Particles = () => (
   </div>
 );
 
-const StepDot = ({ step, currentStep, completedSteps }: { step: typeof steps[0]; currentStep: number; completedSteps: number[] }) => {
+const StepDot = ({ step, currentStep, completedSteps, compact }: { step: typeof steps[0]; currentStep: number; completedSteps: number[]; compact?: boolean }) => {
   const isDone = completedSteps.includes(step.id);
   const isActive = currentStep === step.id;
+  const dotSize = compact ? "w-6 h-6" : "w-7 h-7";
+  const fontSize = compact ? "text-[9px]" : "text-xs";
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+      <div className={`${dotSize} rounded-full flex items-center justify-center ${fontSize} font-bold transition-all ${
         isDone
           ? "bg-primary text-primary-foreground shadow-[0_0_10px_hsl(var(--primary))]"
           : isActive
@@ -74,7 +76,7 @@ const StepDot = ({ step, currentStep, completedSteps }: { step: typeof steps[0];
           <span className="text-foreground/20 text-[10px]">{step.id}</span>
         )}
       </div>
-      <span className={`text-[9px] font-body ${isDone || isActive ? "text-primary" : "text-foreground/20"}`}>{step.label}</span>
+      <span className={`${compact ? "text-[8px]" : "text-[9px]"} font-body ${isDone || isActive ? "text-primary" : "text-foreground/20"}`}>{step.label}</span>
     </div>
   );
 };
