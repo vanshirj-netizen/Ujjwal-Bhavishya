@@ -80,6 +80,46 @@ const AnubhavPage = () => {
     setIsListening(false);
   };
 
+  const speakFeedback = async (text: string) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-flame-voice`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            text,
+            masterName: profile?.selected_master ?? "gyani",
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Voice API failed");
+
+      const data = await response.json();
+      if (data?.audioBase64) {
+        const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
+        audio.play();
+        return;
+      }
+      throw new Error("No audio data");
+    } catch (err) {
+      console.error("Voice feedback failed:", err);
+      try {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-IN";
+        utterance.rate = 0.85;
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        // Silently fail — text feedback always visible ✦
+      }
+    }
+  };
+
   const fetchSentences = async (type: "professional" | "casual") => {
     setWorldType(type);
     const { data } = await supabase
@@ -144,6 +184,7 @@ const AnubhavPage = () => {
       setWasCorrect(result.wasCorrect);
       setCorrectedSentence(result.correctedSentence);
       setSessionScore((s) => s + (result.score ?? 0));
+      speakFeedback(result.feedback);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user && sessionId) {
