@@ -24,6 +24,8 @@ const AnubhavPage = () => {
   const [score, setScore] = useState(0);
   const [wasCorrect, setWasCorrect] = useState<boolean | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const [sessionScore, setSessionScore] = useState(0);
   const [screen, setScreen] = useState<Screen>("select");
