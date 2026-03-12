@@ -55,9 +55,23 @@ const Dashboard = () => {
 
       const { data: enrollData } = await supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).maybeSingle();
       setEnrollmentData(enrollData);
-      const day = (enrollData?.current_day ?? 0) > 0 ? enrollData!.current_day! : 1;
+
+      // Fetch all progress for day grid (moved up for fallback calculations)
+      let allProg: DayProgress[] = [];
+      try {
+        const { data } = await supabase.from("progress").select("day_number, day_complete, gamma_complete, gyani_complete, gyanu_complete, quiz_complete").eq("user_id", user.id);
+        allProg = data ?? [];
+        setAllProgress(allProg);
+      } catch { /* ignore */ }
+
+      // Derive completedDays from progress as fallback
+      const completedFromProgress = allProg.filter(p => p.day_complete).length;
+      const resolvedCompleted = enrollData?.days_completed ?? completedFromProgress;
+      setCompletedDays(resolvedCompleted);
+
+      // displayDay: enrollment current_day, or fallback to next day after last completed
+      const day = (enrollData?.current_day ?? 0) > 0 ? enrollData!.current_day! : (completedFromProgress > 0 ? completedFromProgress + 1 : 1);
       setDisplayDay(day);
-      setCompletedDays(enrollData?.days_completed ?? 0);
 
       // Fetch today's lesson
       const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number").eq("day_number", day).eq("course_id", COURSE_ID).maybeSingle();
