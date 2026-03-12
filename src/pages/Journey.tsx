@@ -25,7 +25,7 @@ const Journey = () => {
           .from("profiles")
           .select("full_name, current_streak")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         const name =
           (profile?.full_name && profile.full_name !== "Student")

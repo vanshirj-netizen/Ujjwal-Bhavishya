@@ -147,7 +147,7 @@ const DayScreen = () => {
           supabase.from("lessons").select("day_number, title, week_number").eq("day_number", Number(dayNumber) + 1).eq("course_id", COURSE_ID).single(),
           supabase.from("progress").select("*").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle(),
           supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).maybeSingle(),
-          supabase.from("profiles").select("current_streak").eq("id", user.id).single(),
+          supabase.from("profiles").select("current_streak").eq("id", user.id).maybeSingle(),
         ]);
 
         setLesson(lessonRes.data);

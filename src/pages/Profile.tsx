@@ -87,7 +87,7 @@ const Profile = () => {
           .from("profiles")
           .select("current_streak, longest_streak")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         const daysDone = progressData?.filter(p => p.day_complete).length ?? 0;
         const flames = flameData?.length ?? 0;
