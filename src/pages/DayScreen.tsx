@@ -352,6 +352,16 @@ const DayScreen = () => {
           </div>
           <button onClick={() => navigate("/flame/" + dayNumber)} className="w-full mt-4 bg-primary text-primary-foreground py-3 rounded-xl font-body font-semibold">Light My Flame →</button>
         </motion.div>
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.9 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/anubhav/${dayNumber}`)} className="glass-card-gold p-5 rounded-3xl cursor-pointer border border-primary/30 shadow-[0_0_20px_rgba(254,209,65,0.1)] w-full mt-4">
+          <div className="flex items-center gap-4">
+            <span className="text-3xl">🎯</span>
+            <div className="text-left">
+              <p className="font-display font-bold text-foreground text-base">Practice with {masterName}</p>
+              <p className="text-xs text-foreground/40 mt-1">Speak 10 sentences with AI feedback → build fluency</p>
+              <p className="text-xs text-primary font-semibold mt-2">10 sentences · Scored · Live AI</p>
+            </div>
+          </div>
+        </motion.div>
         {nextDayLesson && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.0 }} onClick={() => navigate("/day/" + (Number(dayNumber) + 1))} className="glass-card p-4 rounded-2xl w-full mt-4 cursor-pointer">
             <div className="flex items-center justify-between">

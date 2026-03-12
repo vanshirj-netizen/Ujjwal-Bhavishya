@@ -365,11 +365,35 @@ const AnubhavPage = () => {
                     </p>
                   </div>
 
-                  {/* Textarea */}
+                  {/* Mic Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={isListening ? stopListening : startListening}
+                    disabled={isEvaluating}
+                    className={`w-full mt-3 py-6 rounded-3xl font-body font-bold text-lg flex flex-col items-center justify-center gap-1 transition-all duration-300 ${
+                      isListening
+                        ? "bg-red-500/20 border border-red-400 text-red-400 animate-pulse"
+                        : response
+                        ? "bg-green-500/10 border border-green-500/30 text-green-400"
+                        : "bg-primary text-primary-foreground"
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      {isListening ? "🔴 Listening... tap to stop" : response ? `✅ ${response.slice(0, 60)}${response.length > 60 ? "..." : ""}` : "🎤 Tap to Speak"}
+                    </span>
+                    {!isListening && response && (
+                      <span className="text-xs font-normal opacity-60">(tap to re-record)</span>
+                    )}
+                  </motion.button>
+
+                  {/* Divider */}
+                  <p className="text-xs text-foreground/20 text-center my-3">— or type below —</p>
+
+                  {/* Textarea fallback */}
                   <textarea
                     ref={textareaRef}
-                    className="w-full mt-3 min-h-[100px] bg-foreground/5 rounded-2xl border border-foreground/10 focus:border-primary p-4 text-sm font-body text-foreground placeholder:text-foreground/30 outline-none resize-none"
-                    placeholder={`Type your response in English here... (even broken English is okay — ${masterName} will help! ✦)`}
+                    className="w-full min-h-[60px] bg-foreground/5 rounded-2xl border border-foreground/10 focus:border-primary p-4 text-sm font-body text-foreground placeholder:text-foreground/30 outline-none resize-none"
+                    placeholder="Type if mic not working..."
                     value={response}
                     onChange={(e) => setResponse(e.target.value)}
                     disabled={isEvaluating}
