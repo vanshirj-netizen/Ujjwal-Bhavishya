@@ -165,17 +165,46 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: seq.lesson.delay, duration: seq.lesson.duration }}
-          className="glass-card-gold p-5 mt-8"
+          className="glass-card-gold p-5 mt-8 relative overflow-hidden cursor-pointer"
+          onClick={() => {
+            if (currentDay > 5 && enrollmentData?.payment_status === "free") {
+              toast("🔒 Upgrade to unlock Day " + currentDay);
+              return;
+            }
+            navigate("/day/" + currentDay);
+          }}
         >
-          <p className="text-xs text-primary font-semibold tracking-wide uppercase">Today — Day {currentDay}</p>
-          <h2 className="text-lg font-display font-bold text-foreground mt-1">Introduction & Basics</h2>
-          <div className="flex gap-4 mt-3 text-lg">
-            {["🎬", "📖", "⚡", "🔥"].map((emoji, i) => (
-              <span key={i} className="opacity-40">{emoji}</span>
+          {/* Free tier lock overlay */}
+          {currentDay > 5 && enrollmentData?.payment_status === "free" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-xl">
+              <span className="text-3xl">🔒</span>
+              <span className="text-xs text-foreground/50 mt-1">Upgrade to unlock</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-foreground/40 uppercase tracking-wider">
+              {todayLesson?.week_number ? `Week ${todayLesson.week_number}` : "Today"}
+            </p>
+            {streak > 0 && <span className="text-xs text-primary font-bold">🔥 {streak}</span>}
+          </div>
+          <p className="text-3xl font-display font-bold text-primary mt-1">Day {currentDay}</p>
+          <h2 className="text-lg font-display font-bold text-foreground mt-1 line-clamp-2">
+            {todayLesson?.title?.replace(/^Day\s*\d+:\s*/i, "") || "Loading..."}
+          </h2>
+          {/* Mini step progress */}
+          <div className="flex gap-2 mt-3">
+            {[
+              todayProgress?.gamma_complete,
+              todayProgress?.gyani_complete,
+              todayProgress?.gyanu_complete,
+              todayProgress?.quiz_complete,
+              todayProgress?.day_complete,
+            ].map((done, i) => (
+              <div key={i} className={`w-2.5 h-2.5 rounded-full ${done ? "bg-primary shadow-[0_0_6px_hsl(var(--primary))]" : "bg-foreground/20"}`} />
             ))}
           </div>
           <button className="w-full mt-4 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm gold-glow transition-transform active:scale-[0.98]">
-            Continue Day {currentDay} →
+            {todayProgress?.day_complete ? "Day Complete ✦" : todayProgress?.gamma_complete ? "Continue →" : `Start Day ${currentDay} →`}
           </button>
         </motion.div>
 
