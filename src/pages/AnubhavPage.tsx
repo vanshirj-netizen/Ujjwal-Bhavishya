@@ -236,6 +236,8 @@ const AnubhavPage = () => {
 
   const nextSentence = () => {
     setResponse("");
+    responseRef.current = "";
+    setInterimTranscript("");
     setFeedback("");
     setScore(0);
     setWasCorrect(null);
