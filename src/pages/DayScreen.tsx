@@ -472,13 +472,13 @@ const DayScreen = () => {
   );
 
   const stepperRow = (
-    <div className={`flex items-center gap-1 ${isLandscape ? "flex-col" : "justify-center px-4 py-3"}`}>
+    <div className={`flex items-center gap-1 ${isLandscape ? "flex-col gap-2" : "justify-center px-4 py-3"}`}>
       {steps.map((s, i) => (
         <React.Fragment key={s.id}>
-          <StepDot step={s} currentStep={currentStep} completedSteps={completedSteps} />
+          <StepDot step={s} currentStep={currentStep} completedSteps={completedSteps} compact={isLandscape} />
           {i < steps.length - 1 && (
             isLandscape
-              ? <div className={`w-px h-4 ${completedSteps.includes(s.id) ? "bg-primary" : "bg-foreground/10"}`} />
+              ? <div className={`w-px h-3 ${completedSteps.includes(s.id) ? "bg-primary" : "bg-foreground/10"}`} />
               : <StepConnector fromDone={completedSteps.includes(s.id)} toActive={currentStep === steps[i + 1].id} />
           )}
         </React.Fragment>
