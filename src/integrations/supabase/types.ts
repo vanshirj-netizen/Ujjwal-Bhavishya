@@ -145,38 +145,50 @@ export type Database = {
       }
       daily_flames: {
         Row: {
+          ai_generated_at: string | null
+          ai_response: string | null
           audio_url: string | null
           biggest_challenge: string | null
           confidence_rating: number | null
           day_number: number
+          elevenlabs_audio_url: string | null
           flame_date: string | null
           id: string
           spoke_about: string | null
           submitted_at: string | null
+          tomorrows_intention: string | null
           user_id: string | null
           written_reflection: string | null
         }
         Insert: {
+          ai_generated_at?: string | null
+          ai_response?: string | null
           audio_url?: string | null
           biggest_challenge?: string | null
           confidence_rating?: number | null
           day_number: number
+          elevenlabs_audio_url?: string | null
           flame_date?: string | null
           id?: string
           spoke_about?: string | null
           submitted_at?: string | null
+          tomorrows_intention?: string | null
           user_id?: string | null
           written_reflection?: string | null
         }
         Update: {
+          ai_generated_at?: string | null
+          ai_response?: string | null
           audio_url?: string | null
           biggest_challenge?: string | null
           confidence_rating?: number | null
           day_number?: number
+          elevenlabs_audio_url?: string | null
           flame_date?: string | null
           id?: string
           spoke_about?: string | null
           submitted_at?: string | null
+          tomorrows_intention?: string | null
           user_id?: string | null
           written_reflection?: string | null
         }
