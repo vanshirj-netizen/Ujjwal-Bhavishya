@@ -16,6 +16,7 @@ const COURSE_ID = "6a860163-ea3c-4205-89b3-74a3e9be098f";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [firstName, setFirstName] = useState("");
   const [streak, setStreak] = useState(0);
   const [completedDays, setCompletedDays] = useState(0);
