@@ -50,6 +50,36 @@ const AnubhavPage = () => {
 
   const masterName = profile?.selected_master === "gyanu" ? "Gyanu" : "Gyani";
 
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Microphone not supported. Please type your response.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setResponse(transcript);
+      setIsListening(false);
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+      toast.error("Could not hear you. Try again or type below.");
+    };
+    recognition.onend = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  };
+
   const fetchSentences = async (type: "professional" | "casual") => {
     setWorldType(type);
     const { data } = await supabase
