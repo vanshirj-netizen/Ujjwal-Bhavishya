@@ -169,8 +169,9 @@ const AnubhavPage = () => {
     setScreen("practice");
   };
 
-  const submitResponse = async () => {
-    if (!response.trim() || isEvaluating) return;
+  const submitResponse = async (directInput?: string) => {
+    const input = (directInput || responseRef.current || response).trim();
+    if (!input || isEvaluating) return;
     setIsEvaluating(true);
 
     const current = sentences[currentIndex];
@@ -187,7 +188,7 @@ const AnubhavPage = () => {
           mtiTarget: current.mti_target ?? "",
           expectedKeywords: current.expected_keywords ?? "",
           vocabularyWords: current.vocabulary_words ?? "",
-          studentResponse: response.trim(),
+          studentResponse: input,
           ultimateGoal: profile?.primary_goal ?? "",
           mtiBackground: profile?.mti_zone ?? "",
         },
@@ -205,6 +206,8 @@ const AnubhavPage = () => {
       setWasCorrect(result.wasCorrect);
       setCorrectedSentence(result.correctedSentence);
       setSessionScore((s) => s + (result.score ?? 0));
+
+      // Fire-and-forget — text is already visible
       speakFeedback(result.feedback);
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -214,7 +217,7 @@ const AnubhavPage = () => {
           user_id: user.id,
           day_number: Number(dayNumber),
           sentence: current.sentence,
-          student_response: response.trim(),
+          student_response: input,
           ai_feedback: result.feedback,
           mti_target: current.mti_target,
           was_correct: result.wasCorrect,
