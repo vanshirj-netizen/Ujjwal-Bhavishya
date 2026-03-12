@@ -56,21 +56,41 @@ const AnubhavPage = () => {
       toast.error("Microphone not supported. Please type your response.");
       return;
     }
+    setResponse("");
+    responseRef.current = "";
+    setInterimTranscript("");
+
     const recognition = new SpeechRecognition();
     recognition.lang = "en-IN";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.onstart = () => setIsListening(true);
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setResponse(transcript);
-      setIsListening(false);
+      let interimText = "";
+      let finalText = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalText += event.results[i][0].transcript;
+        } else {
+          interimText += event.results[i][0].transcript;
+        }
+      }
+      if (finalText) {
+        const updated = responseRef.current + finalText;
+        responseRef.current = updated;
+        setResponse(updated);
+      }
+      setInterimTranscript(interimText);
     };
     recognition.onerror = () => {
       setIsListening(false);
+      setInterimTranscript("");
       toast.error("Could not hear you. Try again or type below.");
     };
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      setInterimTranscript("");
+    };
     recognitionRef.current = recognition;
     recognition.start();
   };
