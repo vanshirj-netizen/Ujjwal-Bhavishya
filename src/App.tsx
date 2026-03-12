@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Journey from "./pages/Journey";
 import Profile from "./pages/Profile";
 import FlameRedirect from "./pages/FlameRedirect";
+import FlamePage from "./pages/FlamePage";
 import DayScreen from "./pages/DayScreen";
 import NotFound from "./pages/NotFound";
 
