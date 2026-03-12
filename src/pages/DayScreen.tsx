@@ -492,7 +492,7 @@ const DayScreen = () => {
       whileTap={{ scale: 0.97 }}
       disabled={saving || btn.disabled}
       onClick={btn.onClick}
-      className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-body font-semibold text-base disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(254,209,65,0.3)]"
+      className={`w-full bg-primary text-primary-foreground font-body font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(254,209,65,0.3)] ${isLandscape ? "py-3 rounded-xl text-sm" : "py-4 rounded-2xl text-base"}`}
     >
       {saving ? "Saving..." : btn.label}
     </motion.button>
