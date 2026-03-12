@@ -248,7 +248,7 @@ const DayScreen = () => {
         <h1 className="font-display text-2xl text-primary font-bold mt-4">Day {dayNumber} is Locked</h1>
         <p className="text-sm text-foreground/50 mt-2 max-w-[280px]">Upgrade to Aarambh Full Access to continue your transformation</p>
         <button className="w-full mt-6 py-4 rounded-2xl bg-primary text-primary-foreground font-body font-semibold glass-card-gold">Unlock All 60 Days →</button>
-        <button onClick={() => navigate("/")} className="text-xs text-foreground/30 mt-4">← Back to Home</button>
+        <button onClick={() => navigate("/dashboard")} className="text-xs text-foreground/30 mt-4">← Back to Home</button>
       </motion.div>
     </div>
   );
