@@ -53,13 +53,15 @@ const Particles = () => (
   </div>
 );
 
-const StepDot = ({ step, currentStep, completedSteps }: { step: typeof steps[0]; currentStep: number; completedSteps: number[] }) => {
+const StepDot = ({ step, currentStep, completedSteps, compact }: { step: typeof steps[0]; currentStep: number; completedSteps: number[]; compact?: boolean }) => {
   const isDone = completedSteps.includes(step.id);
   const isActive = currentStep === step.id;
+  const dotSize = compact ? "w-6 h-6" : "w-7 h-7";
+  const fontSize = compact ? "text-[9px]" : "text-xs";
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+      <div className={`${dotSize} rounded-full flex items-center justify-center ${fontSize} font-bold transition-all ${
         isDone
           ? "bg-primary text-primary-foreground shadow-[0_0_10px_hsl(var(--primary))]"
           : isActive
@@ -74,7 +76,7 @@ const StepDot = ({ step, currentStep, completedSteps }: { step: typeof steps[0];
           <span className="text-foreground/20 text-[10px]">{step.id}</span>
         )}
       </div>
-      <span className={`text-[9px] font-body ${isDone || isActive ? "text-primary" : "text-foreground/20"}`}>{step.label}</span>
+      <span className={`${compact ? "text-[8px]" : "text-[9px]"} font-body ${isDone || isActive ? "text-primary" : "text-foreground/20"}`}>{step.label}</span>
     </div>
   );
 };
@@ -319,7 +321,7 @@ const DayScreen = () => {
 
   // Step 6 — full celebration
   if (currentStep === 6) return (
-    <div className="w-screen h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center px-6">
+    <div className="fixed inset-0 z-50 bg-background overflow-hidden flex flex-col items-center justify-center px-6">
       {rotateOverlay}
       <motion.button
         initial={{ opacity: 0 }}
@@ -406,31 +408,35 @@ const DayScreen = () => {
     <AnimatePresence mode="wait">
       <motion.div key={currentStep} initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: 0.3 }} className="flex-1 overflow-y-auto">
         {currentStep === 1 && (
-          <div className="relative w-full h-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)]">
-            <iframe src={lesson?.gamma_url || ""} className="w-full h-full border-none" style={{ minHeight: isLandscape ? "100%" : 400 }} allow="fullscreen" allowFullScreen title="Gamma Lesson" />
-            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+          <div className={isLandscape ? "relative w-full h-full overflow-hidden" : "relative w-full h-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)]"}>
+            <iframe src={lesson?.gamma_url || ""} className="w-full h-full border-none block" style={{ minHeight: isLandscape ? "100%" : 400 }} allow="fullscreen" allowFullScreen title="Gamma Lesson" />
+            {!isLandscape && <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />}
           </div>
         )}
         {currentStep === 2 && (
           <div className="flex flex-col gap-3 h-full">
-            <div className="glass-card px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
-              <div><p className="text-sm font-display font-bold text-primary">Gyani's Perspective</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
-            </div>
-            <div className="relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1" style={{ minHeight: isLandscape ? 0 : 210 }}>
-              <iframe src={toEmbedUrl(lesson?.gyani_youtube_url || "")} className="w-full h-full border-none" allow="autoplay; fullscreen" allowFullScreen title="Gyani Video" />
+            {!isLandscape && (
+              <div className="glass-card px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
+                <div><p className="text-sm font-display font-bold text-primary">Gyani's Perspective</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
+              </div>
+            )}
+            <div className={isLandscape ? "relative w-full flex-1 overflow-hidden" : "relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1"} style={{ minHeight: isLandscape ? 0 : 210 }}>
+              <iframe src={toEmbedUrl(lesson?.gyani_youtube_url || "")} className="w-full h-full border-none" style={isLandscape ? { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" } : undefined} allow="autoplay; fullscreen" allowFullScreen title="Gyani Video" />
             </div>
             {!isLandscape && <p className="text-xs text-center text-foreground/30 mt-2">✦ Watch fully — Gyanu's video unlocks after this</p>}
           </div>
         )}
         {currentStep === 3 && (
           <div className="flex flex-col gap-3 h-full">
-            <div className="glass-card px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
-              <div><p className="text-sm font-display font-bold text-primary">Gyanu's Energy</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
-            </div>
-            <div className="relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1" style={{ minHeight: isLandscape ? 0 : 210 }}>
-              <iframe src={toEmbedUrl(lesson?.gyanu_youtube_url || "")} className="w-full h-full border-none" allow="autoplay; fullscreen" allowFullScreen title="Gyanu Video" />
+            {!isLandscape && (
+              <div className="glass-card px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
+                <div><p className="text-sm font-display font-bold text-primary">Gyanu's Energy</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
+              </div>
+            )}
+            <div className={isLandscape ? "relative w-full flex-1 overflow-hidden" : "relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1"} style={{ minHeight: isLandscape ? 0 : 210 }}>
+              <iframe src={toEmbedUrl(lesson?.gyanu_youtube_url || "")} className="w-full h-full border-none" style={isLandscape ? { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" } : undefined} allow="autoplay; fullscreen" allowFullScreen title="Gyanu Video" />
             </div>
           </div>
         )}
@@ -466,13 +472,13 @@ const DayScreen = () => {
   );
 
   const stepperRow = (
-    <div className={`flex items-center gap-1 ${isLandscape ? "flex-col" : "justify-center px-4 py-3"}`}>
+    <div className={`flex items-center gap-1 ${isLandscape ? "flex-col gap-2" : "justify-center px-4 py-3"}`}>
       {steps.map((s, i) => (
         <React.Fragment key={s.id}>
-          <StepDot step={s} currentStep={currentStep} completedSteps={completedSteps} />
+          <StepDot step={s} currentStep={currentStep} completedSteps={completedSteps} compact={isLandscape} />
           {i < steps.length - 1 && (
             isLandscape
-              ? <div className={`w-px h-4 ${completedSteps.includes(s.id) ? "bg-primary" : "bg-foreground/10"}`} />
+              ? <div className={`w-px h-3 ${completedSteps.includes(s.id) ? "bg-primary" : "bg-foreground/10"}`} />
               : <StepConnector fromDone={completedSteps.includes(s.id)} toActive={currentStep === steps[i + 1].id} />
           )}
         </React.Fragment>
@@ -486,7 +492,7 @@ const DayScreen = () => {
       whileTap={{ scale: 0.97 }}
       disabled={saving || btn.disabled}
       onClick={btn.onClick}
-      className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-body font-semibold text-base disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(254,209,65,0.3)]"
+      className={`w-full bg-primary text-primary-foreground font-body font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(254,209,65,0.3)] ${isLandscape ? "py-3 rounded-xl text-sm" : "py-4 rounded-2xl text-base"}`}
     >
       {saving ? "Saving..." : btn.label}
     </motion.button>
@@ -495,8 +501,8 @@ const DayScreen = () => {
   return (
     <div className="w-screen h-screen bg-background overflow-hidden flex flex-col">
       {rotateOverlay}
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/10 shrink-0">
+      {/* Header — hidden in landscape */}
+      <div className={isLandscape ? "hidden" : "flex items-center justify-between px-4 py-3 border-b border-foreground/10 shrink-0"}>
         <button onClick={() => navigate("/dashboard")} className="text-sm text-foreground/40 hover:text-foreground transition">← Back</button>
         <div className="text-center">
           <p className="text-[10px] text-foreground/40 uppercase tracking-wider">Week {lesson?.week_number} · Day {dayNumber}</p>
@@ -507,11 +513,12 @@ const DayScreen = () => {
 
       {isLandscape ? (
         <div className="flex flex-row flex-1 overflow-hidden">
-          <div className="flex-1 h-full overflow-hidden flex flex-col p-3">{stepContent}</div>
-          <div className="w-72 h-full flex flex-col border-l border-foreground/10 px-5 py-6 gap-5 overflow-y-auto">
-            <div>
-              <p className="text-xs text-foreground/40 uppercase tracking-wider">Week {lesson?.week_number} · Day {dayNumber}</p>
-              <p className="text-sm font-display font-bold text-foreground mt-1">{cleanTitle(lesson?.title)}</p>
+          <div className="flex-1 h-full overflow-hidden flex flex-col p-0">{stepContent}</div>
+          <div className="w-[26%] min-w-[180px] max-w-[210px] h-full flex flex-col border-l border-foreground/10 px-3 py-3 gap-3 overflow-y-auto shrink-0">
+            <div className="mb-2 pb-2 border-b border-foreground/10">
+              <button onClick={() => navigate("/dashboard")} className="text-[10px] font-body text-foreground/30 hover:text-foreground/60 mb-2 block">← Home</button>
+              <p className="text-[9px] font-body text-foreground/30 uppercase tracking-wider">W{lesson?.week_number} · Day {dayNumber}</p>
+              <p className="text-xs font-display font-semibold text-foreground leading-tight mt-0.5 line-clamp-2">{cleanTitle(lesson?.title)}</p>
             </div>
             {stepperRow}
             <div className="mt-auto">{actionButton}</div>
