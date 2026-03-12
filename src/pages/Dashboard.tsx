@@ -12,12 +12,18 @@ const courseCards = [
   { name: "Margdarshan", icon: "🧭", tagline: "Career Counselling", active: false },
 ];
 
+const COURSE_ID = "6a860163-ea3c-4205-89b3-74a3e9be098f";
+
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [streak, setStreak] = useState(0);
   const [completedDays, setCompletedDays] = useState(0);
   const [flamesSubmitted, setFlamesSubmitted] = useState(0);
-  const currentDay = completedDays + 1;
+  const [todayLesson, setTodayLesson] = useState<any>(null);
+  const [todayProgress, setTodayProgress] = useState<any>(null);
+  const [enrollmentData, setEnrollmentData] = useState<any>(null);
+  const [currentDay, setCurrentDay] = useState(1);
 
   useEffect(() => {
     const fetchUserData = async () => {
