@@ -702,9 +702,9 @@ const Onboarding = () => {
                   <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 accent-primary flex-shrink-0" />
                   <span className="text-xs font-body text-foreground/60 leading-relaxed">
                     I have read and agree to the{" "}
-                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.com")} className="text-primary underline hover:text-primary/80 transition-colors">Privacy Policy</button>
+                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.co.in")} className="text-primary underline hover:text-primary/80 transition-colors">Privacy Policy</button>
                     {" "}and{" "}
-                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.com")} className="text-primary underline hover:text-primary/80 transition-colors">Terms of Service</button>
+                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.co.in")} className="text-primary underline hover:text-primary/80 transition-colors">Terms of Service</button>
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
