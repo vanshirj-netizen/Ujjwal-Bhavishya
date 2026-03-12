@@ -38,7 +38,7 @@ export const fetchFreshUserContext = async () => {
 
     const { data: taughtLessons } = await supabase
       .from("lessons")
-      .select("day_number, title, practice_sentence")
+      .select("day_number, title")
       .lte("day_number", currentDay)
       .order("day_number", { ascending: true });
 

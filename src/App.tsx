@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Journey from "./pages/Journey";
 import Profile from "./pages/Profile";
 import FlameRedirect from "./pages/FlameRedirect";
+import DayScreen from "./pages/DayScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,7 +27,9 @@ const App = () => (
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/journey" element={<Journey />} />
+          <Route path="/day/:dayNumber" element={<DayScreen />} />
           <Route path="/flame" element={<FlameRedirect />} />
+          <Route path="/flame/:dayNumber" element={<div className="min-h-screen bg-background flex items-center justify-center text-foreground/40">Flame Coming Soon</div>} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

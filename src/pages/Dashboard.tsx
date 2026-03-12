@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 
 const courseCards = [
@@ -10,12 +12,18 @@ const courseCards = [
   { name: "Margdarshan", icon: "🧭", tagline: "Career Counselling", active: false },
 ];
 
+const COURSE_ID = "6a860163-ea3c-4205-89b3-74a3e9be098f";
+
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [streak, setStreak] = useState(0);
   const [completedDays, setCompletedDays] = useState(0);
   const [flamesSubmitted, setFlamesSubmitted] = useState(0);
-  const currentDay = completedDays + 1;
+  const [todayLesson, setTodayLesson] = useState<any>(null);
+  const [todayProgress, setTodayProgress] = useState<any>(null);
+  const [enrollmentData, setEnrollmentData] = useState<any>(null);
+  const [currentDay, setCurrentDay] = useState(1);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -23,36 +31,26 @@ const Dashboard = () => {
       if (!session) return;
       const user = session.user;
 
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, current_streak")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      // Name fallback chain
-      const fullName = (profile?.full_name && profile.full_name !== "Student")
-        ? profile.full_name
-        : user.user_metadata?.full_name
-          || user.user_metadata?.name
-          || user.email?.split("@")[0]
-          || "";
+      const { data: profile } = await supabase.from("profiles").select("full_name, current_streak").eq("id", user.id).maybeSingle();
+      const fullName = (profile?.full_name && profile.full_name !== "Student") ? profile.full_name : user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "";
       setFirstName(fullName ? fullName.split(" ")[0] : "");
       setStreak(profile?.current_streak ?? 0);
 
-      // Fetch completed days
-      const { count: daysCount } = await supabase
-        .from("progress")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("day_complete", true);
-      setCompletedDays(daysCount ?? 0);
+      const { data: enrollData } = await supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+      setEnrollmentData(enrollData);
+      const day = enrollData?.current_day ?? 1;
+      setCurrentDay(day > 0 ? day : 1);
+      setCompletedDays(enrollData?.days_completed ?? 0);
 
-      // Fetch flames submitted
-      const { count: flamesCount } = await supabase
-        .from("daily_flames")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id);
+      // Fetch today's lesson
+      const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number").eq("day_number", day > 0 ? day : 1).eq("course_id", COURSE_ID).maybeSingle();
+      setTodayLesson(lessonData);
+
+      // Fetch today's progress
+      const { data: progressData } = await supabase.from("progress").select("gamma_complete, gyani_complete, gyanu_complete, quiz_complete, day_complete").eq("user_id", user.id).eq("day_number", day > 0 ? day : 1).maybeSingle();
+      setTodayProgress(progressData);
+
+      const { count: flamesCount } = await supabase.from("daily_flames").select("id", { count: "exact", head: true }).eq("user_id", user.id);
       setFlamesSubmitted(flamesCount ?? 0);
     };
     fetchUserData();
@@ -167,17 +165,46 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: seq.lesson.delay, duration: seq.lesson.duration }}
-          className="glass-card-gold p-5 mt-8"
+          className="glass-card-gold p-5 mt-8 relative overflow-hidden cursor-pointer"
+          onClick={() => {
+            if (currentDay > 5 && enrollmentData?.payment_status === "free") {
+              toast("🔒 Upgrade to unlock Day " + currentDay);
+              return;
+            }
+            navigate("/day/" + currentDay);
+          }}
         >
-          <p className="text-xs text-primary font-semibold tracking-wide uppercase">Today — Day {currentDay}</p>
-          <h2 className="text-lg font-display font-bold text-foreground mt-1">Introduction & Basics</h2>
-          <div className="flex gap-4 mt-3 text-lg">
-            {["🎬", "📖", "⚡", "🔥"].map((emoji, i) => (
-              <span key={i} className="opacity-40">{emoji}</span>
+          {/* Free tier lock overlay */}
+          {currentDay > 5 && enrollmentData?.payment_status === "free" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-xl">
+              <span className="text-3xl">🔒</span>
+              <span className="text-xs text-foreground/50 mt-1">Upgrade to unlock</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-foreground/40 uppercase tracking-wider">
+              {todayLesson?.week_number ? `Week ${todayLesson.week_number}` : "Today"}
+            </p>
+            {streak > 0 && <span className="text-xs text-primary font-bold">🔥 {streak}</span>}
+          </div>
+          <p className="text-3xl font-display font-bold text-primary mt-1">Day {currentDay}</p>
+          <h2 className="text-lg font-display font-bold text-foreground mt-1 line-clamp-2">
+            {todayLesson?.title?.replace(/^Day\s*\d+:\s*/i, "") || "Loading..."}
+          </h2>
+          {/* Mini step progress */}
+          <div className="flex gap-2 mt-3">
+            {[
+              todayProgress?.gamma_complete,
+              todayProgress?.gyani_complete,
+              todayProgress?.gyanu_complete,
+              todayProgress?.quiz_complete,
+              todayProgress?.day_complete,
+            ].map((done, i) => (
+              <div key={i} className={`w-2.5 h-2.5 rounded-full ${done ? "bg-primary shadow-[0_0_6px_hsl(var(--primary))]" : "bg-foreground/20"}`} />
             ))}
           </div>
           <button className="w-full mt-4 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm gold-glow transition-transform active:scale-[0.98]">
-            Continue Day {currentDay} →
+            {todayProgress?.day_complete ? "Day Complete ✦" : todayProgress?.gamma_complete ? "Continue →" : `Start Day ${currentDay} →`}
           </button>
         </motion.div>
 
