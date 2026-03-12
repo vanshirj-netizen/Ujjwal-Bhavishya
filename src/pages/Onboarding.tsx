@@ -161,9 +161,11 @@ const Onboarding = () => {
         : 99;
       const under18 = calculatedAge < 18;
 
+      const googleName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || null;
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
+          ...(googleName ? { full_name: googleName } : {}),
           selected_master: selectedMaster,
           date_of_birth: dob || null,
           gender: gender || null,
