@@ -84,12 +84,6 @@ const Dashboard = () => {
       const { count: flamesCount } = await supabase.from("daily_flames").select("id", { count: "exact", head: true }).eq("user_id", user.id);
       setFlamesSubmitted(flamesCount ?? 0);
 
-      // Fetch all progress for day grid
-      try {
-        const { data: allProg } = await supabase.from("progress").select("day_number, day_complete, gamma_complete, gyani_complete, gyanu_complete, quiz_complete").eq("user_id", user.id);
-        setAllProgress(allProg ?? []);
-      } catch { /* ignore */ }
-
       // Fetch all lesson titles
       try {
         const { data: allLess } = await supabase.from("lessons").select("day_number, title").eq("course_id", COURSE_ID);
