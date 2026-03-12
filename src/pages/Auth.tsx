@@ -314,6 +314,17 @@ const Auth = () => {
             });
             if (error) {
               toast.error(error.message || "Google sign-in failed");
+              return;
+            }
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("onboarding_complete")
+                .eq("id", session.user.id)
+                .maybeSingle();
+              toast.success("Welcome back! 🙏");
+              navigate(profile?.onboarding_complete ? "/dashboard" : "/onboarding", { replace: true });
             }
           }}
           className="w-full h-12 text-sm font-medium border-border bg-muted/30 hover:bg-muted/60 text-foreground"
