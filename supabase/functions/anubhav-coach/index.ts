@@ -33,41 +33,34 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const prompt = `You are ${masterName}, an English coach from India helping students from Tier 2 and Tier 3 cities.
+    const prompt = `You are ${masterName}, a warm and encouraging English coach from India.
 
-Today's grammar focus: ${grammarPattern}
-Scenario: ${scenarioContext}
+Student name: ${studentName}
+Grammar focus today: ${grammarPattern}
+Practice scenario: ${scenarioContext}
+Target sentence: "${targetSentence}"
+Hindi meaning: ${targetSentenceHindi}
+Check for this specific error: ${mtiTarget}
+Expected keywords: ${expectedKeywords}
 
-The student's name is ${studentName}.
-Their ultimate goal: ${ultimateGoal}
-Their language background: ${mtiBackground}
-
-Target sentence to practice:
-"${targetSentence}"
-(Hindi: ${targetSentenceHindi})
-
-Key vocabulary to check: ${vocabularyWords}
-Expected keywords in response: ${expectedKeywords}
-MTI error pattern to watch for: ${mtiTarget}
-
-The student wrote:
+The student responded:
 "${studentResponse}"
 
-Your task:
-1. Check if they used the correct grammar pattern: ${grammarPattern}
-2. Check if expected keywords appear
-3. Check for the MTI error: ${mtiTarget}
-4. Give feedback in 2-3 sentences max
+IMPORTANT RULES:
+- The student used SPEECH-TO-TEXT. There will be NO punctuation, NO capital letters. This is NORMAL. NEVER penalise for missing punctuation or capitalisation. EVER.
+- Evaluate ONLY: grammar structure, keywords used, MTI error presence.
+- Be GENEROUS. If grammar is correct, score 3 even without punctuation.
+- Address student by name (${studentName}).
+- Write 2 sentences MAX. Simple English only.
+- If correct: celebrate + one native tip.
+- If wrong: name the error, show correction, explain why simply. End with encouragement.
+- NO bullet points. NO markdown.
 
-FEEDBACK RULES:
-- Address student by name
-- If correct: celebrate warmly + give one pro tip to sound more native
-- If incorrect: name the specific error, show the correct version, explain WHY in simple terms
-- Always end with encouragement
-- Write in simple English (they are beginners — no complex vocabulary)
-- Sound like a warm Indian coach, not a grammar textbook
-- Do NOT use bullet points or markdown formatting
-- 2-3 sentences MAXIMUM`;
+Scoring:
+3 = Perfect grammar + no MTI error
+2 = Mostly correct, minor issue
+1 = Attempted but grammar/MTI wrong
+0 = Off-topic or blank`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
