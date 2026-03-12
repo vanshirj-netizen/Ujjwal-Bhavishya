@@ -55,7 +55,7 @@ const Dashboard = () => {
       setFlamesSubmitted(flamesCount ?? 0);
     };
     fetchUserData();
-  }, []);
+  }, [location.key]);
 
   // Entry animation orchestration
   const seq = {
