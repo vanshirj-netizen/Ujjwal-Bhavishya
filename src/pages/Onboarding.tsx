@@ -386,46 +386,77 @@ const Onboarding = () => {
 
         {/* STEP 3 — Choose Master (now calls nextStep instead of handleFinish) */}
         {step === 3 && (
-          <motion.div key="master" {...slideVariants} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5">
+          <motion.div key="master" {...slideVariants} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5 overflow-y-auto py-10">
             <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Choose Your Master</h2>
             <p className="text-sm font-body text-secondary/70 mt-2 text-center">Your guide for the next 60 days</p>
-            <div className="grid grid-cols-2 gap-4 mt-8 w-full max-w-sm">
-              {masters.map((m) => {
-                const isSelected = selectedMaster === m.key;
-                const otherSelected = selectedMaster && !isSelected;
-                return (
-                  <button
-                    key={m.key}
-                    onClick={() => setSelectedMaster(m.key)}
-                    className={`relative p-4 rounded-xl text-center transition-all ${
-                      isSelected
-                        ? "glass-card-gold border-2 border-primary bg-primary/5"
-                        : otherSelected
-                          ? "glass-card opacity-60"
-                          : "glass-card hover:scale-[1.02]"
-                    }`}
-                  >
-                    <div
-                      className="w-full h-[200px] rounded-2xl overflow-hidden mb-3 border-2"
-                      style={{
-                        borderColor: "#fed141",
-                        boxShadow: isSelected ? "0 0 20px rgba(254,209,65,0.6)" : "none",
-                      }}
-                    >
-                      <img src={m.img} alt={m.key} className="w-full h-full object-cover" style={m.key === "Gyani" ? { objectPosition: "center 30%" } : undefined} />
+            <div className="flex flex-col gap-4 mt-8 w-full max-w-sm">
+              {/* GYANI CARD */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedMaster("Gyani")}
+                className={`glass-card p-6 rounded-3xl cursor-pointer border-2 transition-all duration-300 ${
+                  selectedMaster === "Gyani"
+                    ? "border-primary shadow-[0_0_24px_rgba(254,209,65,0.2)]"
+                    : "border-foreground/10 hover:border-primary/40"
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <span className="text-3xl">🧙‍♂️</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-display font-bold text-xl text-foreground">Gyani</p>
+                    <p className="text-sm text-foreground/50 mt-1 font-body">Your wise, patient foundation builder</p>
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">🕊️ Warm</span>
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">♾️ Patient</span>
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">🏛️ Foundation-first</span>
                     </div>
-                    <p className="text-lg font-display font-bold text-primary">{m.key}</p>
-                    <p className="text-xs font-body text-primary/80 mt-1">{m.traits}</p>
-                    <p className="text-xs font-body text-foreground/50 mt-2 leading-relaxed">{m.desc}</p>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); playAudio(m.audio); }}
-                      className="mt-3 text-xs font-body text-primary/70 hover:text-primary transition-colors"
-                    >
-                      ▶ Play Intro
-                    </button>
-                  </button>
-                );
-              })}
+                    <div className="h-px bg-foreground/10 mt-3 mb-2" />
+                    <p className="text-xs text-foreground/35 font-body leading-relaxed">
+                      Explains the WHY behind every rule. Never rushes. Never judges. Every mistake is a stepping stone. ✦
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* GYANU CARD */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedMaster("Gyanu")}
+                className={`glass-card p-6 rounded-3xl cursor-pointer border-2 transition-all duration-300 relative overflow-hidden ${
+                  selectedMaster === "Gyanu"
+                    ? "border-primary shadow-[0_0_24px_rgba(254,209,65,0.2)]"
+                    : "border-foreground/10 hover:border-primary/40"
+                }`}
+              >
+                {/* AT YOUR OWN RISK banner */}
+                <div className="absolute top-0 left-0 right-0 bg-primary/15 border-b border-primary/20 py-1.5 px-4 flex items-center justify-center gap-2">
+                  <span className="text-sm">⚡</span>
+                  <span className="font-body font-bold text-xs text-primary tracking-widest uppercase">AT YOUR OWN RISK</span>
+                  <span className="text-sm">⚡</span>
+                </div>
+                <div className="flex items-start gap-4 pt-8">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <span className="text-3xl">🔥</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-display font-bold text-xl text-foreground">Gyanu</p>
+                    <p className="text-sm text-foreground/50 mt-1 font-body">Your brutal truth, results-first coach</p>
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">⚡ No shortcuts excused</span>
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">🎯 Hacks not textbooks</span>
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">🔥 Tough love</span>
+                    </div>
+                    <div className="h-px bg-foreground/10 mt-3 mb-2" />
+                    <p className="text-xs text-foreground/35 font-body leading-relaxed">
+                      Sarcastic but never cruel. He mocks the mistake, not you. If you can handle the truth — you will improve fastest. ✦
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
             <button
               onClick={nextStep}

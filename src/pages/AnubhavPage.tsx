@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 
-type Screen = "select" | "practice" | "result";
+type Screen = "select" | "practice" | "evaluating" | "result";
 
 const AnubhavPage = () => {
   const { dayNumber } = useParams();
@@ -17,23 +17,21 @@ const AnubhavPage = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   const [worldType, setWorldType] = useState<"professional" | "casual" | null>(null);
-  const [response, setResponse] = useState("");
-  const [interimTranscript, setInterimTranscript] = useState("");
-  const responseRef = useRef("");
-
-  const [feedback, setFeedback] = useState("");
-  const [correctedSentence, setCorrectedSentence] = useState("");
-  const [score, setScore] = useState(0);
-  const [wasCorrect, setWasCorrect] = useState<boolean | null>(null);
+  const [responses, setResponses] = useState<string[]>([]);
+  const [sessionResult, setSessionResult] = useState<any>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [captured, setCaptured] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [manualInput, setManualInput] = useState("");
+  const [fallbackVisible, setFallbackVisible] = useState(false);
+
+  const responseRef = useRef("");
   const recognitionRef = useRef<any>(null);
 
   const [sessionScore, setSessionScore] = useState(0);
   const [screen, setScreen] = useState<Screen>("select");
   const [loading, setLoading] = useState(true);
   const [noSentences, setNoSentences] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,95 +49,142 @@ const AnubhavPage = () => {
   }, [dayNumber]);
 
   const masterName = profile?.selected_master === "gyanu" ? "Gyanu" : "Gyani";
+  const masterEmoji = masterName === "Gyanu" ? "🔥" : "🧙‍♂️";
 
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      toast.error("Microphone not supported. Please type your response.");
+      toast.error("Mic not supported on this device.");
       return;
     }
-    setResponse("");
     responseRef.current = "";
-    setInterimTranscript("");
+    setCaptured(false);
 
     const recognition = new SpeechRecognition();
     recognition.lang = "en-IN";
     recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.interimResults = false;
+
     recognition.onstart = () => setIsListening(true);
     recognition.onresult = (event: any) => {
-      let interimText = "";
-      let finalText = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
-          finalText += event.results[i][0].transcript;
-        } else {
-          interimText += event.results[i][0].transcript;
+          responseRef.current += event.results[i][0].transcript;
         }
       }
-      if (finalText) {
-        const updated = responseRef.current + finalText;
-        responseRef.current = updated;
-        setResponse(updated);
-      }
-      setInterimTranscript(interimText);
     };
     recognition.onerror = () => {
       setIsListening(false);
-      setInterimTranscript("");
-      toast.error("Could not hear you. Try again or type below.");
+      toast.error("Could not hear you. Tap mic and try again.");
     };
-    recognition.onend = () => {
-      setIsListening(false);
-      setInterimTranscript("");
-    };
+    recognition.onend = () => setIsListening(false);
+
     recognitionRef.current = recognition;
     recognition.start();
   };
 
-  const stopListening = () => {
+  const stopAndCapture = () => {
     recognitionRef.current?.stop();
     setIsListening(false);
-    setInterimTranscript("");
+
+    const spokenText = responseRef.current.trim();
+    if (!spokenText) {
+      toast.error("Nothing captured. Tap mic and speak.");
+      return;
+    }
+
+    const updatedResponses = [...responses, spokenText];
+    setResponses(updatedResponses);
+    setCaptured(true);
+
+    setTimeout(() => {
+      setCaptured(false);
+      responseRef.current = "";
+      if (currentIndex >= sentences.length - 1) {
+        evaluateSession(updatedResponses);
+      } else {
+        setCurrentIndex(i => i + 1);
+        setFallbackVisible(false);
+        setManualInput("");
+      }
+    }, 900);
   };
 
-  const speakFeedback = async (text: string) => {
+  const handleManualSubmit = () => {
+    const text = manualInput.trim();
+    if (!text) return;
+    const updatedResponses = [...responses, text];
+    setResponses(updatedResponses);
+    setManualInput("");
+    setFallbackVisible(false);
+    if (currentIndex >= sentences.length - 1) {
+      evaluateSession(updatedResponses);
+    } else {
+      setCurrentIndex(i => i + 1);
+    }
+  };
+
+  const evaluateSession = async (allResponses: string[]) => {
+    setScreen("evaluating");
+    setIsEvaluating(true);
+
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-flame-voice`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            text,
-            masterName: profile?.selected_master ?? "gyani",
-          }),
-        }
-      );
+      const { data } = await supabase.functions.invoke("anubhav-coach", {
+        body: {
+          studentName: profile?.full_name ?? "Friend",
+          masterName,
+          dayNumber: Number(dayNumber),
+          ultimateGoal: profile?.primary_goal ?? "",
+          mtiBackground: profile?.mti_zone ?? "hindi_heartland",
+          worldType,
+          sentences: sentences.map((s, i) => ({
+            sentence: s.sentence,
+            sentenceHindi: s.sentence_hindi,
+            grammarPattern: s.grammar_pattern,
+            mtiTarget: s.mti_target,
+            expectedKeywords: s.expected_keywords,
+            studentResponse: allResponses[i] ?? "",
+          })),
+        },
+      });
 
-      if (!response.ok) throw new Error("Voice API failed");
+      setSessionResult(data);
+      setSessionScore(data?.totalScore ?? 0);
 
-      const data = await response.json();
-      if (data?.audioBase64) {
-        const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
-        audio.play();
-        return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && sessionId) {
+        await supabase
+          .from("anubhav_sessions")
+          .update({
+            score: data?.totalScore ?? 0,
+            total_attempted: sentences.length,
+            completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", sessionId);
+
+        const attempts = sentences.map((s, i) => ({
+          session_id: sessionId,
+          user_id: user.id,
+          day_number: Number(dayNumber),
+          sentence: s.sentence,
+          student_response: allResponses[i] ?? "",
+          ai_feedback: data?.sentenceResults?.[i]?.feedback ?? "",
+          mti_target: s.mti_target,
+          was_correct: data?.sentenceResults?.[i]?.wasCorrect ?? false,
+          score_awarded: data?.sentenceResults?.[i]?.score ?? 0,
+        }));
+
+        await supabase.from("anubhav_attempts").insert(attempts);
       }
-      throw new Error("No audio data");
+
+      setScreen("result");
     } catch (err) {
-      console.error("Voice feedback failed:", err);
-      try {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "en-IN";
-        utterance.rate = 0.85;
-        window.speechSynthesis.speak(utterance);
-      } catch {
-        // Silently fail — text feedback always visible ✦
-      }
+      console.error("Evaluation error:", err);
+      setSessionResult(null);
+      setScreen("result");
+    } finally {
+      setIsEvaluating(false);
     }
   };
 
@@ -171,100 +216,6 @@ const AnubhavPage = () => {
     setScreen("practice");
   };
 
-  const submitResponse = async (directInput?: string) => {
-    const input = (directInput || responseRef.current || response).trim();
-    if (!input || isEvaluating) return;
-    setIsEvaluating(true);
-
-    const current = sentences[currentIndex];
-    try {
-      const { data } = await supabase.functions.invoke("anubhav-coach", {
-        body: {
-          studentName: profile?.full_name ?? "Friend",
-          masterName,
-          dayNumber: Number(dayNumber),
-          grammarPattern: current.grammar_pattern ?? "",
-          scenarioContext: current.scenario_context ?? "",
-          targetSentence: current.sentence,
-          targetSentenceHindi: current.sentence_hindi ?? "",
-          mtiTarget: current.mti_target ?? "",
-          expectedKeywords: current.expected_keywords ?? "",
-          vocabularyWords: current.vocabulary_words ?? "",
-          studentResponse: input,
-          ultimateGoal: profile?.primary_goal ?? "",
-          mtiBackground: profile?.mti_zone ?? "",
-        },
-      });
-
-      const result = data ?? {
-        feedback: "Good try! Keep going. ✦",
-        score: 1,
-        wasCorrect: false,
-        correctedSentence: current.sentence,
-      };
-
-      setFeedback(result.feedback);
-      setScore(result.score);
-      setWasCorrect(result.wasCorrect);
-      setCorrectedSentence(result.correctedSentence);
-      setSessionScore((s) => s + (result.score ?? 0));
-
-      // Fire-and-forget — text is already visible
-      speakFeedback(result.feedback);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && sessionId) {
-        await supabase.from("anubhav_attempts").insert({
-          session_id: sessionId,
-          user_id: user.id,
-          day_number: Number(dayNumber),
-          sentence: current.sentence,
-          student_response: input,
-          ai_feedback: result.feedback,
-          mti_target: current.mti_target,
-          was_correct: result.wasCorrect,
-          score_awarded: result.score,
-        });
-      }
-    } catch {
-      setFeedback("Great effort! Keep practicing. ✦");
-      setScore(1);
-      setWasCorrect(false);
-      setCorrectedSentence(current.sentence);
-    } finally {
-      setIsEvaluating(false);
-    }
-  };
-
-  const nextSentence = () => {
-    setResponse("");
-    responseRef.current = "";
-    setInterimTranscript("");
-    setFeedback("");
-    setScore(0);
-    setWasCorrect(null);
-    setCorrectedSentence("");
-
-    if (currentIndex >= sentences.length - 1) {
-      if (sessionId) {
-        supabase
-          .from("anubhav_sessions")
-          .update({
-            score: sessionScore,
-            total_attempted: sentences.length,
-            completed: true,
-            completed_at: new Date().toISOString(),
-          })
-          .eq("id", sessionId)
-          .then();
-      }
-      setScreen("result");
-    } else {
-      setCurrentIndex((i) => i + 1);
-      setTimeout(() => textareaRef.current?.focus(), 300);
-    }
-  };
-
   const resetSession = () => {
     setScreen("select");
     setCurrentIndex(0);
@@ -272,15 +223,19 @@ const AnubhavPage = () => {
     setSentences([]);
     setSessionId(null);
     setWorldType(null);
-    setResponse("");
-    setFeedback("");
+    setResponses([]);
+    setSessionResult(null);
     setNoSentences(false);
-    setWasCorrect(null);
+    setCaptured(false);
+    setFallbackVisible(false);
+    setManualInput("");
   };
 
-  const getStars = () => {
-    if (sentences.length === 0) return 1;
-    const pct = sessionScore / (sentences.length * 3);
+  const getStars = (total?: number, max?: number) => {
+    const t = total ?? sessionScore;
+    const m = max ?? (sentences.length * 3);
+    if (m === 0) return 1;
+    const pct = t / m;
     if (pct >= 0.95) return 5;
     if (pct >= 0.8) return 4;
     if (pct >= 0.6) return 3;
@@ -288,18 +243,10 @@ const AnubhavPage = () => {
     return 1;
   };
 
-  const performanceMessages: Record<number, string> = {
-    5: `Legendary! ${masterName} is proud of you!`,
-    4: "Excellent work! You're improving fast!",
-    3: "Good effort! Keep practicing daily.",
-    2: "Nice try! Come back and beat this!",
-    1: "Every start is brave. Try again! ✦",
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <span className="text-6xl animate-pulse">🎯</span>
+        <span className="text-6xl">🎯</span>
         <p className="text-sm text-foreground/40 mt-4">Loading practice...</p>
       </div>
     );
@@ -326,8 +273,8 @@ const AnubhavPage = () => {
           <div className="h-[3px] w-full bg-foreground/10 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-primary rounded-full"
-              animate={{ width: `${((currentIndex + (feedback ? 1 : 0)) / sentences.length) * 100}%` }}
-              transition={{ duration: 0.3 }}
+              animate={{ width: `${(currentIndex / sentences.length) * 100}%` }}
+              transition={{ duration: 0.5 }}
             />
           </div>
         </div>
@@ -345,7 +292,7 @@ const AnubhavPage = () => {
               className="flex flex-col items-center"
             >
               <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center shadow-[0_0_20px_rgba(254,209,65,0.15)]">
-                <span className="text-2xl font-bold text-primary">{masterName[0]}</span>
+                <span className="text-2xl">{masterEmoji}</span>
               </div>
               <h1 className="font-display text-xl font-bold text-foreground text-center mt-4">
                 {masterName} is ready to practice!
@@ -413,187 +360,171 @@ const AnubhavPage = () => {
           {screen === "practice" && current && (
             <motion.div
               key={`practice-${currentIndex}`}
-              initial={{ opacity: 0, x: 40 }}
+              initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -40 }}
-              transition={{ duration: 0.25 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.22 }}
             >
-              {!feedback ? (
-                <>
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-2">
-                    {current.scenario_context && (
-                      <span className="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full inline-flex items-center gap-1">
-                        📍 {current.scenario_context}
-                      </span>
-                    )}
-                    {current.grammar_pattern && (
-                      <span className="bg-foreground/5 text-foreground/40 text-xs px-3 py-1 rounded-full">
-                        {current.grammar_pattern}
-                      </span>
-                    )}
-                  </div>
+              {/* Badges */}
+              <div className="flex flex-wrap gap-2">
+                {current.scenario_context && (
+                  <span className="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full inline-flex items-center gap-1">
+                    📍 {current.scenario_context}
+                  </span>
+                )}
+                {current.grammar_pattern && (
+                  <span className="bg-foreground/5 text-foreground/30 text-xs px-3 py-1 rounded-full">
+                    {current.grammar_pattern}
+                  </span>
+                )}
+              </div>
 
-                  {/* Sentence Card */}
-                  <div className="glass-card-gold p-5 rounded-3xl shadow-[0_0_20px_rgba(254,209,65,0.08)] mt-4">
-                    <p className="font-display text-xl font-bold text-foreground text-center leading-relaxed">
-                      {current.sentence}
-                    </p>
-                    {current.sentence_hindi && (
-                      <p className="text-sm text-foreground/40 text-center mt-2 font-body italic">
-                        {current.sentence_hindi}
-                      </p>
-                    )}
-                    <div className="flex justify-end gap-1 mt-3">
-                      {[1, 2, 3].map((d) => (
+              {/* Sentence Card */}
+              <div className="glass-card-gold p-6 rounded-3xl shadow-[0_0_24px_rgba(254,209,65,0.08)] mt-4 text-center">
+                <p className="font-display text-xl font-bold text-foreground leading-relaxed">
+                  {current.sentence}
+                </p>
+                {current.sentence_hindi && (
+                  <p className="text-sm text-foreground/40 text-center mt-2 font-body italic">
+                    {current.sentence_hindi}
+                  </p>
+                )}
+                <div className="flex justify-end gap-1 mt-3">
+                  {[1, 2, 3].map((d) => (
+                    <div
+                      key={d}
+                      className={`w-2 h-2 rounded-full ${d <= (current.difficulty ?? 1) ? "bg-primary" : "bg-foreground/20"}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Master prompt */}
+              <div className="flex items-center gap-2 mt-5">
+                <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+                  <span className="text-sm">{masterEmoji}</span>
+                </div>
+                <p className="text-sm text-foreground/40 font-body italic">
+                  {masterName} says: Read this aloud →
+                </p>
+              </div>
+
+              {/* MIC BUTTON STATES */}
+              <div className="mt-4">
+                {!isListening && !captured && (
+                  <motion.button
+                    onClick={startListening}
+                    className="w-full py-6 rounded-3xl bg-primary text-background font-body font-bold text-lg flex items-center justify-center gap-3"
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    🎤 Tap to Speak
+                  </motion.button>
+                )}
+
+                {isListening && (
+                  <motion.button
+                    onClick={stopAndCapture}
+                    className="w-full py-6 rounded-3xl bg-foreground/5 border border-primary/30 font-body font-semibold text-base flex items-center justify-center gap-4"
+                  >
+                    {/* 5-bar soundwave */}
+                    <div className="flex items-end gap-[3px] h-7">
+                      {[14, 20, 26, 20, 14].map((h, i) => (
                         <div
-                          key={d}
-                          className={`w-2 h-2 rounded-full ${d <= (current.difficulty ?? 1) ? "bg-primary" : "bg-foreground/20"}`}
+                          key={i}
+                          className="wave-bar w-[3px] rounded-full bg-primary"
+                          style={{ height: `${h}px` }}
                         />
                       ))}
                     </div>
-                  </div>
-
-                  {/* Master prompt */}
-                  <div className="flex items-center gap-2 mt-4">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
-                      <span className="text-primary font-bold text-sm">{masterName[0]}</span>
-                    </div>
-                    <p className="text-sm text-foreground/50 font-body italic">
-                      {masterName} says: Now you say it in your own words in English →
-                    </p>
-                  </div>
-
-                  {/* === MIC BUTTON === */}
-                  <motion.button
-                    onClick={isListening ? stopListening : startListening}
-                    disabled={isEvaluating}
-                    className={`w-full py-5 rounded-3xl font-body font-bold text-lg flex items-center justify-center gap-3 transition-all duration-300 ${
-                      isListening
-                        ? "bg-red-500/20 border border-red-400 text-red-400 animate-pulse"
-                        : response
-                          ? "bg-green-500/10 border border-green-500/40 text-green-400"
-                          : "bg-primary text-background"
-                    }`}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    {isListening
-                      ? <><span className="text-xl">🔴</span> Listening... (tap to stop)</>
-                      : response
-                        ? <><span className="text-xl">✅</span> Tap to re-record</>
-                        : <><span className="text-xl">🎤</span> Tap to Speak</>
-                    }
+                    <span className="text-primary font-body font-semibold text-base">Tap to Stop</span>
                   </motion.button>
+                )}
 
-                  {/* === LIVE TRANSCRIPT BOX === */}
-                  {(isListening || response || interimTranscript) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="min-h-[64px] p-4 rounded-2xl bg-foreground/5 border border-foreground/10 font-body text-sm text-foreground/80 leading-relaxed mt-3"
-                    >
-                      {response && <span>{response}</span>}
-                      {interimTranscript && (
-                        <span className="text-foreground/30 italic">{" "}{interimTranscript}</span>
-                      )}
-                      {!response && !interimTranscript && (
-                        <span className="text-foreground/30 italic">Start speaking...</span>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* === OR DIVIDER === */}
-                  <div className="flex items-center gap-3 my-3">
-                    <div className="flex-1 h-px bg-foreground/10" />
-                    <span className="text-xs text-foreground/20 font-body">— or type below —</span>
-                    <div className="flex-1 h-px bg-foreground/10" />
-                  </div>
-
-                  {/* === TEXTAREA FALLBACK === */}
-                  <textarea
-                    ref={textareaRef}
-                    value={response}
-                    onChange={(e) => {
-                      setResponse(e.target.value);
-                      responseRef.current = e.target.value;
-                    }}
-                    disabled={isEvaluating}
-                    placeholder="Type if mic is not working..."
-                    className="w-full min-h-[60px] p-3 rounded-2xl bg-foreground/5 border border-foreground/10 focus:border-primary outline-none resize-none font-body text-sm text-foreground placeholder:text-foreground/20 transition-colors duration-200"
-                  />
-
-                  {/* === SUBMIT BUTTON === */}
-                  <motion.button
-                    onClick={() => submitResponse()}
-                    disabled={(!response.trim() && !responseRef.current.trim()) || isEvaluating || isListening}
-                    className={`w-full py-4 rounded-2xl font-body font-bold text-base mt-3 transition-all duration-200 ${
-                      response.trim() && !isEvaluating && !isListening
-                        ? "bg-primary text-background shadow-[0_0_20px_rgba(254,209,65,0.25)]"
-                        : "bg-foreground/10 text-foreground/30 cursor-not-allowed"
-                    }`}
-                    whileTap={response.trim() && !isEvaluating ? { scale: 0.98 } : {}}
+                {captured && (
+                  <motion.div
+                    className="capture-flash w-full py-6 rounded-3xl bg-green-500/10 border border-green-500/30 flex items-center justify-center gap-3"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                   >
-                    {isEvaluating ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 rounded-full border-2 border-background/40 border-t-background animate-spin" />
-                        {masterName} is thinking...
-                      </span>
-                    ) : isListening ? (
-                      "🔴 Stop speaking first"
-                    ) : (
-                      `Submit to ${masterName} →`
-                    )}
-                  </motion.button>
-                </>
-              ) : (
-                /* ═══ FEEDBACK ═══ */
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", duration: 0.5 }}
+                    <span className="text-green-400 font-body font-bold text-lg">✅ Got it!</span>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Fallback link */}
+              {!fallbackVisible && !isListening && !captured && (
+                <p
+                  onClick={() => setFallbackVisible(true)}
+                  className="text-xs text-foreground/20 text-center mt-3 cursor-pointer hover:text-foreground/40 transition-colors"
                 >
-                  {/* Result banner */}
-                  <div
-                    className={`rounded-2xl p-4 ${
-                      wasCorrect
-                        ? "bg-green-500/10 border border-green-500/30"
-                        : "bg-primary/10 border border-primary/30"
-                    }`}
-                  >
-                    <p className={`font-bold ${wasCorrect ? "text-green-400" : "text-primary"}`}>
-                      {wasCorrect ? "✅ Well done!" : "💡 Here's the correction:"}
-                    </p>
-                  </div>
-
-                  {/* Score stars */}
-                  <div className="flex gap-1 mt-3">
-                    {[1, 2, 3].map((s) => (
-                      <span key={s} className="text-xl">
-                        {s <= score ? "⭐" : "☆"}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Feedback text */}
-                  <p className="font-body text-sm text-foreground leading-relaxed mt-3">{feedback}</p>
-
-                  {/* Corrected sentence */}
-                  {!wasCorrect && correctedSentence && (
-                    <div className="glass-card mt-3 p-3 rounded-xl">
-                      <p className="text-[10px] text-foreground/40 uppercase tracking-wider">✅ Correct version:</p>
-                      <p className="font-body text-sm text-primary font-semibold mt-1">{correctedSentence}</p>
-                    </div>
-                  )}
-
-                  {/* Next button */}
-                  <button
-                    onClick={nextSentence}
-                    className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-body font-bold mt-4"
-                  >
-                    {currentIndex < sentences.length - 1 ? "Next Sentence →" : "See My Results 🎯"}
-                  </button>
-                </motion.div>
+                  Can't use mic?
+                </p>
               )}
+
+              {/* Fallback textarea */}
+              {fallbackVisible && !captured && (
+                <div className="mt-3">
+                  <textarea
+                    value={manualInput}
+                    onChange={(e) => setManualInput(e.target.value)}
+                    placeholder="Type your response..."
+                    className="w-full min-h-[60px] p-3 rounded-2xl bg-foreground/5 border border-foreground/10 focus:border-primary outline-none resize-none font-body text-sm text-foreground placeholder:text-foreground/20 transition-colors"
+                  />
+                  <button
+                    onClick={handleManualSubmit}
+                    disabled={!manualInput.trim()}
+                    className="w-full bg-primary text-background py-3 rounded-2xl font-body font-semibold text-sm mt-2 disabled:opacity-40"
+                  >
+                    Submit →
+                  </button>
+                </div>
+              )}
+
+              {/* Sentence counter */}
+              <p className="text-xs text-foreground/20 text-center mt-5">
+                Sentence {currentIndex + 1} of {sentences.length}
+              </p>
+            </motion.div>
+          )}
+
+          {/* ═══ EVALUATING SCREEN ═══ */}
+          {screen === "evaluating" && (
+            <motion.div
+              key="evaluating"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center min-h-[70vh] px-6"
+            >
+              <motion.div
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="w-24 h-24 rounded-3xl bg-primary/15 border-2 border-primary/30 flex items-center justify-center shadow-[0_0_32px_rgba(254,209,65,0.15)]"
+              >
+                <span className="text-4xl">{masterEmoji}</span>
+              </motion.div>
+
+              <p className="font-display text-xl font-bold text-foreground text-center mt-6">
+                {masterName} is reviewing<br />your session...
+              </p>
+              <p className="text-sm text-foreground/40 text-center mt-2 font-body">
+                Analysing all {sentences.length} sentences together...
+              </p>
+
+              {/* 3-dot loader */}
+              <div className="flex gap-2 mt-8">
+                {[0, 0.2, 0.4].map((delay, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-3 h-3 rounded-full bg-primary"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ repeat: Infinity, duration: 1.2, delay }}
+                  />
+                ))}
+              </div>
+
+              <p className="text-xs text-foreground/20 text-center mt-6 font-body">
+                This takes about 5-8 seconds ✦
+              </p>
             </motion.div>
           )}
 
@@ -607,45 +538,91 @@ const AnubhavPage = () => {
               className="flex flex-col items-center"
             >
               <motion.span
-                className="text-[80px] text-center block"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
+                className="text-[72px] text-center block"
+                animate={{ scale: [1, 1.08, 1] }}
+                transition={{ repeat: Infinity, duration: 2.5 }}
               >
                 🎯
               </motion.span>
 
-              <h1 className="font-display text-3xl font-bold text-primary text-center mt-4">
-                Practice Complete!
+              <h1 className="font-display text-3xl font-bold text-primary text-center mt-3">
+                Session Complete!
               </h1>
 
+              {/* Score card */}
               <div className="glass-card-gold p-6 rounded-3xl text-center mt-4 w-full">
-                <p className="text-xs text-foreground/30 uppercase tracking-wider">Your Score</p>
+                <p className="text-xs text-foreground/30 uppercase tracking-widest">Your Score</p>
                 <p className="font-display text-4xl font-bold text-primary mt-2">
-                  {sessionScore} / {sentences.length * 3}
+                  {sessionResult?.totalScore ?? 0} / {sentences.length * 3}
                 </p>
                 <div className="flex gap-1 justify-center mt-3">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <span key={s} className="text-2xl">
-                      {s <= getStars() ? "⭐" : "☆"}
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span key={i} className={`text-2xl ${i < getStars() ? "text-primary" : "text-foreground/20"}`}>
+                      ★
                     </span>
                   ))}
                 </div>
+                {sessionResult?.overallFeedback && (
+                  <p className="font-body text-sm text-foreground leading-relaxed italic mt-4">
+                    {sessionResult.overallFeedback}
+                  </p>
+                )}
               </div>
 
-              <p className="font-display text-lg font-bold text-foreground text-center mt-4">
-                {performanceMessages[getStars()]}
-              </p>
+              {/* Sentence breakdown */}
+              <div className="w-full mt-6">
+                <p className="text-xs text-foreground/30 uppercase tracking-widest mb-3">
+                  Your {sentences.length} Sentences
+                </p>
+                <div className="flex flex-col gap-3">
+                  {sentences.map((s, i) => {
+                    const result = sessionResult?.sentenceResults?.[i];
+                    return (
+                      <div key={i} className="glass-card p-4 rounded-2xl">
+                        <div className="flex justify-between items-center">
+                          <span className="text-base">{result?.wasCorrect ? "✅" : "❌"}</span>
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: 3 }).map((_, j) => (
+                              <span key={j} className={`text-sm ${j < (result?.score ?? 0) ? "text-primary" : "text-foreground/20"}`}>★</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <p className="text-[10px] text-foreground/25 uppercase">Target:</p>
+                          <p className="text-sm text-foreground/60 font-body mt-0.5">{s.sentence}</p>
+                        </div>
+                        <div className="mt-2">
+                          <p className="text-[10px] text-foreground/25 uppercase">You said:</p>
+                          <p className="text-sm text-foreground/45 font-body italic mt-0.5">
+                            {responses[i] || "(no response)"}
+                          </p>
+                        </div>
+                        {!result?.wasCorrect && result?.correction && (
+                          <div className="mt-2">
+                            <p className="text-[10px] text-primary/50 uppercase">Better:</p>
+                            <p className="text-sm text-primary font-body font-medium mt-0.5">{result.correction}</p>
+                          </div>
+                        )}
+                        {result?.feedback && (
+                          <p className="text-xs text-foreground/35 font-body mt-2 italic">{result.feedback}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-              <div className="mt-6 flex flex-col gap-3 w-full">
+              {/* Action buttons */}
+              <div className="mt-4 flex flex-col gap-3 w-full pb-8">
                 <button
                   onClick={resetSession}
-                  className="glass-card border border-primary/30 text-primary font-body font-semibold py-4 rounded-2xl w-full"
+                  className="glass-card border border-primary/30 text-primary font-body font-semibold py-4 rounded-2xl w-full text-center"
                 >
                   Practice Again 🔄
                 </button>
                 <button
                   onClick={() => navigate("/dashboard")}
-                  className="glass-card border border-foreground/10 text-foreground/50 font-body py-4 rounded-2xl w-full"
+                  className="glass-card border border-foreground/10 text-foreground/40 font-body py-4 rounded-2xl w-full text-center"
                 >
                   Back to Home
                 </button>

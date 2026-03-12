@@ -37,12 +37,12 @@ const Profile = () => {
   const [displayName, setDisplayName] = useState("Student");
 
   const [selectedMasterLocal, setSelectedMasterLocal] = useState("gyani");
-  const [showMasterModal, setShowMasterModal] = useState(false);
+  const [originalMaster, setOriginalMaster] = useState("gyani");
   const [chosenWorldDisplay, setChosenWorldDisplay] = useState("");
   const [whatsappOn, setWhatsappOn] = useState(true);
   const [motherTongueDisplay, setMotherTongueDisplay] = useState("");
   const [childhoodStateDisplay, setChildhoodStateDisplay] = useState("");
-  const [savingSettings, setSavingSettings] = useState(false);
+  const [savingMaster, setSavingMaster] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -57,7 +57,6 @@ const Profile = () => {
           .maybeSingle();
         setProfile(profileData);
 
-        // Google login fallback chain
         const resolvedName =
           (profileData?.full_name && profileData.full_name !== "Student")
             ? profileData.full_name
@@ -67,7 +66,9 @@ const Profile = () => {
               "Student";
         setDisplayName(resolvedName);
 
-        setSelectedMasterLocal(profileData?.selected_master ?? "gyani");
+        const master = profileData?.selected_master ?? "gyani";
+        setSelectedMasterLocal(master);
+        setOriginalMaster(master);
         setChosenWorldDisplay(profileData?.chosen_world ?? "");
         setWhatsappOn(profileData?.whatsapp_opted_in ?? true);
         setMotherTongueDisplay(profileData?.mother_tongue ?? "");
@@ -119,22 +120,21 @@ const Profile = () => {
     window.open("https://razorpay.com/payment-link/YOUR_LINK_HERE", "_blank");
   };
 
-  const saveMaster = async (newMaster: string) => {
-    setSavingSettings(true);
+  const handleSaveMaster = async () => {
+    setSavingMaster(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       await supabase
         .from("profiles")
-        .update({ selected_master: newMaster } as any)
+        .update({ selected_master: selectedMasterLocal } as any)
         .eq("id", user.id);
-      setSelectedMasterLocal(newMaster);
-      setShowMasterModal(false);
-      toast.success("Master updated ✦");
+      setOriginalMaster(selectedMasterLocal);
+      toast.success("Master updated! ✦");
     } catch {
       toast.error("Could not save. Try again.");
     } finally {
-      setSavingSettings(false);
+      setSavingMaster(false);
     }
   };
 
@@ -237,15 +237,78 @@ const Profile = () => {
           </motion.div>
         )}
 
-        {/* Preferences */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 space-y-2">
-          <p className="text-xs font-body text-foreground/40 uppercase tracking-widest mb-2">Preferences</p>
+        {/* Your Master — Inline Cards */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6">
+          <div>
+            <p className="font-display font-bold text-foreground text-base">Your Master</p>
+            <p className="text-xs text-foreground/30 mt-0.5 font-body">You can change your master anytime</p>
+          </div>
 
-          {/* Change Master */}
-          <button onClick={() => setShowMasterModal(true)} className="w-full glass-card p-4 flex items-center justify-between">
-            <span className="text-sm font-body text-foreground/70">My Master</span>
-            <span className="text-sm font-body text-primary">{selectedMasterLocal === "gyani" ? "Gyani" : "Gyanu"} →</span>
-          </button>
+          <div className="flex flex-col gap-3 mt-3">
+            {/* Gyani compact */}
+            <button
+              onClick={() => setSelectedMasterLocal("gyani")}
+              className={`glass-card p-4 rounded-2xl cursor-pointer border-2 transition-all text-left ${
+                selectedMasterLocal === "gyani" ? "border-primary" : "border-foreground/10"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🧙‍♂️</span>
+                <div className="flex-1">
+                  <p className="font-display font-bold text-sm text-foreground">Gyani</p>
+                  <p className="text-xs text-foreground/40">Warm · Patient · Foundation-first</p>
+                </div>
+                {selectedMasterLocal === "gyani" ? (
+                  <span className="text-primary text-lg">✅</span>
+                ) : (
+                  <div className="w-5 h-5 rounded-full border border-foreground/20" />
+                )}
+              </div>
+            </button>
+
+            {/* Gyanu compact */}
+            <button
+              onClick={() => setSelectedMasterLocal("gyanu")}
+              className={`glass-card p-4 rounded-2xl cursor-pointer border-2 transition-all text-left relative overflow-hidden ${
+                selectedMasterLocal === "gyanu" ? "border-primary" : "border-foreground/10"
+              }`}
+            >
+              {/* Risk banner */}
+              <div className="absolute top-0 left-0 right-0 bg-primary/10 py-0.5 text-center">
+                <span className="text-[9px] text-primary font-body font-bold tracking-widest uppercase">⚡ AT YOUR OWN RISK ⚡</span>
+              </div>
+              <div className="flex items-center gap-3 pt-5">
+                <span className="text-2xl">🔥</span>
+                <div className="flex-1">
+                  <p className="font-display font-bold text-sm text-foreground">Gyanu</p>
+                  <p className="text-xs text-foreground/40">Brutal truth · Hacks · Tough love</p>
+                </div>
+                {selectedMasterLocal === "gyanu" ? (
+                  <span className="text-primary text-lg">✅</span>
+                ) : (
+                  <div className="w-5 h-5 rounded-full border border-foreground/20" />
+                )}
+              </div>
+            </button>
+          </div>
+
+          {/* Update button — only if changed */}
+          {selectedMasterLocal !== originalMaster && (
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={handleSaveMaster}
+              disabled={savingMaster}
+              className="w-full bg-primary text-background py-3 rounded-2xl font-body font-semibold text-sm mt-4 active:scale-[0.98] transition-transform disabled:opacity-50"
+            >
+              {savingMaster ? "Saving..." : "Update My Master →"}
+            </motion.button>
+          )}
+        </motion.div>
+
+        {/* Other Preferences */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }} className="mt-6 space-y-2">
+          <p className="text-xs font-body text-foreground/40 uppercase tracking-widest mb-2">Preferences</p>
 
           {/* Change World */}
           <div className="glass-card p-4">
@@ -325,52 +388,6 @@ const Profile = () => {
       </div>
 
       <BottomNav />
-
-      {/* Master Modal */}
-      {showMasterModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-5" onClick={() => setShowMasterModal(false)}>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm glass-card-gold p-6"
-            style={{
-              backgroundColor: '#01271d',
-              border: '1px solid rgba(254,209,65,0.3)',
-            }}
-          >
-            <h3 className="text-lg font-display font-bold text-primary text-center mb-4">Choose Your Master</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { key: "gyani", img: "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyani.webp", traits: "Wisdom · Depth" },
-                { key: "gyanu", img: "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyanu.webp", traits: "Energy · Action" },
-              ].map((m) => (
-                <button
-                  key={m.key}
-                  onClick={() => saveMaster(m.key)}
-                  disabled={savingSettings}
-                  className={`p-3 rounded-xl text-center transition-all ${
-                    selectedMasterLocal === m.key ? "glass-card-gold border-2 border-primary" : "glass-card"
-                  }`}
-                >
-                  <div className="w-full h-32 rounded-xl overflow-hidden bg-foreground/10 border border-primary/30 flex items-center justify-center">
-                    <img
-                      src={m.img}
-                      alt={m.key}
-                      className="w-full h-full object-cover"
-                      style={{ objectFit: 'cover', objectPosition: 'top' }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-                  <p className="text-sm font-display font-bold text-primary capitalize mt-2">{m.key}</p>
-                  <p className="text-xs font-body text-foreground/50 mt-0.5">{m.traits}</p>
-                </button>
-              ))}
-            </div>
-            <button onClick={() => setShowMasterModal(false)} className="w-full mt-4 py-2 text-sm font-body text-foreground/40 hover:text-foreground/60 transition-colors">Cancel</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
