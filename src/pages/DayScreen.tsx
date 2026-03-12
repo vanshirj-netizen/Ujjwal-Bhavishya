@@ -266,14 +266,24 @@ const DayScreen = () => {
   );
 
   // Free tier gate
-  if (Number(dayNumber) > 5 && enrollment?.payment_status === "free") return (
+  const isFreeUser = enrollment?.payment_status === "free" || enrollment?.payment_status === null || !enrollment;
+  const isLockedDay = isFreeUser && Number(dayNumber) > 5;
+
+  if (isLockedDay) return (
     <div className="w-screen h-screen bg-background flex flex-col items-center justify-center px-6">
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center">
-        <motion.span className="text-6xl text-primary" animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>🔒</motion.span>
-        <h1 className="font-display text-2xl text-primary font-bold mt-4">Day {dayNumber} is Locked</h1>
-        <p className="text-sm text-foreground/50 mt-2 max-w-[280px]">Upgrade to Aarambh Full Access to continue your transformation</p>
-        <button className="w-full mt-6 py-4 rounded-2xl bg-primary text-primary-foreground font-body font-semibold glass-card-gold">Unlock All 60 Days →</button>
-        <button onClick={() => navigate("/dashboard")} className="text-xs text-foreground/30 mt-4">← Back to Home</button>
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="flex flex-col items-center text-center">
+        <motion.span className="text-6xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>🔒</motion.span>
+        <h1 className="font-display text-2xl font-bold text-primary text-center mt-6">Day {dayNumber} is Locked</h1>
+        <p className="text-sm font-body text-foreground/50 text-center mt-3 max-w-[280px] leading-relaxed">
+          You've completed your free preview. Upgrade to unlock all 60 days and continue your transformation.
+        </p>
+        <button
+          onClick={() => toast("Upgrade feature coming soon! Write to contact@ujjwalbhavishya.co.in")}
+          className="w-full mt-8 bg-primary text-primary-foreground font-body font-semibold py-4 rounded-2xl text-base"
+        >
+          Unlock All 60 Days →
+        </button>
+        <button onClick={() => navigate("/dashboard")} className="mt-4 text-sm font-body text-foreground/30 underline">← Back to Home</button>
       </motion.div>
     </div>
   );
