@@ -50,13 +50,11 @@ const Profile = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { navigate("/auth"); return; }
 
-        const { data: profileData, error } = await supabase
+        const { data: profileData } = await supabase
           .from("profiles")
           .select("full_name, ub_student_id, selected_master, payment_status, enrollment_date, chosen_world, whatsapp_opted_in, mother_tongue, childhood_state")
           .eq("id", user.id)
-          .single();
-
-        if (error) throw error;
+          .maybeSingle();
         setProfile(profileData);
 
         // Google login fallback chain
@@ -89,7 +87,7 @@ const Profile = () => {
           .from("profiles")
           .select("current_streak, longest_streak")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         const daysDone = progressData?.filter(p => p.day_complete).length ?? 0;
         const flames = flameData?.length ?? 0;

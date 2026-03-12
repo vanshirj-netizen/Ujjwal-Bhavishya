@@ -147,7 +147,7 @@ const DayScreen = () => {
           supabase.from("lessons").select("day_number, title, week_number").eq("day_number", Number(dayNumber) + 1).eq("course_id", COURSE_ID).single(),
           supabase.from("progress").select("*").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle(),
           supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).maybeSingle(),
-          supabase.from("profiles").select("current_streak").eq("id", user.id).single(),
+          supabase.from("profiles").select("current_streak").eq("id", user.id).maybeSingle(),
         ]);
 
         setLesson(lessonRes.data);
@@ -219,11 +219,25 @@ const DayScreen = () => {
       if (!user) return;
       await supabase.from("progress").update({ quiz_score: Number(quizScore), day_complete: true, completed_at: new Date().toISOString() }).eq("user_id", user.id).eq("day_number", Number(dayNumber));
       const nextDay = Number(dayNumber) + 1;
-      await supabase.from("enrollments").update({ current_day: nextDay, days_completed: Number(dayNumber) }).eq("user_id", user.id).eq("is_active", true);
-      const { data: profileData } = await supabase.from("profiles").select("current_streak").eq("id", user.id).single();
+
+      // Upsert enrollment
+      const { data: existingEnroll } = await supabase.from("enrollments").select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+      if (existingEnroll) {
+        await supabase.from("enrollments").update({ current_day: nextDay, days_completed: Number(dayNumber) }).eq("id", existingEnroll.id);
+      } else {
+        await supabase.from("enrollments").insert({ user_id: user.id, current_day: nextDay, days_completed: Number(dayNumber), is_active: true, course_id: COURSE_ID });
+      }
+
+      // Upsert profile streak
+      const { data: profileData } = await supabase.from("profiles").select("current_streak").eq("id", user.id).maybeSingle();
       const newStreak = (profileData?.current_streak ?? 0) + 1;
       setCurrentStreak(newStreak);
-      await supabase.from("profiles").update({ current_streak: newStreak }).eq("id", user.id);
+      if (profileData) {
+        await supabase.from("profiles").update({ current_streak: newStreak }).eq("id", user.id);
+      } else {
+        await supabase.from("profiles").insert({ id: user.id, full_name: user.user_metadata?.full_name || 'Student', email: user.email, current_streak: newStreak });
+      }
+
       setCompletedSteps(prev => [...prev, 5]);
       setCurrentStep(6);
     } catch {
@@ -266,14 +280,24 @@ const DayScreen = () => {
   );
 
   // Free tier gate
-  if (Number(dayNumber) > 5 && enrollment?.payment_status === "free") return (
+  const isFreeUser = enrollment?.payment_status === "free" || enrollment?.payment_status === null || !enrollment;
+  const isLockedDay = isFreeUser && Number(dayNumber) > 5;
+
+  if (isLockedDay) return (
     <div className="w-screen h-screen bg-background flex flex-col items-center justify-center px-6">
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center">
-        <motion.span className="text-6xl text-primary" animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>🔒</motion.span>
-        <h1 className="font-display text-2xl text-primary font-bold mt-4">Day {dayNumber} is Locked</h1>
-        <p className="text-sm text-foreground/50 mt-2 max-w-[280px]">Upgrade to Aarambh Full Access to continue your transformation</p>
-        <button className="w-full mt-6 py-4 rounded-2xl bg-primary text-primary-foreground font-body font-semibold glass-card-gold">Unlock All 60 Days →</button>
-        <button onClick={() => navigate("/dashboard")} className="text-xs text-foreground/30 mt-4">← Back to Home</button>
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="flex flex-col items-center text-center">
+        <motion.span className="text-6xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>🔒</motion.span>
+        <h1 className="font-display text-2xl font-bold text-primary text-center mt-6">Day {dayNumber} is Locked</h1>
+        <p className="text-sm font-body text-foreground/50 text-center mt-3 max-w-[280px] leading-relaxed">
+          You've completed your free preview. Upgrade to unlock all 60 days and continue your transformation.
+        </p>
+        <button
+          onClick={() => toast("Upgrade feature coming soon! Write to contact@ujjwalbhavishya.co.in")}
+          className="w-full mt-8 bg-primary text-primary-foreground font-body font-semibold py-4 rounded-2xl text-base"
+        >
+          Unlock All 60 Days →
+        </button>
+        <button onClick={() => navigate("/dashboard")} className="mt-4 text-sm font-body text-foreground/30 underline">← Back to Home</button>
       </motion.div>
     </div>
   );
