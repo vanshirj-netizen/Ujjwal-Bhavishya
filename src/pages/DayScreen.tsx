@@ -155,16 +155,23 @@ const DayScreen = () => {
         setEnrollment(enrollRes.data);
         setCurrentStreak(profileRes.data?.current_streak ?? 0);
 
-        // Resume logic
-        if (progressRes.data) {
-          const p = progressRes.data;
+        // Resume logic — explicit 3-branch guard
+        const p = progressRes.data;
+        if (p && !p.day_complete) {
           const done: number[] = [];
-          if (p.day_complete) { setCurrentStep(6); done.push(1, 2, 3, 4, 5); }
-          else if (p.quiz_complete) { setCurrentStep(5); done.push(1, 2, 3, 4); }
+          if (p.quiz_complete) { setCurrentStep(5); done.push(1, 2, 3, 4); }
           else if (p.gyanu_complete) { setCurrentStep(4); done.push(1, 2, 3); }
           else if (p.gyani_complete) { setCurrentStep(3); done.push(1, 2); }
           else if (p.gamma_complete) { setCurrentStep(2); done.push(1); }
+          else { setCurrentStep(1); }
           setCompletedSteps(done);
+        } else if (p?.day_complete) {
+          setCurrentStep(6);
+          setCompletedSteps([1, 2, 3, 4, 5]);
+        } else {
+          // No progress at all — fresh start
+          setCurrentStep(1);
+          setCompletedSteps([]);
         }
       } catch {
         toast.error("Could not load lesson");
@@ -241,7 +248,7 @@ const DayScreen = () => {
         <h1 className="font-display text-2xl text-primary font-bold mt-4">Day {dayNumber} is Locked</h1>
         <p className="text-sm text-foreground/50 mt-2 max-w-[280px]">Upgrade to Aarambh Full Access to continue your transformation</p>
         <button className="w-full mt-6 py-4 rounded-2xl bg-primary text-primary-foreground font-body font-semibold glass-card-gold">Unlock All 60 Days →</button>
-        <button onClick={() => navigate("/")} className="text-xs text-foreground/30 mt-4">← Back to Home</button>
+        <button onClick={() => navigate("/dashboard")} className="text-xs text-foreground/30 mt-4">← Back to Home</button>
       </motion.div>
     </div>
   );
@@ -269,7 +276,7 @@ const DayScreen = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/dashboard")}
         className="absolute top-5 right-5 z-10 glass-card px-3 py-2 text-xs font-body text-foreground/50 hover:text-foreground flex items-center gap-1.5 transition-colors"
       >
         🏠 Home
@@ -310,7 +317,7 @@ const DayScreen = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/dashboard")}
           className="mt-4 text-sm font-body text-foreground/30 underline underline-offset-4 hover:text-foreground/60 transition-colors"
         >
           ← Back to Home
@@ -424,7 +431,7 @@ const DayScreen = () => {
       {rotateOverlay}
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/10 shrink-0">
-        <button onClick={() => navigate("/")} className="text-sm text-foreground/40 hover:text-foreground transition">← Back</button>
+        <button onClick={() => navigate("/dashboard")} className="text-sm text-foreground/40 hover:text-foreground transition">← Back</button>
         <div className="text-center">
           <p className="text-[10px] text-foreground/40 uppercase tracking-wider">Week {lesson?.week_number} · Day {dayNumber}</p>
           <p className="text-sm font-display font-bold text-foreground mt-0.5 max-w-[200px] truncate">{cleanTitle(lesson?.title)}</p>
