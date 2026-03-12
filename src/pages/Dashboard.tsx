@@ -31,36 +31,26 @@ const Dashboard = () => {
       if (!session) return;
       const user = session.user;
 
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, current_streak")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      // Name fallback chain
-      const fullName = (profile?.full_name && profile.full_name !== "Student")
-        ? profile.full_name
-        : user.user_metadata?.full_name
-          || user.user_metadata?.name
-          || user.email?.split("@")[0]
-          || "";
+      const { data: profile } = await supabase.from("profiles").select("full_name, current_streak").eq("id", user.id).maybeSingle();
+      const fullName = (profile?.full_name && profile.full_name !== "Student") ? profile.full_name : user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "";
       setFirstName(fullName ? fullName.split(" ")[0] : "");
       setStreak(profile?.current_streak ?? 0);
 
-      // Fetch completed days
-      const { count: daysCount } = await supabase
-        .from("progress")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("day_complete", true);
-      setCompletedDays(daysCount ?? 0);
+      const { data: enrollData } = await supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+      setEnrollmentData(enrollData);
+      const day = enrollData?.current_day ?? 1;
+      setCurrentDay(day > 0 ? day : 1);
+      setCompletedDays(enrollData?.days_completed ?? 0);
 
-      // Fetch flames submitted
-      const { count: flamesCount } = await supabase
-        .from("daily_flames")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id);
+      // Fetch today's lesson
+      const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number").eq("day_number", day > 0 ? day : 1).eq("course_id", COURSE_ID).maybeSingle();
+      setTodayLesson(lessonData);
+
+      // Fetch today's progress
+      const { data: progressData } = await supabase.from("progress").select("gamma_complete, gyani_complete, gyanu_complete, quiz_complete, day_complete").eq("user_id", user.id).eq("day_number", day > 0 ? day : 1).maybeSingle();
+      setTodayProgress(progressData);
+
+      const { count: flamesCount } = await supabase.from("daily_flames").select("id", { count: "exact", head: true }).eq("user_id", user.id);
       setFlamesSubmitted(flamesCount ?? 0);
     };
     fetchUserData();
