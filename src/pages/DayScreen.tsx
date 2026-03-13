@@ -229,15 +229,7 @@ const DayScreen = () => {
         await supabase.from("enrollments").insert({ user_id: user.id, current_day: nextDay, days_completed: Number(dayNumber), is_active: true, course_id: COURSE_ID });
       }
 
-      // Upsert profile streak
-      const { data: profileData } = await supabase.from("profiles").select("current_streak").eq("id", user.id).maybeSingle();
-      const newStreak = (profileData?.current_streak ?? 0) + 1;
-      setCurrentStreak(newStreak);
-      if (profileData) {
-        await supabase.from("profiles").update({ current_streak: newStreak }).eq("id", user.id);
-      } else {
-        await supabase.from("profiles").insert({ id: user.id, full_name: user.user_metadata?.full_name || 'Student', email: user.email, current_streak: newStreak });
-      }
+      // Streak is now updated via flame submission only — removed from here
 
       setCompletedSteps(prev => [...prev, 5]);
       setCurrentStep(6);
