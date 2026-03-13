@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PAYMENT_URL } from "@/lib/constants";
 import BottomNav from "@/components/BottomNav";
 
 interface ProfileData {
@@ -66,7 +67,8 @@ const Profile = () => {
               "Student";
         setDisplayName(resolvedName);
 
-        const master = profileData?.selected_master ?? "gyani";
+        // Normalize master on read
+        const master = (profileData?.selected_master ?? "gyani").toLowerCase();
         setSelectedMasterLocal(master);
         setOriginalMaster(master);
         setChosenWorldDisplay(profileData?.chosen_world ?? "");
@@ -117,7 +119,7 @@ const Profile = () => {
   };
 
   const handleUpgrade = () => {
-    window.open("https://razorpay.com/payment-link/YOUR_LINK_HERE", "_blank");
+    window.open(PAYMENT_URL, "_blank");
   };
 
   const handleSaveMaster = async () => {
@@ -163,6 +165,7 @@ const Profile = () => {
 
   const ubId = profile?.ub_student_id ?? "UB-000001";
   const paymentStatus = profile?.payment_status ?? "free";
+  const isGyani = selectedMasterLocal === "gyani";
 
   const initials = displayName
     .split(" ")
@@ -170,6 +173,18 @@ const Profile = () => {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  // Gold Orb component
+  const GoldOrb = ({ selected }: { selected: boolean }) => (
+    <div
+      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+        selected ? "orb-pulse" : "border-[1.5px] border-primary/20"
+      }`}
+      style={selected ? { background: "radial-gradient(circle, #fed141 0%, #f59e0b 60%, #d97706 100%)" } : {}}
+    >
+      {selected && <span className="text-[10px] text-primary-foreground font-bold">✦</span>}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background pb-24 safe-top">
@@ -202,7 +217,7 @@ const Profile = () => {
           <h2 className="text-lg font-display font-bold text-foreground mt-3">{displayName}</h2>
           <p className="text-sm font-mono-ub text-primary mt-1 tracking-widest">{ubId}</p>
           <span className="inline-block mt-2 text-xs px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-            {selectedMasterLocal === "gyani" ? "📖 Gyani's Student" : "⚡ Gyanu's Student"}
+            {isGyani ? "📖 Gyani's Student" : "⚡ Gyanu's Student"}
           </span>
           <div className="mt-3">
             <span className={`inline-block text-xs px-3 py-1 rounded-full ${paymentStatus === "paid" ? "bg-primary/20 text-primary border border-primary/30" : "bg-foreground/10 text-foreground/60"}`}>
@@ -237,7 +252,7 @@ const Profile = () => {
           </motion.div>
         )}
 
-        {/* Your Master — Inline Cards */}
+        {/* Your Master — Inline Cards with Gold Orb */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6">
           <div>
             <p className="font-display font-bold text-foreground text-base">Your Master</p>
@@ -258,11 +273,7 @@ const Profile = () => {
                   <p className="font-display font-bold text-sm text-foreground">Gyani</p>
                   <p className="text-xs text-foreground/40">Warm · Patient · Foundation-first</p>
                 </div>
-                {selectedMasterLocal === "gyani" ? (
-                  <span className="text-primary text-lg">✅</span>
-                ) : (
-                  <div className="w-5 h-5 rounded-full border border-foreground/20" />
-                )}
+                <GoldOrb selected={selectedMasterLocal === "gyani"} />
               </div>
             </button>
 
@@ -274,8 +285,8 @@ const Profile = () => {
               }`}
             >
               {/* Risk banner */}
-              <div className="absolute top-0 left-0 right-0 bg-primary/10 py-0.5 text-center">
-                <span className="text-[9px] text-primary font-body font-bold tracking-widest uppercase">⚡ AT YOUR OWN RISK ⚡</span>
+              <div className="absolute top-0 left-0 right-0 py-0.5 text-center" style={{ background: "linear-gradient(90deg, #7f1d1d, #991b1b)" }}>
+                <span className="text-[9px] font-body font-bold tracking-widest uppercase" style={{ color: "#fecaca" }}>⚡ AT YOUR OWN RISK ⚡</span>
               </div>
               <div className="flex items-center gap-3 pt-5">
                 <span className="text-2xl">🔥</span>
@@ -283,11 +294,7 @@ const Profile = () => {
                   <p className="font-display font-bold text-sm text-foreground">Gyanu</p>
                   <p className="text-xs text-foreground/40">Brutal truth · Hacks · Tough love</p>
                 </div>
-                {selectedMasterLocal === "gyanu" ? (
-                  <span className="text-primary text-lg">✅</span>
-                ) : (
-                  <div className="w-5 h-5 rounded-full border border-foreground/20" />
-                )}
+                <GoldOrb selected={selectedMasterLocal === "gyanu"} />
               </div>
             </button>
           </div>
