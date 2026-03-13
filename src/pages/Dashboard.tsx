@@ -13,7 +13,7 @@ const courseCards = [
   { name: "Margdarshan", icon: "🧭", tagline: "Career Counselling", active: false },
 ];
 
-const COURSE_ID = "6a860163-ea3c-4205-89b3-74a3e9be098f";
+// COURSE_ID imported from constants
 
 type DayProgress = {
   day_number: number;
