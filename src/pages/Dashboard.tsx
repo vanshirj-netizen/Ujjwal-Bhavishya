@@ -312,7 +312,7 @@ const Dashboard = () => {
                 return (
                   <div
                     key={day}
-                    onClick={() => toast("🔒 Upgrade coming soon! Contact: contact@ujjwalbhavishya.co.in")}
+                    onClick={() => window.open(PAYMENT_URL, "_blank")}
                     className="glass-card p-3 rounded-xl relative opacity-60 cursor-not-allowed"
                   >
                     <p className="text-xs font-body text-foreground/30">Day {day}</p>

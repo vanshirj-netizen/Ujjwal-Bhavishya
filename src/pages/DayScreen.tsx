@@ -285,7 +285,7 @@ const DayScreen = () => {
           You've completed your free preview. Upgrade to unlock all 60 days and continue your transformation.
         </p>
         <button
-          onClick={() => toast("Upgrade feature coming soon! Write to contact@ujjwalbhavishya.co.in")}
+          onClick={() => window.open(PAYMENT_URL, "_blank")}
           className="w-full mt-8 bg-primary text-primary-foreground font-body font-semibold py-4 rounded-2xl text-base"
         >
           Unlock All 60 Days →
