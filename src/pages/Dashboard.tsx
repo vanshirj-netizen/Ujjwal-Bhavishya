@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PAYMENT_URL, COURSE_ID } from "@/lib/constants";
 import BottomNav from "@/components/BottomNav";
 
 const courseCards = [
