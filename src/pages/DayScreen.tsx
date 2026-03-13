@@ -3,8 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-const COURSE_ID = "6a860163-ea3c-4205-89b3-74a3e9be098f";
+import { PAYMENT_URL, COURSE_ID } from "@/lib/constants";
 
 const toEmbedUrl = (url: string): string => {
   if (!url) return "";
@@ -230,15 +229,7 @@ const DayScreen = () => {
         await supabase.from("enrollments").insert({ user_id: user.id, current_day: nextDay, days_completed: Number(dayNumber), is_active: true, course_id: COURSE_ID });
       }
 
-      // Upsert profile streak
-      const { data: profileData } = await supabase.from("profiles").select("current_streak").eq("id", user.id).maybeSingle();
-      const newStreak = (profileData?.current_streak ?? 0) + 1;
-      setCurrentStreak(newStreak);
-      if (profileData) {
-        await supabase.from("profiles").update({ current_streak: newStreak }).eq("id", user.id);
-      } else {
-        await supabase.from("profiles").insert({ id: user.id, full_name: user.user_metadata?.full_name || 'Student', email: user.email, current_streak: newStreak });
-      }
+      // Streak is now updated via flame submission only — removed from here
 
       setCompletedSteps(prev => [...prev, 5]);
       setCurrentStep(6);
@@ -294,7 +285,7 @@ const DayScreen = () => {
           You've completed your free preview. Upgrade to unlock all 60 days and continue your transformation.
         </p>
         <button
-          onClick={() => toast("Upgrade feature coming soon! Write to contact@ujjwalbhavishya.co.in")}
+          onClick={() => window.open(PAYMENT_URL, "_blank")}
           className="w-full mt-8 bg-primary text-primary-foreground font-body font-semibold py-4 rounded-2xl text-base"
         >
           Unlock All 60 Days →

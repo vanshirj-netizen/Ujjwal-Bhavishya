@@ -227,8 +227,8 @@ const Onboarding = () => {
   };
 
   const masters = [
-    { key: "Gyani", img: GYANI_IMG, audio: "/audio/gyani-intro.mp3", traits: "Wisdom • Depth • Ancient Knowledge", desc: "The scholar who transforms how you think" },
-    { key: "Gyanu", img: GYANU_IMG, audio: "/audio/gyanu-intro.mp3", traits: "Energy • Action • Modern Mindset", desc: "The hustler who transforms how you act" },
+    { key: "gyani", img: GYANI_IMG, audio: "/audio/gyani-intro.mp3", traits: "Wisdom • Depth • Ancient Knowledge", desc: "The scholar who transforms how you think" },
+    { key: "gyanu", img: GYANU_IMG, audio: "/audio/gyanu-intro.mp3", traits: "Energy • Action • Modern Mindset", desc: "The hustler who transforms how you act" },
   ];
 
   // Step dots component for steps 4-8
@@ -394,28 +394,36 @@ const Onboarding = () => {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedMaster("Gyani")}
-                className={`glass-card p-6 rounded-3xl cursor-pointer border-2 transition-all duration-300 ${
-                  selectedMaster === "Gyani"
+                onClick={() => setSelectedMaster("gyani")}
+                className={`glass-card p-6 rounded-3xl cursor-pointer border-2 transition-all duration-300 relative ${
+                  selectedMaster === "gyani"
                     ? "border-primary shadow-[0_0_24px_rgba(254,209,65,0.2)]"
                     : "border-foreground/10 hover:border-primary/40"
                 }`}
               >
+                {/* Gold Orb */}
+                <div className={`absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center ${
+                  selectedMaster === "gyani"
+                    ? "orb-pulse"
+                    : "border-[1.5px] border-primary/20"
+                }`} style={selectedMaster === "gyani" ? { background: "radial-gradient(circle, #fed141 0%, #f59e0b 60%, #d97706 100%)" } : {}}>
+                  {selectedMaster === "gyani" && <span className="text-[10px] text-primary-foreground font-bold">✦</span>}
+                </div>
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                     <span className="text-3xl">🧙‍♂️</span>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 pr-8">
                     <p className="font-display font-bold text-xl text-foreground">Gyani</p>
                     <p className="text-sm text-foreground/50 mt-1 font-body">Your wise, patient foundation builder</p>
                     <div className="flex gap-2 mt-3 flex-wrap">
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">🕊️ Warm</span>
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">♾️ Patient</span>
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">🏛️ Foundation-first</span>
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Warm</span>
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Patient</span>
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Foundation First</span>
                     </div>
                     <div className="h-px bg-foreground/10 mt-3 mb-2" />
                     <p className="text-xs text-foreground/35 font-body leading-relaxed">
-                      Explains the WHY behind every rule. Never rushes. Never judges. Every mistake is a stepping stone. ✦
+                      "Your wise guide. Gyani celebrates every step and builds your confidence brick by brick. Perfect for your first English journey."
                     </p>
                   </div>
                 </div>
@@ -425,35 +433,43 @@ const Onboarding = () => {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedMaster("Gyanu")}
-                className={`glass-card p-6 rounded-3xl cursor-pointer border-2 transition-all duration-300 relative overflow-hidden ${
-                  selectedMaster === "Gyanu"
+                onClick={() => setSelectedMaster("gyanu")}
+                className={`glass-card rounded-3xl cursor-pointer border-2 transition-all duration-300 relative overflow-hidden ${
+                  selectedMaster === "gyanu"
                     ? "border-primary shadow-[0_0_24px_rgba(254,209,65,0.2)]"
                     : "border-foreground/10 hover:border-primary/40"
                 }`}
               >
                 {/* AT YOUR OWN RISK banner */}
-                <div className="absolute top-0 left-0 right-0 bg-primary/15 border-b border-primary/20 py-1.5 px-4 flex items-center justify-center gap-2">
-                  <span className="text-sm">⚡</span>
-                  <span className="font-body font-bold text-xs text-primary tracking-widest uppercase">AT YOUR OWN RISK</span>
-                  <span className="text-sm">⚡</span>
+                <div className="w-full py-2 text-center rounded-t-3xl" style={{ background: "linear-gradient(90deg, #7f1d1d, #991b1b)" }}>
+                  <span className="text-xs tracking-widest font-body font-bold uppercase" style={{ color: "#fecaca" }}>⚡ AT YOUR OWN RISK ⚡</span>
                 </div>
-                <div className="flex items-start gap-4 pt-8">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                    <span className="text-3xl">🔥</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-display font-bold text-xl text-foreground">Gyanu</p>
-                    <p className="text-sm text-foreground/50 mt-1 font-body">Your brutal truth, results-first coach</p>
-                    <div className="flex gap-2 mt-3 flex-wrap">
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">⚡ No shortcuts excused</span>
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">🎯 Hacks not textbooks</span>
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">🔥 Tough love</span>
+                {/* Gold Orb */}
+                <div className={`absolute top-12 right-4 w-6 h-6 rounded-full flex items-center justify-center ${
+                  selectedMaster === "gyanu"
+                    ? "orb-pulse"
+                    : "border-[1.5px] border-primary/20"
+                }`} style={selectedMaster === "gyanu" ? { background: "radial-gradient(circle, #fed141 0%, #f59e0b 60%, #d97706 100%)" } : {}}>
+                  {selectedMaster === "gyanu" && <span className="text-[10px] text-primary-foreground font-bold">✦</span>}
+                </div>
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                      <span className="text-3xl">🔥</span>
                     </div>
-                    <div className="h-px bg-foreground/10 mt-3 mb-2" />
-                    <p className="text-xs text-foreground/35 font-body leading-relaxed">
-                      Sarcastic but never cruel. He mocks the mistake, not you. If you can handle the truth — you will improve fastest. ✦
-                    </p>
+                    <div className="flex-1 pr-8">
+                      <p className="font-display font-bold text-xl text-foreground">Gyanu</p>
+                      <p className="text-sm text-foreground/50 mt-1 font-body">Your brutal truth, results-first coach</p>
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">No Shortcuts</span>
+                        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Hacks Not Textbooks</span>
+                        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Tough Love</span>
+                      </div>
+                      <div className="h-px bg-foreground/10 mt-3 mb-2" />
+                      <p className="text-xs text-foreground/35 font-body leading-relaxed">
+                        "Gyanu will push you hard and call out every mistake. No comfort zone. No hand-holding. Only for those who are truly serious."
+                      </p>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -463,7 +479,7 @@ const Onboarding = () => {
               disabled={!selectedMaster}
               className="mt-8 w-full max-w-sm h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {`I Choose ${selectedMaster || "..."} →`}
+              {`I Choose ${selectedMaster === "gyani" ? "Gyani" : selectedMaster === "gyanu" ? "Gyanu" : "..."} →`}
             </button>
           </motion.div>
         )}

@@ -6,6 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const GYANI_STYLE = `You are Gyani — warm, wise, patient. You love your students. Celebrate their effort. Use simple words. Sound like a caring grandfather who believes in them completely.`;
+
+const GYANU_STYLE = `You are Gyanu — direct, sharp, honest. No sugar-coating. But you care deeply. Push them forward. Sound like a strict coach who knows they can be great.`;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,7 +32,17 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const prompt = `You are ${masterName}, an inspiring English language coach from India. Your student ${studentName} just completed Day ${dayNumber} of their English journey: "${lessonTitle}".
+    const personaStyle = masterName === "Gyanu" ? GYANU_STYLE : GYANI_STYLE;
+
+    const prompt = `LANGUAGE RULE — MANDATORY:
+Write in simple English only. Max level: B1.
+Students are A0-A2 beginners.
+Zero technical linguistic terms.
+If explaining grammar: use plain words a 14-year-old understands immediately.
+
+${personaStyle}
+
+Your student ${studentName} just completed Day ${dayNumber} of their English journey: "${lessonTitle}".
 
 Today they spoke about: "${spokeAbout}"
 

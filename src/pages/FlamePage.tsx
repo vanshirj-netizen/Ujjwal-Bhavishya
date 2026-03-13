@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 
-/* ─── Particles (copied from DayScreen concept) ─── */
+/* ─── Particles ─── */
 const Particle = ({ delay, x, size }: { delay: number; x: number; size: number }) => (
   <motion.div
     className="absolute rounded-full bg-primary/40"
@@ -41,7 +41,6 @@ const intentionChips = [
   "I will watch an English video",
 ];
 
-/* ─── Slide animation ─── */
 const slideVariants = {
   initial: { opacity: 0, x: 40 },
   animate: { opacity: 1, x: 0 },
@@ -52,7 +51,6 @@ const FlamePage = () => {
   const { dayNumber } = useParams();
   const navigate = useNavigate();
 
-  // Data
   const [lesson, setLesson] = useState<{ title: string; week_number: number | null } | null>(null);
   const [profile, setProfile] = useState<{
     full_name: string;
@@ -61,10 +59,11 @@ const FlamePage = () => {
   } | null>(null);
   const [existingFlame, setExistingFlame] = useState<any>(null);
 
-  // Flow
-  const [currentScreen, setCurrentScreen] = useState(1);
+  // Screen 0 = confidence rating (new), 1-3 = existing, 4 = generating, 5 = AI response, 6 = celebration
+  const [currentScreen, setCurrentScreen] = useState(0);
 
   // Inputs
+  const [confRating, setConfRating] = useState(0);
   const [spokeAbout, setSpokeAbout] = useState("");
   const [challenge, setChallenge] = useState("");
   const [customChallenge, setCustomChallenge] = useState("");
@@ -81,7 +80,6 @@ const FlamePage = () => {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  /* ─── Fetch on mount ─── */
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -102,6 +100,7 @@ const FlamePage = () => {
           setAiResponse((flameRes.data as any).ai_response);
           setSpokeAbout((flameRes.data as any).spoke_about ?? "");
           setIntention((flameRes.data as any).tomorrows_intention ?? "");
+          setConfRating((flameRes.data as any).confidence_rating ?? 0);
           setCurrentScreen(6);
         }
       }
@@ -110,7 +109,50 @@ const FlamePage = () => {
     fetchData();
   }, [dayNumber, navigate]);
 
-  const masterName = profile?.selected_master === "gyanu" ? "Gyanu" : "Gyani";
+  // Normalize master name
+  const masterName = (profile?.selected_master?.toLowerCase() === "gyanu") ? "Gyanu" : "Gyani";
+
+  /* ─── Streak update helper ─── */
+  const updateStreakAfterFlame = async (userId: string) => {
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("current_streak, longest_streak, last_flame_date")
+      .eq("id", userId)
+      .single();
+
+    let newStreak = 1;
+    if (prof?.last_flame_date) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = yesterday.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      if (prof.last_flame_date === yStr) {
+        newStreak = (prof.current_streak || 0) + 1;
+      } else if (prof.last_flame_date === today) {
+        newStreak = prof.current_streak || 1;
+      }
+    }
+
+    const newLongest = Math.max(newStreak, prof?.longest_streak || 0);
+
+    // Calculate next unlock: next 05:30 AM IST
+    const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const unlock = new Date(nowIST);
+    unlock.setHours(5, 30, 0, 0);
+    if (nowIST >= unlock) {
+      unlock.setDate(unlock.getDate() + 1);
+    }
+
+    await supabase.from("profiles").update({
+      current_streak: newStreak,
+      longest_streak: newLongest,
+      last_flame_date: today,
+      next_day_unlock_at: unlock.toISOString(),
+    } as any).eq("id", userId);
+
+    return newStreak;
+  };
 
   /* ─── Generate AI Response ─── */
   const generateAIResponse = async () => {
@@ -125,7 +167,7 @@ const FlamePage = () => {
       : challengeOptions.find(c => c.id === challenge)?.label ?? challenge;
 
     try {
-      const { data, error } = await supabase.functions.invoke("generate-flame-response", {
+      const { data } = await supabase.functions.invoke("generate-flame-response", {
         body: {
           studentName: profile?.full_name ?? "Friend",
           dayNumber: Number(dayNumber),
@@ -134,7 +176,7 @@ const FlamePage = () => {
           biggestChallenge: finalChallenge,
           tomorrowsIntention: intention,
           masterName,
-          confidenceRating: existingFlame?.confidence_rating ?? 5,
+          confidenceRating: confRating,
         },
       });
 
@@ -149,6 +191,7 @@ const FlamePage = () => {
         spoke_about: spokeAbout,
         biggest_challenge: finalChallenge,
         tomorrows_intention: intention,
+        confidence_rating: confRating,
         ai_response: responseText,
         ai_generated_at: new Date().toISOString(),
       };
@@ -160,9 +203,14 @@ const FlamePage = () => {
           user_id: user.id,
           day_number: Number(dayNumber),
           flame_date: new Date().toISOString().split("T")[0],
+          submitted_at: new Date().toISOString(),
           ...payload,
         });
       }
+
+      // Update streak
+      const newStreak = await updateStreakAfterFlame(user.id);
+      setProfile(prev => prev ? { ...prev, current_streak: newStreak } : prev);
 
       setCurrentScreen(5);
     } catch (err) {
@@ -200,7 +248,6 @@ const FlamePage = () => {
         throw new Error("No audio");
       }
     } catch {
-      // Fallback: browser TTS
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(aiResponse);
       utterance.lang = "en-IN";
@@ -226,7 +273,6 @@ const FlamePage = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  /* ─── Loading ─── */
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
@@ -236,7 +282,6 @@ const FlamePage = () => {
     );
   }
 
-  /* ─── Chip Component ─── */
   const Chip = ({ label, selected, onSelect }: { label: string; selected: boolean; onSelect: () => void }) => (
     <button
       onClick={onSelect}
@@ -257,10 +302,10 @@ const FlamePage = () => {
         <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-body">Day {dayNumber}</span>
       </div>
 
-      {/* Progress dots (screens 1-3) */}
+      {/* Progress dots (screens 0-3) */}
       {currentScreen <= 3 && (
         <div className="flex items-center justify-center gap-2 pb-3">
-          {[1, 2, 3].map(s => (
+          {[0, 1, 2, 3].map(s => (
             <div
               key={s}
               className={`w-2 h-2 rounded-full transition-colors ${
@@ -274,6 +319,41 @@ const FlamePage = () => {
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-5 py-4">
         <AnimatePresence mode="wait">
+          {/* ─── SCREEN 0: Confidence Rating (NEW) ─── */}
+          {currentScreen === 0 && (
+            <motion.div key="s0" variants={slideVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }}>
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                  <span className="text-primary font-bold text-lg">{masterName[0]}</span>
+                </div>
+                <p className="text-xs text-foreground/40 mt-2 font-body">{masterName} asks...</p>
+                <h2 className="font-display text-xl font-bold text-foreground text-center mt-3">How confident did you feel today?</h2>
+                <p className="text-sm text-foreground/40 text-center mt-1 font-body">Be honest — this helps track your growth</p>
+              </div>
+
+              <div className="flex justify-center mt-8 gap-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <motion.button
+                    key={i}
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => setConfRating(i)}
+                    className="text-4xl cursor-pointer transition-transform hover:scale-110"
+                  >
+                    {i <= confRating ? <span className="text-primary">★</span> : <span className="text-foreground/20">☆</span>}
+                  </motion.button>
+                ))}
+              </div>
+
+              <button
+                disabled={confRating === 0}
+                onClick={() => setCurrentScreen(1)}
+                className="w-full mt-8 bg-primary text-primary-foreground py-4 rounded-2xl font-body font-bold text-base disabled:opacity-40 transition-opacity active:scale-[0.98]"
+              >
+                Continue →
+              </button>
+            </motion.div>
+          )}
+
           {/* ─── SCREEN 1: Spoke About ─── */}
           {currentScreen === 1 && (
             <motion.div key="s1" variants={slideVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }}>

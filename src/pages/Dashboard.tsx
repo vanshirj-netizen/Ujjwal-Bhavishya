@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PAYMENT_URL, COURSE_ID } from "@/lib/constants";
 import BottomNav from "@/components/BottomNav";
 
 const courseCards = [
@@ -12,7 +13,7 @@ const courseCards = [
   { name: "Margdarshan", icon: "🧭", tagline: "Career Counselling", active: false },
 ];
 
-const COURSE_ID = "6a860163-ea3c-4205-89b3-74a3e9be098f";
+// COURSE_ID imported from constants
 
 type DayProgress = {
   day_number: number;
@@ -311,7 +312,7 @@ const Dashboard = () => {
                 return (
                   <div
                     key={day}
-                    onClick={() => toast("🔒 Upgrade coming soon! Contact: contact@ujjwalbhavishya.co.in")}
+                    onClick={() => window.open(PAYMENT_URL, "_blank")}
                     className="glass-card p-3 rounded-xl relative opacity-60 cursor-not-allowed"
                   >
                     <p className="text-xs font-body text-foreground/30">Day {day}</p>

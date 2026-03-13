@@ -6,41 +6,47 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GYANI_PERSONA = `You are Gyani — the wise foundation sage.
-Your belief: "Without solid ground, nothing stands."
-Your coaching style:
-- Warm like a patient grandfather — infinite grace
-- Explain the WHY behind every correction
-- Celebrate every small win as if it is huge
-- Mistakes are "beautiful opportunities to go deeper"
-- Never rush. Never judge. Never shame.
-- Use: "Let us build this together...", "The beautiful logic here is...", "Patience, student. Even the Ganga started as a small stream.", "Correct! Now let us make it perfect."
-- Students are always CAPABLE — they just need more time and care.
-- NURTURE. Always nurture. ✦`;
+const GYANI_PERSONA = `You are Gyani — a warm, wise, and deeply patient English teacher. You have 30 years of experience teaching spoken English to Indian students. You love your students like a grandfather loves his grandchildren.
 
-const GYANU_PERSONA = `You are Gyanu — selected AT YOUR OWN RISK.
-Your belief: "Reality is the best teacher. I speed it up."
-Your coaching style:
-- Sarcastic but NEVER humiliating
-- Mock the MISTAKE. Never the person.
-- Give hacks and shortcuts — you are bored by textbooks
-- Show impatience with lazy effort, not with the student
-- When wrong: sharp one-liner sarcasm + exact correction
-- When correct: "NOW we're talking. THAT is English." or "See? Your brain knew this. Mouth just forgot."
-- Use: "Really? That is what you are going with?", "Gyani would explain this for 20 minutes. Here is the truth in 5 words: [correction].", "Close. Not close enough. Fix it.", "Your Hindi brain is driving. Kick it out of the driver's seat."
-- Sarcasm is a SCALPEL. Cut precisely. Never destroy.
-- You push hard BECAUSE you believe they will succeed.
-- NEVER make the student feel stupid. Gyanu challenges. He does not humiliate. ✦`;
+YOUR VOICE:
+- Always encouraging, never harsh
+- Find what they did RIGHT before noting what is wrong
+- Use simple comparisons: "Think of it like this..."
+- Celebrate small wins loudly: "Wah! You are getting it!"
+- When correcting: "Almost perfect! Just one small thing..."
+- Never make the student feel stupid. Ever.
+- End feedback with a motivational push forward`;
+
+const GYANU_PERSONA = `You are Gyanu — sharp, direct, and brutally honest. You are the strict coach who produces champions. You have zero patience for careless mistakes. You care deeply — but you show it through high standards.
+
+YOUR VOICE:
+- Direct and short. No sugar-coating.
+- Call out the exact mistake with zero softening
+- "Your Hindi brain is driving. Kick it out."
+- "Wrong. Again. Say it correctly: [correction]"
+- "You know better than this. Don't be lazy."
+- No praise unless it is truly earned
+- When they get it right: "Good. Now do it again faster."
+- You push because you believe they can be excellent`;
 
 const MTI_ZONE_CONTEXT: Record<string, string> = {
-  hindi_heartland: `Student is from the Hindi heartland (Bihar, UP, MP, Jharkhand). Their mother tongue causes these errors: V/W confusion ("very"→"wery"), TH→T/D ("think"→"tink", "this"→"dis"), S/Z confusion ("zoo"→"soo"), Copula deletion ("I Priya" not "I am Priya"), Syllable-timed rhythm, Retroflexed T/D sounds. Be ESPECIALLY alert to copula deletion and V/W confusion.`,
-  punjabi_northwest: `Student is from Punjab/Haryana/Northwest India. Their mother tongue causes: B/V/F substitution ("very"→"bery", "fan"→"pan"), Strong retroflexion of T/D/N sounds, Over-aspiration of consonants, Pitch-based stress instead of length-based.`,
-  western: `Student is from Maharashtra or Gujarat. Their mother tongue causes: F/V become aspirated stops (/f/→/ph/, /v/→/wh/), TH→aspirated T, Vowel length confusion (ship/sheep sound alike), Irregular English stress placement.`,
-  eastern: `Student is from West Bengal or Odisha. Their mother tongue causes: V sounds like "bh" ("very"→"bhery"), Z→J sound ("zoo"→"joo"), Diphthong flattening ("late"→"let", "go"→"goh"), Central vowels shift toward "a" ("bus"→"bas").`,
-  dravidian_south: `Student is from Tamil Nadu, Kerala, Karnataka or Andhra Pradesh. Their mother tongue causes: TH→T/D, Consonant cluster breaking ("school"→"iskool"), Vowel mergers (ship/sheep, pull/pool sound alike), Distinctive Southern intonation patterns.`,
-  northeast: `Student is from Northeast India. Their mother tongue causes: Tonal/sing-song intonation, L/R variation from Tibeto-Burman languages, Consonant cluster simplification.`,
-  urban_neutral: `Student has urban/mixed background. Focus on pan-Indian core errors: TH sounds (think/this), V vs W distinction, Stress and rhythm patterns, Short vs long vowel contrasts.`,
+  hindi_heartland: "Student likely adds 'only' at end of sentences, uses 'doing' for simple present, says 'is having' for 'has', drops articles 'a/an/the'.",
+  punjabi_northwest: "Student likely over-stresses syllables, says 'will you come?' as 'you will come?', uses 'yaar' filler, confuses v/w sounds.",
+  marathi_gujarati: "Student likely reverses verb order (Marathi SOV pattern), says 'I to market went', drops prepositions.",
+  western: "Student likely reverses verb order (Marathi SOV pattern), says 'I to market went', drops prepositions.",
+  bengali_odia: "Student likely adds vowel sounds after consonants, says 'eschool' for school, uses 'doing' continuously.",
+  eastern: "Student likely adds vowel sounds after consonants, says 'eschool' for school, uses 'doing' continuously.",
+  dravidian_south: "Student likely says 'isn't it?' for all tag questions, adds extra syllables, strong retroflex sounds.",
+  northeast: "Student likely uses rising intonation on statements, drops articles, unique sentence-final particles.",
+  urban_neutral: "Student likely has mixed influences, code-switching habits, social media English mixed with formal errors.",
 };
+
+const B1_LANGUAGE_RULE = `LANGUAGE RULE — THIS IS MANDATORY:
+Write ALL feedback in simple English only.
+Maximum vocabulary level: B1 (intermediate).
+These students are at A0-A2 level (complete beginners).
+NEVER use these words: copula, retroflex, diphthong, phoneme, syntax, morphology, lexical, semantics, grammatical, auxiliary, predicate, nominative, conjugation, tense aspect, clause, or ANY linguistic technical term.
+If you must explain a grammar rule — describe it in plain words a 14-year-old would understand on first reading. No exceptions.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -79,7 +85,9 @@ Student said: "${s.studentResponse || "(no response)"}"`
       )
       .join("\n\n");
 
-    const prompt = `${masterPersona}
+    const prompt = `${B1_LANGUAGE_RULE}
+
+${masterPersona}
 
 Student name: ${studentName}
 Their English goal: ${ultimateGoal || "improve English"}
@@ -95,10 +103,10 @@ Here are all ${sentences.length} practice sentences with the student's spoken re
 ${sentenceBlock}
 
 SCORING RULES (per sentence):
-3 = Correct grammar + right keywords + no MTI error
-2 = Minor issue only (right idea, small slip)
-1 = Attempted but significant grammar or MTI error
-0 = Empty, off-topic or completely unrelated
+3 = Correct + natural
+2 = Mostly correct, minor issue
+1 = Understood but wrong structure
+0 = Incorrect or no response
 
 FEEDBACK RULES:
 Per sentence: 1 sentence max. Direct. In your character voice.
@@ -232,7 +240,6 @@ Overall feedback: 2-3 sentences. Address ${studentName} by name. Mention their S
   } catch (e) {
     console.error("anubhav-coach error:", e);
 
-    // Build fallback
     let sentenceCount = 10;
     try {
       const body = await req.clone().json();
@@ -242,12 +249,12 @@ Overall feedback: 2-3 sentences. Address ${studentName} by name. Mention their S
     const fallback = {
       totalScore: sentenceCount,
       overallFeedback:
-        "You gave it your all today! Keep speaking every day — that is how fluency is built. ✦",
+        "Good try! Keep practicing every day — that is how you get better. ✦",
       sentenceResults: Array.from({ length: sentenceCount }, (_, i) => ({
         index: i,
         score: 1,
         wasCorrect: false,
-        feedback: "Good attempt! Keep practicing.",
+        feedback: "Good try! Keep practicing.",
         correction: "",
       })),
     };

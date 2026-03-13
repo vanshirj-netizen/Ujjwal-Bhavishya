@@ -240,3 +240,29 @@
 .capture-flash {
   animation: captureFlash 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* Gold orb pulse for master selection */
+@keyframes orbPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(254,209,65,0.5),
+                0 0 16px rgba(254,209,65,0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(254,209,65,0.9),
+                0 0 40px rgba(254,209,65,0.4);
+  }
+}
+
+/* Flame breathing animation */
+@keyframes flameBreath {
+  0%, 100% { transform: scale(1.0); }
+  50% { transform: scale(1.15); }
+}
+
+.orb-pulse {
+  animation: orbPulse 2s ease-in-out infinite;
+}
+
+.flame-breath {
+  animation: flameBreath 2s ease-in-out infinite;
+}
