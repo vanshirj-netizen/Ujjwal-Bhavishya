@@ -536,12 +536,14 @@ export type Database = {
           gender: string | null
           id: string
           is_under_18: boolean | null
+          last_flame_date: string | null
           longest_streak: number | null
           mother_tongue: string | null
           mti_primary_zone: string | null
           mti_profile_type: string | null
           mti_secondary_zone: string | null
           mti_zone: string | null
+          next_day_unlock_at: string | null
           onboarding_complete: boolean | null
           onboarding_step: number | null
           parental_consent: boolean | null
@@ -569,12 +571,14 @@ export type Database = {
           gender?: string | null
           id: string
           is_under_18?: boolean | null
+          last_flame_date?: string | null
           longest_streak?: number | null
           mother_tongue?: string | null
           mti_primary_zone?: string | null
           mti_profile_type?: string | null
           mti_secondary_zone?: string | null
           mti_zone?: string | null
+          next_day_unlock_at?: string | null
           onboarding_complete?: boolean | null
           onboarding_step?: number | null
           parental_consent?: boolean | null
@@ -602,12 +606,14 @@ export type Database = {
           gender?: string | null
           id?: string
           is_under_18?: boolean | null
+          last_flame_date?: string | null
           longest_streak?: number | null
           mother_tongue?: string | null
           mti_primary_zone?: string | null
           mti_profile_type?: string | null
           mti_secondary_zone?: string | null
           mti_zone?: string | null
+          next_day_unlock_at?: string | null
           onboarding_complete?: boolean | null
           onboarding_step?: number | null
           parental_consent?: boolean | null
