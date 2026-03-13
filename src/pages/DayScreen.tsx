@@ -3,8 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-const COURSE_ID = "6a860163-ea3c-4205-89b3-74a3e9be098f";
+import { PAYMENT_URL, COURSE_ID } from "@/lib/constants";
 
 const toEmbedUrl = (url: string): string => {
   if (!url) return "";
