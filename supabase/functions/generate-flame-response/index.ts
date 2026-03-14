@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,13 +7,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GYANI_STYLE = `You are Gyani — warm, wise, patient. You love your students. Celebrate their effort. Use simple words. Sound like a caring grandfather who believes in them completely.`;
-
-const GYANU_STYLE = `You are Gyanu — direct, sharp, honest. No sugar-coating. But you care deeply. Push them forward. Sound like a strict coach who knows they can be great.`;
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // JWT auth
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+  }
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
   }
 
   try {
@@ -25,6 +38,11 @@ serve(async (req) => {
       tomorrowsIntention,
       masterName,
       confidenceRating,
+      streak_count,
+      word_clarity_score,
+      smoothness_score,
+      natural_sound_score,
+      top_error_summary,
     } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -32,7 +50,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const personaStyle = masterName === "Gyanu" ? GYANU_STYLE : GYANI_STYLE;
+    const FLAME_MASTER_PROMPT = Deno.env.get("FLAME_MASTER_PROMPT") || `You are a warm, caring English language coach. Respond in plain text only. No markdown.`;
 
     const prompt = `LANGUAGE RULE — MANDATORY:
 Write in simple English only. Max level: B1.
@@ -40,17 +58,15 @@ Students are A0-A2 beginners.
 Zero technical linguistic terms.
 If explaining grammar: use plain words a 14-year-old understands immediately.
 
-${personaStyle}
+Your student ${studentName} just completed Day ${dayNumber} of their English journey: "${lessonTitle || "today's lesson"}".
 
-Your student ${studentName} just completed Day ${dayNumber} of their English journey: "${lessonTitle}".
-
-Today they spoke about: "${spokeAbout}"
-
-Their biggest challenge was: "${biggestChallenge}"
-
-Their confidence today was ${confidenceRating} out of 5 stars.
-
-Tomorrow they plan to practice: "${tomorrowsIntention}"
+Today they spoke about: "${spokeAbout || "their lesson"}"
+Their biggest challenge was: "${biggestChallenge || "general practice"}"
+Their confidence today was ${confidenceRating || 3} out of 5 stars.
+Tomorrow they plan to practice: "${tomorrowsIntention || "continue learning"}"
+${streak_count ? `They are on a ${streak_count}-day streak!` : ""}
+${word_clarity_score ? `Their pronunciation scores: Word Clarity ${word_clarity_score}/100, Smoothness ${smoothness_score}/100, Natural Sound ${natural_sound_score}/100.` : ""}
+${top_error_summary ? `Main area to improve: ${top_error_summary}` : ""}
 
 Write a personal, warm, encouraging response in 3-4 sentences. Address them by name. Reference exactly what they wrote. End with one specific tip for tomorrow's practice. Write in simple English — they are learning, not experts. Sound like a caring coach, not a robot. Do NOT use markdown, bullet points, or formatting. Plain text only.`;
 
@@ -65,7 +81,7 @@ Write a personal, warm, encouraging response in 3-4 sentences. Address them by n
         body: JSON.stringify({
           model: "google/gemini-2.5-flash-lite",
           messages: [
-            { role: "system", content: "You are a warm, caring English language coach. Respond in plain text only. No markdown." },
+            { role: "system", content: FLAME_MASTER_PROMPT },
             { role: "user", content: prompt },
           ],
           stream: false,
@@ -75,6 +91,18 @@ Write a personal, warm, encouraging response in 3-4 sentences. Address them by n
 
     if (!response.ok) {
       console.error("AI gateway error:", response.status, await response.text());
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Payment required, please add funds." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       throw new Error("AI gateway error");
     }
 
