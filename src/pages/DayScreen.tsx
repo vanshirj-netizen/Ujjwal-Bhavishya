@@ -347,9 +347,9 @@ const DayScreen = () => {
           <div className="flex items-center gap-4">
             <span className="text-3xl">🎯</span>
             <div className="text-left">
-              <p className="font-display font-bold text-foreground text-base">Practice with your Master</p>
-              <p className="text-xs text-foreground/40 mt-1">Speak 10 sentences with AI feedback → build fluency</p>
-              <p className="text-xs text-primary font-semibold mt-2">10 sentences · Scored · Live AI</p>
+              <p className="font-display font-bold text-foreground text-base">Start Your Practice</p>
+              <p className="text-xs text-foreground/40 mt-1">Write → Speak → Get AI feedback from your Master</p>
+              <p className="text-xs text-primary font-semibold mt-2">Write · Record · Scored · AI Feedback</p>
             </div>
           </div>
         </motion.div>
