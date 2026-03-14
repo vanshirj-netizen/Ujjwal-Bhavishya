@@ -64,6 +64,72 @@ export type Database = {
           },
         ]
       }
+      anubhav_practice_sessions: {
+        Row: {
+          ai_feedback: string | null
+          audio_freespeech_path: string | null
+          audio_sentences_path: string | null
+          azure_word_errors: Json | null
+          created_at: string | null
+          day_number: number
+          id: string
+          lesson_topic: string | null
+          natural_sound_score: number | null
+          retry_count: number | null
+          smoothness_score: number | null
+          status: string | null
+          submitted_at: string | null
+          top_error_summary: string | null
+          transcript_freespeech: string | null
+          transcript_sentences: string | null
+          user_id: string
+          word_clarity_score: number | null
+          writing_id: string | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          audio_freespeech_path?: string | null
+          audio_sentences_path?: string | null
+          azure_word_errors?: Json | null
+          created_at?: string | null
+          day_number: number
+          id?: string
+          lesson_topic?: string | null
+          natural_sound_score?: number | null
+          retry_count?: number | null
+          smoothness_score?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          top_error_summary?: string | null
+          transcript_freespeech?: string | null
+          transcript_sentences?: string | null
+          user_id: string
+          word_clarity_score?: number | null
+          writing_id?: string | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          audio_freespeech_path?: string | null
+          audio_sentences_path?: string | null
+          azure_word_errors?: Json | null
+          created_at?: string | null
+          day_number?: number
+          id?: string
+          lesson_topic?: string | null
+          natural_sound_score?: number | null
+          retry_count?: number | null
+          smoothness_score?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          top_error_summary?: string | null
+          transcript_freespeech?: string | null
+          transcript_sentences?: string | null
+          user_id?: string
+          word_clarity_score?: number | null
+          writing_id?: string | null
+        }
+        Relationships: []
+      }
       anubhav_sessions: {
         Row: {
           completed: boolean | null
@@ -100,6 +166,45 @@ export type Database = {
           total_attempted?: number | null
           user_id?: string
           world_type?: string
+        }
+        Relationships: []
+      }
+      anubhav_writings: {
+        Row: {
+          created_at: string | null
+          day_number: number
+          id: string
+          lesson_topic: string | null
+          sentence_1: string | null
+          sentence_2: string | null
+          sentence_3: string | null
+          sentence_4: string | null
+          sentence_5: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_number: number
+          id?: string
+          lesson_topic?: string | null
+          sentence_1?: string | null
+          sentence_2?: string | null
+          sentence_3?: string | null
+          sentence_4?: string | null
+          sentence_5?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          day_number?: number
+          id?: string
+          lesson_topic?: string | null
+          sentence_1?: string | null
+          sentence_2?: string | null
+          sentence_3?: string | null
+          sentence_4?: string | null
+          sentence_5?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -420,43 +525,70 @@ export type Database = {
           course_id: string | null
           created_at: string | null
           day_number: number
+          free_speak_context: string | null
           gamma_url: string | null
+          grammar_hint: string | null
           gyani_timestamps: string | null
           gyani_youtube_url: string | null
           gyanu_timestamps: string | null
           gyanu_youtube_url: string | null
           id: string
+          speak_example: string | null
+          speak_max_seconds: number | null
+          speak_min_seconds: number | null
+          speak_prompt: string | null
           title: string
           wayground_quiz_url: string | null
           week_number: number | null
+          write_example: string | null
+          write_prompt: string | null
+          write_sentence_count: number | null
         }
         Insert: {
           course_id?: string | null
           created_at?: string | null
           day_number: number
+          free_speak_context?: string | null
           gamma_url?: string | null
+          grammar_hint?: string | null
           gyani_timestamps?: string | null
           gyani_youtube_url?: string | null
           gyanu_timestamps?: string | null
           gyanu_youtube_url?: string | null
           id?: string
+          speak_example?: string | null
+          speak_max_seconds?: number | null
+          speak_min_seconds?: number | null
+          speak_prompt?: string | null
           title: string
           wayground_quiz_url?: string | null
           week_number?: number | null
+          write_example?: string | null
+          write_prompt?: string | null
+          write_sentence_count?: number | null
         }
         Update: {
           course_id?: string | null
           created_at?: string | null
           day_number?: number
+          free_speak_context?: string | null
           gamma_url?: string | null
+          grammar_hint?: string | null
           gyani_timestamps?: string | null
           gyani_youtube_url?: string | null
           gyanu_timestamps?: string | null
           gyanu_youtube_url?: string | null
           id?: string
+          speak_example?: string | null
+          speak_max_seconds?: number | null
+          speak_min_seconds?: number | null
+          speak_prompt?: string | null
           title?: string
           wayground_quiz_url?: string | null
           week_number?: number | null
+          write_example?: string | null
+          write_prompt?: string | null
+          write_sentence_count?: number | null
         }
         Relationships: [
           {
@@ -629,15 +761,18 @@ export type Database = {
       }
       progress: {
         Row: {
+          anubhav_complete: boolean | null
           completed_at: string | null
           course_id: string | null
           created_at: string | null
           day_complete: boolean | null
           day_number: number
+          flame_complete: boolean | null
           gamma_complete: boolean | null
           gyani_complete: boolean | null
           gyanu_complete: boolean | null
           id: string
+          lesson_complete: boolean | null
           lesson_id: string | null
           master_watched: boolean | null
           practice_complete: boolean | null
@@ -647,15 +782,18 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          anubhav_complete?: boolean | null
           completed_at?: string | null
           course_id?: string | null
           created_at?: string | null
           day_complete?: boolean | null
           day_number: number
+          flame_complete?: boolean | null
           gamma_complete?: boolean | null
           gyani_complete?: boolean | null
           gyanu_complete?: boolean | null
           id?: string
+          lesson_complete?: boolean | null
           lesson_id?: string | null
           master_watched?: boolean | null
           practice_complete?: boolean | null
@@ -665,15 +803,18 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          anubhav_complete?: boolean | null
           completed_at?: string | null
           course_id?: string | null
           created_at?: string | null
           day_complete?: boolean | null
           day_number?: number
+          flame_complete?: boolean | null
           gamma_complete?: boolean | null
           gyani_complete?: boolean | null
           gyanu_complete?: boolean | null
           id?: string
+          lesson_complete?: boolean | null
           lesson_id?: string | null
           master_watched?: boolean | null
           practice_complete?: boolean | null
