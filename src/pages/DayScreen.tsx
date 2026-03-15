@@ -333,17 +333,7 @@ const DayScreen = () => {
           <span className="text-sm text-foreground/50">day streak</span>
         </div>
         <div className="w-16 h-px bg-primary/30 mx-auto mt-6 mb-6" />
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} className="glass-card-gold border border-primary/40 shadow-[0_0_20px_rgba(254,209,65,0.1)] p-5 rounded-2xl w-full">
-          <div className="flex items-center gap-4">
-            <motion.span className="text-4xl" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }}>🔥</motion.span>
-            <div className="text-left">
-              <p className="font-display font-bold text-primary">Your Daily Flame is Ready</p>
-              <p className="text-xs text-foreground/40 mt-0.5">Reflect on today's learning</p>
-            </div>
-          </div>
-          <button onClick={() => navigate("/flame/" + dayNumber)} className="w-full mt-4 bg-primary text-primary-foreground py-3 rounded-xl font-body font-semibold">Light My Flame →</button>
-        </motion.div>
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.9 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/anubhav/${dayNumber}`)} className="glass-card-gold p-5 rounded-3xl cursor-pointer border border-primary/30 shadow-[0_0_20px_rgba(254,209,65,0.1)] w-full mt-4">
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/anubhav/${dayNumber}`)} className="glass-card-gold p-5 rounded-3xl cursor-pointer border border-primary/30 shadow-[0_0_20px_rgba(254,209,65,0.1)] w-full">
           <div className="flex items-center gap-4">
             <span className="text-3xl">🎯</span>
             <div className="text-left">
@@ -353,18 +343,6 @@ const DayScreen = () => {
             </div>
           </div>
         </motion.div>
-        {nextDayLesson && (
-          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.0 }} onClick={() => navigate("/day/" + (Number(dayNumber) + 1))} className="glass-card p-4 rounded-2xl w-full mt-4 cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="text-left">
-                <p className="text-[10px] text-foreground/30 uppercase tracking-wider">Up Next</p>
-                <p className="text-sm font-display font-bold text-foreground mt-0.5">Day {nextDayLesson.day_number}: {cleanTitle(nextDayLesson.title)}</p>
-                <p className="text-[10px] text-foreground/30 mt-0.5">Week {nextDayLesson.week_number}</p>
-              </div>
-              <span className="text-xl text-primary">→</span>
-            </div>
-          </motion.div>
-        )}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

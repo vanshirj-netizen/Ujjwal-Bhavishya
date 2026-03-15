@@ -274,7 +274,7 @@ const AnubhavPage = () => {
     }
 
     toast.success("Practice complete! Your Flame awaits 🔥");
-    setTimeout(() => navigate("/dashboard"), 2000);
+    setTimeout(() => navigate(`/flame/${dayNumber}`), 1500);
   };
 
   const playMasterVoice = async (text: string) => {

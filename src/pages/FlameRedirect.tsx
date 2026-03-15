@@ -49,12 +49,12 @@ const FlameRedirect = () => {
         flames?.forEach(f => { if (f.flame_date) dates.add(f.flame_date); });
         setFlameDates(dates);
 
-        // Anubhav sessions (completed)
+        // Anubhav practice sessions (completed)
         const { data: sessions } = await supabase
-          .from("anubhav_sessions")
-          .select("score, total_attempted, day_number, completed")
+          .from("anubhav_practice_sessions")
+          .select("word_clarity_score, smoothness_score, natural_sound_score, day_number, status")
           .eq("user_id", user.id)
-          .eq("completed", true)
+          .eq("status", "complete")
           .order("day_number", { ascending: true });
 
         setSessionsCount(sessions?.length ?? 0);
@@ -63,7 +63,7 @@ const FlameRedirect = () => {
         if (sessions && sessions.length > 0) {
           const data = sessions.map(s => ({
             name: `Day ${s.day_number}`,
-            score: s.total_attempted > 0 ? Math.round((s.score / (s.total_attempted * 3)) * 100) : 0,
+            score: Math.round(((Number(s.word_clarity_score) || 0) + (Number(s.smoothness_score) || 0) + (Number(s.natural_sound_score) || 0)) / 3),
           }));
           setChartData(data);
 
