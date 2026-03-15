@@ -64,22 +64,11 @@ const AnubhavPage = () => {
         .maybeSingle();
       setProfile(profileData);
 
-      // Get course_id from enrollment
-      const { data: enrollment } = await supabase
-        .from("enrollments")
-        .select("course_id")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      const courseId = enrollment?.course_id || COURSE_ID;
-
-      // Fetch lesson
+      // Fetch lesson by day_number only (single course)
       const { data: lessonData } = await supabase
         .from("lessons")
         .select("*")
         .eq("day_number", Number(dayNumber))
-        .eq("course_id", courseId)
         .maybeSingle();
 
       setLesson(lessonData);
