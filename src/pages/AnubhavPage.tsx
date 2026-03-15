@@ -625,7 +625,7 @@ const AnubhavPage = () => {
                   onClick={markDone}
                   className="w-full bg-primary text-primary-foreground font-body font-bold py-4 rounded-2xl"
                 >
-                  Done for Today ✦
+                  Light Your Flame 🔥
                 </button>
               </div>
             </motion.div>
