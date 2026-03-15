@@ -337,17 +337,33 @@ const Dashboard = () => {
               const prog = getDayProgress(day);
               const title = getDayTitle(day);
               const isFreeUser = enrollmentData?.payment_status === "free" || !enrollmentData;
-              const isLocked = isFreeUser && day > 5;
               const isCompleted = prog?.day_complete === true;
               const isToday = day === displayDay;
               const phases = getPhaseStates(prog);
 
-              if (isLocked) {
+              // Sequential unlock: Day 1 always unlocked, others need previous day flame_complete
+              const prevProg = day > 1 ? getDayProgress(day - 1) : null;
+              const isSequentiallyLocked = day > 1 && prevProg?.flame_complete !== true;
+              // Free user lock for days > 5
+              const isPayLocked = isFreeUser && day > 5;
+              const isLocked = isPayLocked || (isSequentiallyLocked && !isCompleted);
+
+              if (isPayLocked) {
                 return (
                   <div key={day} onClick={() => window.open(PAYMENT_URL, "_blank")} className="glass-card p-3 rounded-xl relative opacity-60 cursor-not-allowed">
                     <p className="text-xs font-body text-foreground/30">Day {day}</p>
                     <div className="flex items-center justify-center my-2"><span className="text-2xl text-foreground/20">🔒</span></div>
                     <p className="text-[10px] font-body text-foreground/20">Upgrade to unlock</p>
+                  </div>
+                );
+              }
+
+              if (isLocked) {
+                return (
+                  <div key={day} onClick={() => toast("Complete the previous day first ✦")} className="glass-card p-3 rounded-xl relative opacity-50 cursor-not-allowed">
+                    <p className="text-xs font-body text-foreground/30">Day {day}</p>
+                    <div className="flex items-center justify-center my-2"><span className="text-2xl text-foreground/20">🔒</span></div>
+                    {title && <p className="text-[10px] font-body text-foreground/20 line-clamp-1">{title}</p>}
                   </div>
                 );
               }
@@ -359,7 +375,6 @@ const Dashboard = () => {
                     <div className="absolute top-2 right-2 bg-green-500/20 text-green-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">✓</div>
                     <p className="text-xs font-body text-foreground/40">Day {day}</p>
                     {title && <p className="text-sm font-display font-semibold text-foreground line-clamp-2 mt-1">{title}</p>}
-                    {/* Phase icons */}
                     <div className="flex gap-2 mt-2">
                       <PhaseIcon emoji="📖" state={phases.lessonState} />
                       <PhaseIcon emoji="🎤" state={phases.anubhavState} />

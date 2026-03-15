@@ -43,6 +43,7 @@ serve(async (req) => {
       smoothness_score,
       natural_sound_score,
       top_error_summary,
+      written_sentences,
     } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -64,11 +65,12 @@ Today they spoke about: "${spokeAbout || "their lesson"}"
 Their biggest challenge was: "${biggestChallenge || "general practice"}"
 Their confidence today was ${confidenceRating || 3} out of 5 stars.
 Tomorrow they plan to practice: "${tomorrowsIntention || "continue learning"}"
+${written_sentences ? `They wrote these sentences: "${written_sentences}"` : ""}
 ${streak_count ? `They are on a ${streak_count}-day streak!` : ""}
 ${word_clarity_score ? `Their pronunciation scores: Word Clarity ${word_clarity_score}/100, Smoothness ${smoothness_score}/100, Natural Sound ${natural_sound_score}/100.` : ""}
 ${top_error_summary ? `Main area to improve: ${top_error_summary}` : ""}
 
-Write a personal, warm, encouraging response in 3-4 sentences. Address them by name. Reference exactly what they wrote. End with one specific tip for tomorrow's practice. Write in simple English — they are learning, not experts. Sound like a caring coach, not a robot. Do NOT use markdown, bullet points, or formatting. Plain text only.`;
+Write a personal, warm, encouraging response in 3-4 sentences. Address them by name. Reference what they spoke about and what was difficult for them. End with one specific tip for tomorrow based on what they plan to say. Write in simple English — they are learning, not experts. Sound like a caring coach, not a robot. Do NOT use markdown, bullet points, or formatting. Plain text only.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
