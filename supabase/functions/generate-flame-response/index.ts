@@ -43,6 +43,7 @@ serve(async (req) => {
       smoothness_score,
       natural_sound_score,
       top_error_summary,
+      written_sentences,
     } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
