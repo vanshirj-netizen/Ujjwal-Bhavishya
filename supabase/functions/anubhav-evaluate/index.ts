@@ -212,7 +212,7 @@ Score strictly based on actual pronunciation quality. Real scores, not flattery.
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.0-flash",
+            model: "google/gemini-2.5-flash",
             messages: [{ role: "user", content: contentParts }],
             tools: [
               {
