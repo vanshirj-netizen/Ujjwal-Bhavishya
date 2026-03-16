@@ -32,7 +32,8 @@ async function assessPronunciation(
   contentType: string,
   azureKey: string,
   azureRegion: string,
-  label: string
+  label: string,
+  referenceText: string
 ): Promise<{
   wordClarity: number;
   smoothness: number;
