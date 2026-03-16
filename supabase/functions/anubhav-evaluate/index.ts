@@ -46,10 +46,10 @@ async function assessPronunciation(
   const fallback = { wordClarity: 50, smoothness: 50, naturalSound: 50, transcript: "", errors: [] as any[], azureFailed: true, azureFailReason: "" };
 
   const pronunciationConfig = {
-    ReferenceText: "",
+    ReferenceText: referenceText,
     GradingSystem: "HundredMark",
     Granularity: "Word",
-    EnableMiscue: true,
+    EnableMiscue: referenceText.length > 0,
     ScenarioId: "",
   };
   const pronunciationHeader = btoa(JSON.stringify(pronunciationConfig));
