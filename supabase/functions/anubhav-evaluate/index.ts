@@ -326,6 +326,7 @@ Score strictly based on actual pronunciation quality. Real scores, not flattery.
     if (audioEvalFailed) {
       console.warn("[anubhav-evaluate] Audio evaluation failed:", audioEvalFailReason);
     }
+    console.log('[anubhav-evaluate] Final scores:', avgWordClarity, avgSmoothness, avgNaturalSound, 'transcripts:', transcriptSentences?.substring(0, 50));
 
     // Gemini feedback call
     console.log("[anubhav-evaluate] Step 9: Gemini feedback call starting");
