@@ -1158,6 +1158,15 @@ export type Database = {
     }
     Functions: {
       generate_ub_student_id: { Args: never; Returns: string }
+      update_own_enrollment_safe: {
+        Args: {
+          p_current_day?: number
+          p_days_completed?: number
+          p_enrollment_id: string
+          p_trial_completed?: boolean
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

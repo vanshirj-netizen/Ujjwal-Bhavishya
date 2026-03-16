@@ -335,10 +335,11 @@ const FlamePage = () => {
       const { data: enroll } = await supabase.from("enrollments")
         .select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
       if (enroll) {
-        await supabase.from("enrollments").update({
-          current_day: nextDay,
-          days_completed: Number(dayNumber),
-        }).eq("id", enroll.id);
+        await supabase.rpc('update_own_enrollment_safe', {
+          p_enrollment_id: enroll.id,
+          p_current_day: nextDay,
+          p_days_completed: Number(dayNumber),
+        });
       }
 
       toast.success(`🔥 Day ${dayNumber} complete! Streak: ${streak}`);
