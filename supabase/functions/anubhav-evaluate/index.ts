@@ -32,7 +32,8 @@ async function assessPronunciation(
   contentType: string,
   azureKey: string,
   azureRegion: string,
-  label: string
+  label: string,
+  referenceText: string
 ): Promise<{
   wordClarity: number;
   smoothness: number;
@@ -45,10 +46,10 @@ async function assessPronunciation(
   const fallback = { wordClarity: 50, smoothness: 50, naturalSound: 50, transcript: "", errors: [] as any[], azureFailed: true, azureFailReason: "" };
 
   const pronunciationConfig = {
-    ReferenceText: "",
+    ReferenceText: referenceText,
     GradingSystem: "HundredMark",
     Granularity: "Word",
-    EnableMiscue: true,
+    EnableMiscue: referenceText.length > 0,
     ScenarioId: "",
   };
   const pronunciationHeader = btoa(JSON.stringify(pronunciationConfig));
@@ -233,20 +234,21 @@ serve(async (req) => {
     }
 
     // Fix 1 — Parallel Azure calls
-    console.log("[anubhav-evaluate] Step 5: Azure calls starting, region:", AZURE_SPEECH_REGION);
+    const sentencesReferenceText = writtenSentences.filter(Boolean).join(' ');
+    console.log("[anubhav-evaluate] Step 5: Azure calls starting, region:", AZURE_SPEECH_REGION, "referenceText length:", sentencesReferenceText.length);
 
     const azurePromises: Promise<Awaited<ReturnType<typeof assessPronunciation>>>[] = [];
 
     if (audioBuffer1 && audioPath1) {
       const ct1 = getAudioContentType(audioPath1);
-      azurePromises.push(assessPronunciation(audioBuffer1, ct1, AZURE_SPEECH_KEY, AZURE_SPEECH_REGION, "sentences"));
+      azurePromises.push(assessPronunciation(audioBuffer1, ct1, AZURE_SPEECH_KEY, AZURE_SPEECH_REGION, "sentences", sentencesReferenceText));
     } else {
       azurePromises.push(Promise.resolve({ wordClarity: 50, smoothness: 50, naturalSound: 50, transcript: "", errors: [], azureFailed: true, azureFailReason: "No audio file" }));
     }
 
     if (audioBuffer2 && audioPath2) {
       const ct2 = getAudioContentType(audioPath2);
-      azurePromises.push(assessPronunciation(audioBuffer2, ct2, AZURE_SPEECH_KEY, AZURE_SPEECH_REGION, "freespeech"));
+      azurePromises.push(assessPronunciation(audioBuffer2, ct2, AZURE_SPEECH_KEY, AZURE_SPEECH_REGION, "freespeech", ""));
     } else {
       azurePromises.push(Promise.resolve({ wordClarity: 50, smoothness: 50, naturalSound: 50, transcript: "", errors: [], azureFailed: true, azureFailReason: "No audio file" }));
     }
