@@ -298,9 +298,9 @@ Score strictly based on actual pronunciation quality. Real scores, not flattery.
           const toolCall = geminiData.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
             const audioEval = JSON.parse(toolCall.function.arguments);
-            avgWordClarity = Math.round((audioEval.sentences.accuracyScore + audioEval.freespeech.accuracyScore) / 2);
-            avgSmoothness = Math.round((audioEval.sentences.fluencyScore + audioEval.freespeech.fluencyScore) / 2);
-            avgNaturalSound = Math.round((audioEval.sentences.prosodyScore + audioEval.freespeech.prosodyScore) / 2);
+            avgWordClarity = Math.round((normalizeScore(audioEval.sentences.accuracyScore) + normalizeScore(audioEval.freespeech.accuracyScore)) / 2);
+            avgSmoothness = Math.round((normalizeScore(audioEval.sentences.fluencyScore) + normalizeScore(audioEval.freespeech.fluencyScore)) / 2);
+            avgNaturalSound = Math.round((normalizeScore(audioEval.sentences.prosodyScore) + normalizeScore(audioEval.freespeech.prosodyScore)) / 2);
             transcriptSentences = audioEval.sentences.transcript || "";
             transcriptFreespeech = audioEval.freespeech.transcript || "";
             allErrors = [...(audioEval.sentences.wordErrors || []), ...(audioEval.freespeech.wordErrors || [])].slice(0, 5);
