@@ -224,7 +224,11 @@ const DayScreen = () => {
       // Upsert enrollment
       const { data: existingEnroll } = await supabase.from("enrollments").select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
       if (existingEnroll) {
-        await supabase.from("enrollments").update({ current_day: nextDay, days_completed: Number(dayNumber) }).eq("id", existingEnroll.id);
+        await supabase.rpc('update_own_enrollment_safe', {
+          p_enrollment_id: existingEnroll.id,
+          p_current_day: nextDay,
+          p_days_completed: Number(dayNumber),
+        });
       } else {
         await supabase.from("enrollments").insert({ user_id: user.id, current_day: nextDay, days_completed: Number(dayNumber), is_active: true, course_id: COURSE_ID });
       }
