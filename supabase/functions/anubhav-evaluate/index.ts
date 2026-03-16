@@ -192,6 +192,8 @@ Reference sentences the student was asked to read: "${sentencesReferenceText}"
 
 ${audioDescription}
 
+Score using integers from 0 to 100 (not decimals, not 0-1 scale).
+Example: accuracyScore: 73, fluencyScore: 68, prosodyScore: 81
 Score strictly based on actual pronunciation quality. Real scores, not flattery. Max 3 word errors total across both.`
         });
 
