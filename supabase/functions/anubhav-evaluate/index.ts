@@ -22,6 +22,12 @@ function getAudioMimeType(path: string): string {
   return "audio/webm";
 }
 
+function normalizeScore(score: number): number {
+  if (score === null || score === undefined) return 50;
+  if (score <= 1.0 && score >= 0) return Math.round(score * 100);
+  return Math.round(Math.min(100, Math.max(0, score)));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
