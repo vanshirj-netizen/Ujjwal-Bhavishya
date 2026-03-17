@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PAYMENT_URL, COURSE_ID } from "@/lib/constants";
+import GoldButton from "@/components/ui/GoldButton";
+import GlassButton from "@/components/ui/GlassButton";
+import GoldCard from "@/components/ui/GoldCard";
 
 const toEmbedUrl = (url: string): string => {
   if (!url) return "";
@@ -75,12 +78,12 @@ const StepDot = ({ step, currentStep, completedSteps, compact }: { step: typeof 
           <span className="text-foreground/20 text-[10px]">{step.id}</span>
         )}
       </div>
-      <span className={`${compact ? "text-[8px]" : "text-[9px]"} font-body ${isDone || isActive ? "text-primary" : "text-foreground/20"}`}>{step.label}</span>
+      <span className={`${compact ? "text-[8px]" : "text-[9px]"} ${isDone || isActive ? "text-primary" : "text-foreground/20"}`} style={{ fontFamily: "var(--fb)" }}>{step.label}</span>
     </div>
   );
 };
 
-const StepConnector = ({ fromDone, toActive }: { fromDone: boolean; toActive: boolean }) => (
+const StepConnector = ({ fromDone }: { fromDone: boolean; toActive: boolean }) => (
   <div className={`flex-1 h-[2px] mt-[-14px] ${fromDone ? "bg-primary" : "bg-foreground/10"}`} />
 );
 
@@ -105,7 +108,6 @@ const DayScreen = () => {
   const [isReplay, setIsReplay] = useState(false);
   const streakRef = useRef<HTMLSpanElement>(null);
 
-  // Hide bottom nav
   useEffect(() => {
     document.body.classList.add("hide-bottom-nav");
     return () => document.body.classList.remove("hide-bottom-nav");
@@ -117,7 +119,6 @@ const DayScreen = () => {
     }
   }, [currentStep]);
 
-  // Orientation
   useEffect(() => {
     const check = () => setIsLandscape(window.innerWidth > window.innerHeight);
     check();
@@ -135,7 +136,6 @@ const DayScreen = () => {
     if (isLandscape) setShowRotatePrompt(false);
   }, [isLandscape]);
 
-  // Data fetch
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
@@ -157,7 +157,6 @@ const DayScreen = () => {
         setEnrollment(enrollRes.data);
         setCurrentStreak(profileRes.data?.current_streak ?? 0);
 
-        // Resume logic
         const p = progressRes.data;
         if (p && !p.day_complete) {
           const done: number[] = [];
@@ -221,7 +220,6 @@ const DayScreen = () => {
       await supabase.from("progress").update({ quiz_score: Number(quizScore), day_complete: true, completed_at: new Date().toISOString() }).eq("user_id", user.id).eq("day_number", Number(dayNumber));
       const nextDay = Number(dayNumber) + 1;
 
-      // Upsert enrollment
       const { data: existingEnroll } = await supabase.from("enrollments").select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
       if (existingEnroll) {
         await supabase.rpc('update_own_enrollment_safe', {
@@ -232,8 +230,6 @@ const DayScreen = () => {
       } else {
         await supabase.from("enrollments").insert({ user_id: user.id, current_day: nextDay, days_completed: Number(dayNumber), is_active: true, course_id: COURSE_ID });
       }
-
-      // Streak is now updated via flame submission only — removed from here
 
       setCompletedSteps(prev => [...prev, 5]);
       setCurrentStep(6);
@@ -250,7 +246,6 @@ const DayScreen = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      // Update score ONLY — do NOT touch enrollment, streak, or current_day
       await supabase.from("progress").update({
         quiz_score: Number(quizScore),
         updated_at: new Date().toISOString(),
@@ -268,47 +263,41 @@ const DayScreen = () => {
 
   const cleanTitle = (title?: string) => title?.replace(/^Day\s*\d+:\s*/i, "") || "";
 
-  // Loading
   if (loading) return (
-    <div className="w-screen h-screen bg-background flex flex-col items-center justify-center">
+    <div className="w-screen h-screen flex flex-col items-center justify-center" style={{ background: "#000e09" }}>
       <motion.span className="text-4xl text-primary" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.2, repeat: Infinity }}>✦</motion.span>
-      <p className="text-sm text-foreground/40 mt-4">Loading your lesson...</p>
+      <p className="text-sm mt-4" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Loading your lesson...</p>
     </div>
   );
 
-  // Free tier gate
   const isFreeUser = enrollment?.payment_status === "free" || enrollment?.payment_status === null || !enrollment;
   const isLockedDay = isFreeUser && Number(dayNumber) > 5;
 
   if (isLockedDay) return (
-    <div className="w-screen h-screen bg-background flex flex-col items-center justify-center px-6">
+    <div className="w-screen h-screen flex flex-col items-center justify-center px-6" style={{ background: "#000e09" }}>
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="flex flex-col items-center text-center">
         <motion.span className="text-6xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>🔒</motion.span>
-        <h1 className="font-display text-2xl font-bold text-primary text-center mt-6">Day {dayNumber} is Locked</h1>
-        <p className="text-sm font-body text-foreground/50 text-center mt-3 max-w-[280px] leading-relaxed">
+        <h1 className="text-2xl font-bold text-center mt-6" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>Day {dayNumber} is Locked</h1>
+        <p className="text-sm text-center mt-3 max-w-[280px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>
           You've completed your free preview. Upgrade to unlock all 60 days and continue your transformation.
         </p>
-        <button
-          onClick={() => window.open(PAYMENT_URL, "_blank")}
-          className="w-full mt-8 bg-primary text-primary-foreground font-body font-semibold py-4 rounded-2xl text-base"
-        >
+        <GoldButton onClick={() => window.open(PAYMENT_URL, "_blank")} fullWidth className="mt-8">
           Unlock All 60 Days →
-        </button>
-        <button onClick={() => navigate("/dashboard")} className="mt-4 text-sm font-body text-foreground/30 underline">← Back to Home</button>
+        </GoldButton>
+        <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm">← Back to Home</GlassButton>
       </motion.div>
     </div>
   );
 
-  // Rotate prompt
   const rotateOverlay = (
     <AnimatePresence>
       {showRotatePrompt && (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center px-6">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-50 flex flex-col items-center justify-center px-6" style={{ background: "#000e09" }}>
           <motion.span className="text-7xl" animate={{ rotate: [0, 90, 90, 0, 0] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.8 }}>📱</motion.span>
-          <p className="font-display text-xl text-primary font-bold text-center mt-6">✦ Rotate for Full Experience</p>
-          <p className="text-sm text-foreground/50 text-center mt-2 max-w-[260px] leading-relaxed">Landscape mode gives you wider lessons, cinematic videos, and a better quiz experience.</p>
-          <button className="mt-8 bg-primary text-primary-foreground px-6 py-3 rounded-full font-body font-medium">I'll Rotate My Phone →</button>
-          <button onClick={() => { setShowRotatePrompt(false); setRotatePromptDismissed(true); }} className="text-xs text-foreground/30 underline mt-4">Continue in portrait →</button>
+          <p className="text-xl font-bold text-center mt-6" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>✦ Rotate for Full Experience</p>
+          <p className="text-sm text-center mt-2 max-w-[260px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Landscape mode gives you wider lessons, cinematic videos, and a better quiz experience.</p>
+          <GoldButton className="mt-8">I'll Rotate My Phone →</GoldButton>
+          <GlassButton onClick={() => { setShowRotatePrompt(false); setRotatePromptDismissed(true); }} className="mt-4 text-xs">Continue in portrait →</GlassButton>
         </motion.div>
       )}
     </AnimatePresence>
@@ -316,64 +305,57 @@ const DayScreen = () => {
 
   // Step 6 — full celebration
   if (currentStep === 6) return (
-    <div className="fixed inset-0 z-50 bg-background overflow-hidden flex flex-col items-center justify-center px-6">
+    <div className="fixed inset-0 z-50 overflow-hidden flex flex-col items-center justify-center px-6" style={{ background: "#000e09" }}>
       {rotateOverlay}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
+      <GlassButton
         onClick={() => navigate("/dashboard")}
-        className="absolute top-5 right-5 z-10 glass-card px-3 py-2 text-xs font-body text-foreground/50 hover:text-foreground flex items-center gap-1.5 transition-colors"
+        className="absolute top-5 right-5 z-10 !px-3 !py-2 text-xs flex items-center gap-1.5"
       >
         🏠 Home
-      </motion.button>
+      </GlassButton>
       <Particles />
       <motion.div initial={{ opacity: 0, scale: 0.8, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, type: "spring" }} className="relative z-10 flex flex-col items-center text-center">
-        <motion.span className="text-8xl text-primary font-display font-bold" style={{ filter: "drop-shadow(0 0 40px hsl(var(--primary)))" }} initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ type: "spring", delay: 0.4 }}>✦</motion.span>
-        <h1 className="font-display text-3xl font-bold text-foreground mt-4">Day {dayNumber} Complete!</h1>
+        <motion.span className="text-8xl font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300", filter: "drop-shadow(0 0 40px hsl(var(--primary)))" }} initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ type: "spring", delay: 0.4 }}>✦</motion.span>
+        <h1 className="text-3xl font-bold mt-4" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Day {dayNumber} Complete!</h1>
         <div className="mt-4 flex items-center gap-2 justify-center">
           <span className="text-2xl">🔥</span>
-          <span ref={streakRef} className="font-display text-2xl font-bold text-primary">{currentStreak}</span>
-          <span className="text-sm text-foreground/50">day streak</span>
+          <span ref={streakRef} className="text-2xl font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>{currentStreak}</span>
+          <span className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>day streak</span>
         </div>
-        <div className="w-16 h-px bg-primary/30 mx-auto mt-6 mb-6" />
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/anubhav/${dayNumber}`)} className="glass-card-gold p-5 rounded-3xl cursor-pointer border border-primary/30 shadow-[0_0_20px_rgba(254,209,65,0.1)] w-full">
-          <div className="flex items-center gap-4">
-            <span className="text-3xl">🎯</span>
-            <div className="text-left">
-              <p className="font-display font-bold text-foreground text-base">Start Your Practice</p>
-              <p className="text-xs text-foreground/40 mt-1">Write → Speak → Get AI feedback from your Master</p>
-              <p className="text-xs text-primary font-semibold mt-2">Write · Record · Scored · AI Feedback</p>
+        <div className="w-16 h-px mx-auto mt-6 mb-6" style={{ background: "rgba(253,193,65,0.3)" }} />
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <GoldCard padding="20px" glow>
+            <div onClick={() => navigate(`/anubhav/${dayNumber}`)} className="cursor-pointer">
+              <div className="flex items-center gap-4">
+                <span className="text-3xl">🎯</span>
+                <div className="text-left">
+                  <p className="font-bold text-base" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Start Your Practice</p>
+                  <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Write → Speak → Get AI feedback from your Master</p>
+                  <p className="text-xs font-semibold mt-2" style={{ fontFamily: "var(--fa)", color: "#ffc300" }}>Write · Record · Scored · AI Feedback</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </GoldCard>
         </motion.div>
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          onClick={() => navigate("/dashboard")}
-          className="mt-4 text-sm font-body text-foreground/30 underline underline-offset-4 hover:text-foreground/60 transition-colors"
-        >
-          ← Back to Home
-        </motion.button>
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4 }}
-          onClick={() => {
-            setIsReplay(true);
-            setCurrentStep(1);
-            setCompletedSteps([]);
-          }}
-          className="mt-3 text-sm font-body text-foreground/30 underline underline-offset-4 hover:text-foreground/50 transition-colors"
-        >
-          ↺ Replay Day {dayNumber}
-        </motion.button>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
+          <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm">← Back to Home</GlassButton>
+        </motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}>
+          <GlassButton
+            onClick={() => {
+              setIsReplay(true);
+              setCurrentStep(1);
+              setCompletedSteps([]);
+            }}
+            className="mt-3 text-sm"
+          >
+            ↺ Replay Day {dayNumber}
+          </GlassButton>
+        </motion.div>
       </motion.div>
     </div>
   );
 
-  // Button config per step
   const buttonConfig: Record<number, { label: string; onClick: () => void; disabled?: boolean } | null> = {
     1: { label: "I've Completed the Lesson ✦", onClick: () => completeStep(1) },
     2: { label: "I Watched Gyani ✦", onClick: () => completeStep(2) },
@@ -391,60 +373,64 @@ const DayScreen = () => {
     <AnimatePresence mode="wait">
       <motion.div key={currentStep} initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: 0.3 }} className="flex-1 overflow-y-auto">
         {currentStep === 1 && (
-          <div className={isLandscape ? "relative w-full h-full overflow-hidden" : "relative w-full h-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)]"}>
+          <div className={isLandscape ? "relative w-full h-full overflow-hidden" : "relative w-full h-full rounded-2xl overflow-hidden"} style={!isLandscape ? { border: "1px solid rgba(255,252,239,0.1)", boxShadow: "0 0 20px rgba(254,209,65,0.08)" } : {}}>
             <iframe src={lesson?.gamma_url || ""} className="w-full h-full border-none block" style={{ minHeight: isLandscape ? "100%" : 400 }} allow="fullscreen" allowFullScreen title="Gamma Lesson" />
-            {!isLandscape && <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />}
+            {!isLandscape && <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none" style={{ background: "linear-gradient(to top, #000e09, transparent)" }} />}
           </div>
         )}
         {currentStep === 2 && (
           <div className="flex flex-col gap-3 h-full">
             {!isLandscape && (
-              <div className="glass-card px-4 py-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
-                <div><p className="text-sm font-display font-bold text-primary">Gyani's Perspective</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
-              </div>
+              <GoldCard padding="12px 16px">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(253,193,65,0.2)", border: "1px solid rgba(253,193,65,0.4)" }}><span style={{ fontFamily: "var(--fd)", fontWeight: 700, color: "#ffc300" }}>G</span></div>
+                  <div><p className="text-sm font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>Gyani's Perspective</p><p className="text-xs mt-0.5" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Watch the full video for full marks</p></div>
+                </div>
+              </GoldCard>
             )}
-            <div className={isLandscape ? "relative w-full flex-1 overflow-hidden" : "relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1"} style={{ minHeight: isLandscape ? 0 : 210 }}>
+            <div className={isLandscape ? "relative w-full flex-1 overflow-hidden" : "relative w-full rounded-2xl overflow-hidden flex-1"} style={!isLandscape ? { border: "1px solid rgba(255,252,239,0.1)", boxShadow: "0 0 20px rgba(254,209,65,0.08)", minHeight: 210 } : { minHeight: 0 }}>
               <iframe src={toEmbedUrl(lesson?.gyani_youtube_url || "")} className="w-full h-full border-none" style={isLandscape ? { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" } : undefined} allow="autoplay; fullscreen" allowFullScreen title="Gyani Video" />
             </div>
-            {!isLandscape && <p className="text-xs text-center text-foreground/30 mt-2">✦ Watch fully — Gyanu's video unlocks after this</p>}
+            {!isLandscape && <p className="text-xs text-center mt-2" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>✦ Watch fully — Gyanu's video unlocks after this</p>}
           </div>
         )}
         {currentStep === 3 && (
           <div className="flex flex-col gap-3 h-full">
             {!isLandscape && (
-              <div className="glass-card px-4 py-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center"><span className="text-primary font-display font-bold">G</span></div>
-                <div><p className="text-sm font-display font-bold text-primary">Gyanu's Energy</p><p className="text-xs text-foreground/40 mt-0.5">Watch the full video for full marks</p></div>
-              </div>
+              <GoldCard padding="12px 16px">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(253,193,65,0.2)", border: "1px solid rgba(253,193,65,0.4)" }}><span style={{ fontFamily: "var(--fd)", fontWeight: 700, color: "#ffc300" }}>G</span></div>
+                  <div><p className="text-sm font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>Gyanu's Energy</p><p className="text-xs mt-0.5" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Watch the full video for full marks</p></div>
+                </div>
+              </GoldCard>
             )}
-            <div className={isLandscape ? "relative w-full flex-1 overflow-hidden" : "relative w-full rounded-2xl overflow-hidden border border-foreground/10 shadow-[0_0_20px_rgba(254,209,65,0.08)] flex-1"} style={{ minHeight: isLandscape ? 0 : 210 }}>
+            <div className={isLandscape ? "relative w-full flex-1 overflow-hidden" : "relative w-full rounded-2xl overflow-hidden flex-1"} style={!isLandscape ? { border: "1px solid rgba(255,252,239,0.1)", boxShadow: "0 0 20px rgba(254,209,65,0.08)", minHeight: 210 } : { minHeight: 0 }}>
               <iframe src={toEmbedUrl(lesson?.gyanu_youtube_url || "")} className="w-full h-full border-none" style={isLandscape ? { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" } : undefined} allow="autoplay; fullscreen" allowFullScreen title="Gyanu Video" />
             </div>
           </div>
         )}
         {currentStep === 4 && (
-          <div className="glass-card p-8 flex flex-col items-center justify-center gap-6 text-center h-full">
+          <GoldCard padding="32px" className="flex flex-col items-center justify-center gap-6 text-center h-full">
             <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}><span className="text-6xl">🏆</span></motion.div>
-            <h2 className="font-display text-xl font-bold text-foreground">Test Your Knowledge</h2>
-            <p className="text-sm text-foreground/50 mt-1">Your Kahoot quiz for Day {dayNumber}</p>
-            <button onClick={() => window.open(lesson?.wayground_quiz_url, "_blank")} className="w-full bg-primary text-primary-foreground font-body font-semibold py-4 rounded-xl text-base">Open Today's Quiz →</button>
-            <p className="text-xs text-foreground/30 mt-3">After finishing, tap below to enter your score</p>
-            <button onClick={() => completeStep(4)} className="glass-card border border-foreground/20 text-sm text-foreground/60 py-3 w-full rounded-xl mt-2">I Finished the Quiz →</button>
-          </div>
+            <h2 className="text-xl font-bold" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Test Your Knowledge</h2>
+            <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Your Kahoot quiz for Day {dayNumber}</p>
+            <GoldButton onClick={() => window.open(lesson?.wayground_quiz_url, "_blank")} fullWidth>Open Today's Quiz →</GoldButton>
+            <p className="text-xs mt-3" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>After finishing, tap below to enter your score</p>
+            <GlassButton onClick={() => completeStep(4)} className="w-full">I Finished the Quiz →</GlassButton>
+          </GoldCard>
         )}
         {currentStep === 5 && (
           <div className="flex flex-col items-center justify-center h-full gap-2 px-4">
-            <span className="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full inline-flex">Quiz Complete ✦</span>
-            <h2 className="font-display text-xl font-bold text-center mt-4">How did you do?</h2>
-            <p className="text-sm text-foreground/50 text-center">Enter your Kahoot score</p>
-            <input inputMode="numeric" placeholder="0" value={quizScore} onChange={e => setQuizScore(e.target.value.replace(/\D/g, ""))} className="mt-6 w-full max-w-[200px] mx-auto block text-center text-3xl font-display font-bold text-primary bg-foreground/5 border-2 border-foreground/20 focus:border-primary transition-colors rounded-2xl py-4 outline-none" />
-            <p className="text-xs text-foreground/30 text-center mt-1">points</p>
-            <p className="text-sm text-foreground/60 text-center mt-6">How confident did you feel?</p>
+            <span className="text-xs px-3 py-1 rounded-full inline-flex" style={{ background: "rgba(253,193,65,0.1)", color: "#ffc300", fontFamily: "var(--fa)" }}>Quiz Complete ✦</span>
+            <h2 className="text-xl font-bold text-center mt-4" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>How did you do?</h2>
+            <p className="text-sm text-center" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Enter your Kahoot score</p>
+            <input inputMode="numeric" placeholder="0" value={quizScore} onChange={e => setQuizScore(e.target.value.replace(/\D/g, ""))} className="mt-6 w-full max-w-[200px] mx-auto block text-center text-3xl font-bold rounded-2xl py-4 outline-none transition-colors" style={{ fontFamily: "var(--fd)", color: "#ffc300", background: "rgba(255,252,239,0.04)", border: "2px solid rgba(255,252,239,0.15)" }} />
+            <p className="text-xs text-center mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>points</p>
+            <p className="text-sm text-center mt-6" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>How confident did you feel?</p>
             <div className="flex justify-center mt-2 gap-2">
               {[1, 2, 3, 4, 5].map(i => (
                 <motion.button key={i} whileTap={{ scale: 0.85 }} onClick={() => setQuizConfidence(i)} className="text-3xl cursor-pointer transition-transform hover:scale-110">
-                  {i <= quizConfidence ? <span className="text-primary">★</span> : <span className="text-foreground/20">☆</span>}
+                  {i <= quizConfidence ? <span style={{ color: "#ffc300" }}>★</span> : <span style={{ color: "rgba(255,252,239,0.2)" }}>☆</span>}
                 </motion.button>
               ))}
             </div>
@@ -470,38 +456,36 @@ const DayScreen = () => {
   );
 
   const actionButton = btn && (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
+    <GoldButton
       disabled={saving || btn.disabled}
       onClick={btn.onClick}
-      className={`w-full bg-primary text-primary-foreground font-body font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(254,209,65,0.3)] ${isLandscape ? "py-3 rounded-xl text-sm" : "py-4 rounded-2xl text-base"}`}
+      fullWidth
+      className={isLandscape ? "py-3 text-sm" : "py-4 text-base"}
     >
       {saving ? "Saving..." : btn.label}
-    </motion.button>
+    </GoldButton>
   );
 
   return (
-    <div className="w-screen h-screen bg-background overflow-hidden flex flex-col">
+    <div className="w-screen h-screen overflow-hidden flex flex-col" style={{ background: "#000e09" }}>
       {rotateOverlay}
-      {/* Header — hidden in landscape */}
-      <div className={isLandscape ? "hidden" : "flex items-center justify-between px-4 py-3 border-b border-foreground/10 shrink-0"}>
-        <button onClick={() => navigate("/dashboard")} className="text-sm text-foreground/40 hover:text-foreground transition">← Back</button>
+      <div className={isLandscape ? "hidden" : "flex items-center justify-between px-4 py-3 shrink-0"} style={{ borderBottom: "1px solid rgba(255,252,239,0.1)" }}>
+        <GlassButton onClick={() => navigate("/dashboard")} className="!px-3 !py-1.5 text-sm">← Back</GlassButton>
         <div className="text-center">
-          <p className="text-[10px] text-foreground/40 uppercase tracking-wider">Week {lesson?.week_number} · Day {dayNumber}</p>
-          <p className="text-sm font-display font-bold text-foreground mt-0.5 max-w-[200px] truncate">{cleanTitle(lesson?.title)}</p>
+          <p className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.4)" }}>Week {lesson?.week_number} · Day {dayNumber}</p>
+          <p className="text-sm font-bold mt-0.5 max-w-[200px] truncate" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>{cleanTitle(lesson?.title)}</p>
         </div>
-        <span className="text-xs text-primary font-bold">{completedSteps.length}/5</span>
+        <span className="text-xs font-bold" style={{ fontFamily: "var(--fa)", color: "#ffc300" }}>{completedSteps.length}/5</span>
       </div>
 
       {isLandscape ? (
         <div className="flex flex-row flex-1 overflow-hidden">
           <div className="flex-1 h-full overflow-hidden flex flex-col p-0">{stepContent}</div>
-          <div className="w-[26%] min-w-[180px] max-w-[210px] h-full flex flex-col border-l border-foreground/10 px-3 py-3 gap-3 overflow-y-auto shrink-0">
-            <div className="mb-2 pb-2 border-b border-foreground/10">
-              <button onClick={() => navigate("/dashboard")} className="text-[10px] font-body text-foreground/30 hover:text-foreground/60 mb-2 block">← Home</button>
-              <p className="text-[9px] font-body text-foreground/30 uppercase tracking-wider">W{lesson?.week_number} · Day {dayNumber}</p>
-              <p className="text-xs font-display font-semibold text-foreground leading-tight mt-0.5 line-clamp-2">{cleanTitle(lesson?.title)}</p>
+          <div className="w-[26%] min-w-[180px] max-w-[210px] h-full flex flex-col px-3 py-3 gap-3 overflow-y-auto shrink-0" style={{ borderLeft: "1px solid rgba(255,252,239,0.1)" }}>
+            <div className="mb-2 pb-2" style={{ borderBottom: "1px solid rgba(255,252,239,0.1)" }}>
+              <GlassButton onClick={() => navigate("/dashboard")} className="!px-2 !py-1 text-[10px] mb-2">← Home</GlassButton>
+              <p className="text-[9px] uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>W{lesson?.week_number} · Day {dayNumber}</p>
+              <p className="text-xs font-semibold leading-tight mt-0.5 line-clamp-2" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>{cleanTitle(lesson?.title)}</p>
             </div>
             {stepperRow}
             <div className="mt-auto">{actionButton}</div>
