@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import GoldButton from "@/components/ui/GoldButton";
+import GlassButton from "@/components/ui/GlassButton";
+import GoldCard from "@/components/ui/GoldCard";
 
 const VIDEO_URL = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB_Welcome_Video.mp4";
 const UB_LOGO = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo.png";
@@ -26,7 +29,6 @@ const Onboarding = () => {
   const [saving, setSaving] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
-  // New state variables for steps 4-8
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<string | null>(null);
   const [country, setCountry] = useState("India");
@@ -108,7 +110,6 @@ const Onboarding = () => {
     }
   };
 
-  // MTI Detection
   const detectMTIZone = (tongue: string, state: string) => {
     const stateZoneMap: Record<string, string> = {
       "Bihar": "hindi_heartland", "Uttar Pradesh": "hindi_heartland", "Jharkhand": "hindi_heartland",
@@ -148,7 +149,6 @@ const Onboarding = () => {
     }
   };
 
-  // Updated handleFinish — only called from step 8
   const handleFinish = async () => {
     if (!consentGiven || !ageVerified) return;
     setSaving(true);
@@ -231,7 +231,6 @@ const Onboarding = () => {
     { key: "gyanu", img: GYANU_IMG, audio: "/audio/gyanu-intro.mp3", traits: "Energy • Action • Modern Mindset", desc: "The hustler who transforms how you act" },
   ];
 
-  // Step dots component for steps 4-8
   const StepDots = ({ current }: { current: number }) => (
     <div className="flex gap-1.5">
       {[4, 5, 6, 7, 8].map((s) => (
@@ -240,8 +239,11 @@ const Onboarding = () => {
     </div>
   );
 
+  const selectStyle = { backgroundColor: '#000e09', color: '#fffcef' };
+  const optionStyle = { backgroundColor: '#000e09', color: '#fffcef' };
+
   return (
-    <div className="fixed inset-0 bg-background overflow-hidden">
+    <div className="fixed inset-0 overflow-hidden" style={{ background: "#000e09" }}>
       <AnimatePresence mode="wait">
         {/* STEP 0 — Brand Video */}
         {step === 0 && (
@@ -276,7 +278,7 @@ const Onboarding = () => {
                   >
                     <span className="text-3xl ml-1" style={{ color: "#fed141" }}>▶</span>
                   </motion.div>
-                  <p className="mt-6 text-base font-body tracking-wide" style={{ color: "#fffcef" }}>
+                  <p className="mt-6 text-base tracking-wide" style={{ fontFamily: "var(--fb)", color: "#fffcef" }}>
                     Tap to Begin Your Journey
                   </p>
                 </motion.div>
@@ -312,7 +314,8 @@ const Onboarding = () => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.78, duration: 0.5 }}
-              className="text-[32px] font-display font-bold text-primary gold-text-glow text-center"
+              className="text-[32px] font-bold text-center"
+              style={{ fontFamily: "var(--fd)", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
             >
               Namaste, {welcomeName || "Friend"}
             </motion.h1>
@@ -320,181 +323,173 @@ const Onboarding = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.18, duration: 0.4 }}
-              className="mt-4 text-base font-body text-secondary text-center max-w-[320px] leading-relaxed"
+              className="mt-4 text-base text-center max-w-[320px] leading-relaxed"
+              style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.75)" }}
             >
               Before you start your journey to Greatness — let's finish setting up your account.
             </motion.p>
-            <motion.button
+            <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.68, duration: 0.4 }}
-              onClick={nextStep}
-              className="mt-10 h-12 px-10 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform"
             >
-              Let's Begin →
-            </motion.button>
+              <GoldButton onClick={nextStep} className="mt-10">
+                Let's Begin →
+              </GoldButton>
+            </motion.div>
           </motion.div>
         )}
 
         {/* STEP 2 — Choose Course */}
         {step === 2 && (
           <motion.div key="course" {...slideVariants} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5">
-            <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Choose Your Path</h2>
-            <p className="text-sm font-body text-secondary/70 mt-2 text-center">Your 60-day transformation begins here</p>
+            <h2 className="text-2xl font-bold text-center" style={{ fontFamily: "var(--fd)", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Choose Your Path</h2>
+            <p className="text-sm mt-2 text-center" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>Your 60-day transformation begins here</p>
             <div className="grid grid-cols-2 gap-3 mt-8 w-full max-w-sm">
               {courses.map((c) => (
                 <button
                   key={c.key}
                   disabled={!c.live}
                   onClick={() => c.live && setSelectedCourse(c.key)}
-                  className={`relative p-4 rounded-xl text-left transition-all ${
-                    c.live
-                      ? selectedCourse === c.key
-                        ? "glass-card-gold border-2 border-primary"
-                        : "glass-card-gold hover:scale-[1.02]"
-                      : "glass-card overflow-hidden cursor-not-allowed"
-                  }`}
+                  className="relative text-left transition-all"
+                  style={{
+                    padding: "1.5px",
+                    borderRadius: 16,
+                    background: selectedCourse === c.key ? "linear-gradient(135deg, #fed141, #ffe180, #ffc300)" : "rgba(255,252,239,0.1)",
+                    opacity: c.live ? 1 : 0.5,
+                  }}
                 >
-                  {!c.live && (
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] rounded-xl z-10 flex items-start justify-end p-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/20 text-foreground/60 font-body">Coming Soon</span>
-                    </div>
-                  )}
-                  {c.live && (
-                    <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-bold font-body">
-                      Now Live ✦
-                    </span>
-                  )}
-                  {selectedCourse === c.key && (
-                    <span className="absolute top-2 left-2 text-primary text-lg">✓</span>
-                  )}
-                  <p className={`text-base font-display font-bold mt-4 ${c.live ? "text-primary" : "text-foreground/40"}`}>{c.name}</p>
-                  <p className="text-xs font-body text-secondary/60 mt-0.5">{c.subtitle}</p>
-                  <p className="text-xs font-body text-foreground/40 mt-2 leading-relaxed">{c.desc}</p>
+                  <div className="p-4 rounded-[14.5px] h-full" style={{ background: "var(--card-bg)" }}>
+                    {!c.live && (
+                      <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full z-10" style={{ background: "rgba(255,252,239,0.1)", color: "rgba(255,252,239,0.6)", fontFamily: "var(--fa)" }}>Coming Soon</span>
+                    )}
+                    {c.live && (
+                      <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "linear-gradient(135deg, #fed141, #ffc300)", color: "#003326", fontFamily: "var(--fa)" }}>
+                        Now Live ✦
+                      </span>
+                    )}
+                    {selectedCourse === c.key && (
+                      <span className="absolute top-2 left-2 text-lg" style={{ color: "#ffc300" }}>✓</span>
+                    )}
+                    <p className="text-base font-bold mt-4" style={{ fontFamily: "var(--fd)", color: selectedCourse === c.key ? "#ffc300" : "rgba(255,252,239,0.8)" }}>{c.name}</p>
+                    <p className="text-xs mt-0.5" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>{c.subtitle}</p>
+                    <p className="text-xs mt-2 leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>{c.desc}</p>
+                  </div>
                 </button>
               ))}
             </div>
-            <button
+            <GoldButton
               onClick={nextStep}
               disabled={!selectedCourse}
-              className="mt-8 w-full max-w-sm h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+              fullWidth
+              className="mt-8 max-w-sm"
             >
               Begin My Journey →
-            </button>
+            </GoldButton>
           </motion.div>
         )}
 
-        {/* STEP 3 — Choose Master (now calls nextStep instead of handleFinish) */}
+        {/* STEP 3 — Choose Master */}
         {step === 3 && (
           <motion.div key="master" {...slideVariants} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5 overflow-y-auto py-10">
-            <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Choose Your Master</h2>
-            <p className="text-sm font-body text-secondary/70 mt-2 text-center">Your guide for the next 60 days</p>
+            <h2 className="text-2xl font-bold text-center" style={{ fontFamily: "var(--fd)", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Choose Your Master</h2>
+            <p className="text-sm mt-2 text-center" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>Your guide for the next 60 days</p>
             <div className="flex flex-col gap-4 mt-8 w-full max-w-sm">
               {/* GYANI CARD */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedMaster("gyani")}
-                className={`glass-card p-6 rounded-3xl cursor-pointer border-2 transition-all duration-300 relative ${
-                  selectedMaster === "gyani"
-                    ? "border-primary shadow-[0_0_24px_rgba(254,209,65,0.2)]"
-                    : "border-foreground/10 hover:border-primary/40"
-                }`}
-              >
-                {/* Gold Orb */}
-                <div className={`absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center ${
-                  selectedMaster === "gyani"
-                    ? "orb-pulse"
-                    : "border-[1.5px] border-primary/20"
-                }`} style={selectedMaster === "gyani" ? { background: "radial-gradient(circle, #fed141 0%, #f59e0b 60%, #d97706 100%)" } : {}}>
-                  {selectedMaster === "gyani" && <span className="text-[10px] text-primary-foreground font-bold">✦</span>}
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                    <span className="text-3xl">🧙‍♂️</span>
+              <GoldCard padding="24px" glow={selectedMaster === "gyani"}>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedMaster("gyani")}
+                  className="cursor-pointer relative"
+                >
+                  <div className={`absolute top-0 right-0 w-6 h-6 rounded-full flex items-center justify-center ${
+                    selectedMaster === "gyani" ? "orb-pulse" : "border-[1.5px] border-primary/20"
+                  }`} style={selectedMaster === "gyani" ? { background: "radial-gradient(circle, #fed141 0%, #f59e0b 60%, #d97706 100%)" } : {}}>
+                    {selectedMaster === "gyani" && <span className="text-[10px] font-bold" style={{ color: "#003326" }}>✦</span>}
                   </div>
-                  <div className="flex-1 pr-8">
-                    <p className="font-display font-bold text-xl text-foreground">Gyani</p>
-                    <p className="text-sm text-foreground/50 mt-1 font-body">Your wise, patient foundation builder</p>
-                    <div className="flex gap-2 mt-3 flex-wrap">
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Warm</span>
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Patient</span>
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Foundation First</span>
-                    </div>
-                    <div className="h-px bg-foreground/10 mt-3 mb-2" />
-                    <p className="text-xs text-foreground/35 font-body leading-relaxed">
-                      "Your wise guide. Gyani celebrates every step and builds your confidence brick by brick. Perfect for your first English journey."
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* GYANU CARD */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedMaster("gyanu")}
-                className={`glass-card rounded-3xl cursor-pointer border-2 transition-all duration-300 relative overflow-hidden ${
-                  selectedMaster === "gyanu"
-                    ? "border-primary shadow-[0_0_24px_rgba(254,209,65,0.2)]"
-                    : "border-foreground/10 hover:border-primary/40"
-                }`}
-              >
-                {/* AT YOUR OWN RISK banner */}
-                <div className="w-full py-2 text-center rounded-t-3xl" style={{ background: "linear-gradient(90deg, #7f1d1d, #991b1b)" }}>
-                  <span className="text-xs tracking-widest font-body font-bold uppercase" style={{ color: "#fecaca" }}>⚡ AT YOUR OWN RISK ⚡</span>
-                </div>
-                {/* Gold Orb */}
-                <div className={`absolute top-12 right-4 w-6 h-6 rounded-full flex items-center justify-center ${
-                  selectedMaster === "gyanu"
-                    ? "orb-pulse"
-                    : "border-[1.5px] border-primary/20"
-                }`} style={selectedMaster === "gyanu" ? { background: "radial-gradient(circle, #fed141 0%, #f59e0b 60%, #d97706 100%)" } : {}}>
-                  {selectedMaster === "gyanu" && <span className="text-[10px] text-primary-foreground font-bold">✦</span>}
-                </div>
-                <div className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                      <span className="text-3xl">🔥</span>
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "rgba(253,193,65,0.1)", border: "1px solid rgba(253,193,65,0.2)" }}>
+                      <span className="text-3xl">🧙‍♂️</span>
                     </div>
                     <div className="flex-1 pr-8">
-                      <p className="font-display font-bold text-xl text-foreground">Gyanu</p>
-                      <p className="text-sm text-foreground/50 mt-1 font-body">Your brutal truth, results-first coach</p>
+                      <p className="font-bold text-xl" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Gyani</p>
+                      <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Your wise, patient foundation builder</p>
                       <div className="flex gap-2 mt-3 flex-wrap">
-                        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">No Shortcuts</span>
-                        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Hacks Not Textbooks</span>
-                        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-body font-medium">Tough Love</span>
+                        {["Warm", "Patient", "Foundation First"].map(t => (
+                          <span key={t} className="text-xs px-2 py-1 rounded-full font-medium" style={{ background: "rgba(253,193,65,0.1)", color: "#ffc300", fontFamily: "var(--fa)" }}>{t}</span>
+                        ))}
                       </div>
-                      <div className="h-px bg-foreground/10 mt-3 mb-2" />
-                      <p className="text-xs text-foreground/35 font-body leading-relaxed">
-                        "Gyanu will push you hard and call out every mistake. No comfort zone. No hand-holding. Only for those who are truly serious."
+                      <div className="h-px mt-3 mb-2" style={{ background: "rgba(255,252,239,0.1)" }} />
+                      <p className="text-xs leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.35)" }}>
+                        "Your wise guide. Gyani celebrates every step and builds your confidence brick by brick. Perfect for your first English journey."
                       </p>
                     </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </GoldCard>
+
+              {/* GYANU CARD */}
+              <GoldCard padding="0px" glow={selectedMaster === "gyanu"}>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedMaster("gyanu")}
+                  className="cursor-pointer relative overflow-hidden"
+                >
+                  <div className="w-full py-2 text-center" style={{ background: "linear-gradient(90deg, #7f1d1d, #991b1b)", borderRadius: "16.5px 16.5px 0 0" }}>
+                    <span className="text-xs tracking-widest font-bold uppercase" style={{ color: "#fecaca", fontFamily: "var(--fa)" }}>⚡ AT YOUR OWN RISK ⚡</span>
+                  </div>
+                  <div className="p-6 relative">
+                    <div className={`absolute top-0 right-4 w-6 h-6 rounded-full flex items-center justify-center ${
+                      selectedMaster === "gyanu" ? "orb-pulse" : "border-[1.5px] border-primary/20"
+                    }`} style={selectedMaster === "gyanu" ? { background: "radial-gradient(circle, #fed141 0%, #f59e0b 60%, #d97706 100%)" } : {}}>
+                      {selectedMaster === "gyanu" && <span className="text-[10px] font-bold" style={{ color: "#003326" }}>✦</span>}
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "rgba(253,193,65,0.1)", border: "1px solid rgba(253,193,65,0.2)" }}>
+                        <span className="text-3xl">🔥</span>
+                      </div>
+                      <div className="flex-1 pr-8">
+                        <p className="font-bold text-xl" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Gyanu</p>
+                        <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Your brutal truth, results-first coach</p>
+                        <div className="flex gap-2 mt-3 flex-wrap">
+                          {["No Shortcuts", "Hacks Not Textbooks", "Tough Love"].map(t => (
+                            <span key={t} className="text-xs px-2 py-1 rounded-full font-medium" style={{ background: "rgba(253,193,65,0.1)", color: "#ffc300", fontFamily: "var(--fa)" }}>{t}</span>
+                          ))}
+                        </div>
+                        <div className="h-px mt-3 mb-2" style={{ background: "rgba(255,252,239,0.1)" }} />
+                        <p className="text-xs leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.35)" }}>
+                          "Gyanu will push you hard and call out every mistake. No comfort zone. No hand-holding. Only for those who are truly serious."
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </GoldCard>
             </div>
-            <button
+            <GoldButton
               onClick={nextStep}
               disabled={!selectedMaster}
-              className="mt-8 w-full max-w-sm h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+              fullWidth
+              className="mt-8 max-w-sm"
             >
               {`I Choose ${selectedMaster === "gyani" ? "Gyani" : selectedMaster === "gyanu" ? "Gyanu" : "..."} →`}
-            </button>
+            </GoldButton>
           </motion.div>
         )}
 
         {/* STEP 4 — Personal Details */}
         {step === 4 && (
           <motion.div key="personal" variants={slideVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5">
-            <button onClick={() => setStep(3)} className="absolute top-6 left-5 text-sm font-body text-foreground/40 hover:text-foreground/70 transition-colors">← Back</button>
+            <GlassButton onClick={() => setStep(3)} className="absolute top-6 left-5 !px-3 !py-2 text-sm">← Back</GlassButton>
             <div className="absolute top-6 right-5"><StepDots current={4} /></div>
             <div className="w-full max-w-sm">
-              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">A little about you</h2>
-              <p className="text-sm font-body text-foreground/50 mt-2 text-center">This shapes your personalized coaching experience</p>
+              <h2 className="text-2xl font-bold text-center" style={{ fontFamily: "var(--fd)", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>A little about you</h2>
+              <p className="text-sm mt-2 text-center" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>This shapes your personalized coaching experience</p>
               <div className="mt-8 space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-body text-foreground/70 block">Date of Birth</label>
+                  <label className="text-sm block" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>Date of Birth</label>
                   <input
                     type="date"
                     value={dob}
@@ -507,20 +502,21 @@ const Onboarding = () => {
                         setIsUnder18(age < 18);
                       }
                     }}
-                    className="w-full h-12 rounded-lg px-4 text-sm font-body bg-foreground/5 border border-foreground/20 text-foreground focus:outline-none focus:border-primary transition-colors"
+                    className="w-full h-12 rounded-lg px-4 text-sm focus:outline-none transition-colors"
+                    style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.15)", color: "#fffcef" }}
                   />
                   {isUnder18 && (
-                    <p className="text-xs font-body text-primary/70 mt-1">Please ensure a parent or guardian has approved your enrollment</p>
+                    <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,193,0,0.7)" }}>Please ensure a parent or guardian has approved your enrollment</p>
                   )}
                 </div>
                 {isUnder18 && (
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" checked={parentalConsent} onChange={(e) => setParentalConsent(e.target.checked)} className="mt-0.5 accent-primary" />
-                    <span className="text-xs font-body text-foreground/60 leading-relaxed">I confirm that a parent or guardian has approved my enrollment</span>
+                    <span className="text-xs leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>I confirm that a parent or guardian has approved my enrollment</span>
                   </label>
                 )}
                 <div className="space-y-2">
-                  <label className="text-sm font-body text-foreground/70 block">Gender <span className="text-foreground/30">(optional)</span></label>
+                  <label className="text-sm block" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>Gender <span style={{ color: "rgba(255,252,239,0.3)" }}>(optional)</span></label>
                   <div className="flex gap-2 flex-wrap">
                     {[
                       { key: "male", label: "Male" },
@@ -531,11 +527,13 @@ const Onboarding = () => {
                       <button
                         key={g.key}
                         onClick={() => setGender(gender === g.key ? null : g.key)}
-                        className={`px-4 py-2 rounded-lg text-sm font-body transition-all duration-200 ${
-                          gender === g.key
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-foreground/5 border border-foreground/20 text-foreground/60"
-                        }`}
+                        className="px-4 py-2 rounded-lg text-sm transition-all duration-200"
+                        style={{
+                          fontFamily: "var(--fb)",
+                          ...(gender === g.key
+                            ? { background: "linear-gradient(135deg, #fed141, #ffc300)", color: "#003326" }
+                            : { background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.15)", color: "rgba(255,252,239,0.6)" }),
+                        }}
                       >
                         {g.label}
                       </button>
@@ -543,13 +541,14 @@ const Onboarding = () => {
                   </div>
                 </div>
               </div>
-              <button
+              <GoldButton
                 onClick={nextStep}
                 disabled={!dob || (isUnder18 && !parentalConsent)}
-                className="mt-8 w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+                fullWidth
+                className="mt-8"
               >
                 Continue →
-              </button>
+              </GoldButton>
             </div>
           </motion.div>
         )}
@@ -557,77 +556,74 @@ const Onboarding = () => {
         {/* STEP 5 — Your Roots */}
         {step === 5 && (
           <motion.div key="roots" variants={slideVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.4 }} className="fixed inset-0 overflow-y-auto py-16 px-5 flex flex-col items-center">
-            <button onClick={() => setStep(4)} className="fixed top-6 left-5 text-sm font-body text-foreground/40 hover:text-foreground/70 transition-colors z-10">← Back</button>
+            <GlassButton onClick={() => setStep(4)} className="fixed top-6 left-5 z-10 !px-3 !py-2 text-sm">← Back</GlassButton>
             <div className="fixed top-6 right-5 z-10"><StepDots current={5} /></div>
             <div className="w-full max-w-sm mt-4">
-              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Where did your story begin?</h2>
-              <p className="text-sm font-body text-foreground/50 mt-2 text-center leading-relaxed">This is the most important question we ask. Your answer shapes your entire coaching.</p>
+              <h2 className="text-2xl font-bold text-center" style={{ fontFamily: "var(--fd)", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Where did your story begin?</h2>
+              <p className="text-sm mt-2 text-center leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>This is the most important question we ask. Your answer shapes your entire coaching.</p>
               <div className="mt-8 space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-body text-foreground/70 block">Country</label>
-                  <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
-                    <option value="India" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>India</option>
-                    <option value="United States" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United States</option>
-                    <option value="United Kingdom" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United Kingdom</option>
-                    <option value="United Arab Emirates" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>United Arab Emirates</option>
-                    <option value="Canada" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Canada</option>
-                    <option value="Australia" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Australia</option>
-                    <option value="Other" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Other</option>
+                  <label className="text-sm block" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>Country</label>
+                  <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full h-12 rounded-lg px-4 text-sm focus:outline-none transition-colors appearance-none cursor-pointer" style={{ ...selectStyle, border: "1px solid rgba(255,252,239,0.15)", fontFamily: "var(--fb)" }}>
+                    {["India", "United States", "United Kingdom", "United Arab Emirates", "Canada", "Australia", "Other"].map(c => (
+                      <option key={c} value={c} style={optionStyle}>{c}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-body text-foreground/70 block">Language spoken at home growing up</label>
-                  <p className="text-xs font-body italic" style={{ color: "#fed141", opacity: 0.8 }}>The first language you learned — the one you think in</p>
+                  <label className="text-sm block" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>Language spoken at home growing up</label>
+                  <p className="text-xs italic" style={{ color: "#fed141", opacity: 0.8, fontFamily: "var(--fb)" }}>The first language you learned — the one you think in</p>
                   <select
                     value={motherTongue || ""}
                     onChange={(e) => {
                       setMotherTongue(e.target.value);
                       if (e.target.value && childhoodState) detectMTIZone(e.target.value, childhoodState);
                     }}
-                    className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
-                    style={{ backgroundColor: '#01271d', color: '#fffcef' }}
+                    className="w-full h-12 rounded-lg px-4 text-sm focus:outline-none transition-colors appearance-none cursor-pointer"
+                    style={{ ...selectStyle, border: "1px solid rgba(255,252,239,0.15)", fontFamily: "var(--fb)" }}
                   >
-                    <option value="" disabled style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Select your mother tongue</option>
+                    <option value="" disabled style={optionStyle}>Select your mother tongue</option>
                     {["Hindi","Bhojpuri","Maithili","Awadhi","Chhattisgarhi","Bengali","Tamil","Telugu","Kannada","Malayalam","Marathi","Gujarati","Punjabi","Odia","Assamese","Urdu","Haryanvi","Rajasthani","Konkani","Sindhi","Kashmiri","Manipuri","Nepali","Dogri","Bodo","Tulu","Other"].map((l) => (
-                      <option key={l} value={l} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{l}</option>
+                      <option key={l} value={l} style={optionStyle}>{l}</option>
                     ))}
                   </select>
                 </div>
                 {country === "India" && (
                   <div className="space-y-2">
-                    <label className="text-sm font-body text-foreground/70 block">Where did you grow up?</label>
-                    <p className="text-xs font-body text-foreground/40 leading-relaxed">The place where you spent your childhood and school years — not where you live today. This helps us understand exactly how your English was shaped.</p>
+                    <label className="text-sm block" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>Where did you grow up?</label>
+                    <p className="text-xs leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>The place where you spent your childhood and school years — not where you live today. This helps us understand exactly how your English was shaped.</p>
                     <select
                       value={childhoodState || ""}
                       onChange={(e) => {
                         setChildhoodState(e.target.value);
                         if (e.target.value && motherTongue) detectMTIZone(motherTongue, e.target.value);
                       }}
-                      className="w-full h-12 rounded-lg px-4 text-sm font-body border border-foreground/20 focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
-                      style={{ backgroundColor: '#01271d', color: '#fffcef' }}
+                      className="w-full h-12 rounded-lg px-4 text-sm focus:outline-none transition-colors appearance-none cursor-pointer"
+                      style={{ ...selectStyle, border: "1px solid rgba(255,252,239,0.15)", fontFamily: "var(--fb)" }}
                     >
-                      <option value="" disabled style={{ backgroundColor: '#01271d', color: '#fffcef' }}>Select your state or UT</option>
-                      <optgroup label="States" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
+                      <option value="" disabled style={optionStyle}>Select your state or UT</option>
+                      <optgroup label="States" style={optionStyle}>
                         {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"].map((s) => (
-                          <option key={s} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{s}</option>
+                          <option key={s} style={optionStyle}>{s}</option>
                         ))}
                       </optgroup>
-                      <optgroup label="Union Territories" style={{ backgroundColor: '#01271d', color: '#fffcef' }}>
+                      <optgroup label="Union Territories" style={optionStyle}>
                         {["Andaman & Nicobar","Chandigarh","Dadra & Nagar Haveli","Daman & Diu","Delhi","Jammu & Kashmir","Ladakh","Lakshadweep","Puducherry"].map((s) => (
-                          <option key={s} style={{ backgroundColor: '#01271d', color: '#fffcef' }}>{s}</option>
+                          <option key={s} style={optionStyle}>{s}</option>
                         ))}
                       </optgroup>
                     </select>
                   </div>
                 )}
               </div>
-              <button
+              <GoldButton
                 onClick={nextStep}
                 disabled={!motherTongue || (country === "India" && !childhoodState)}
-                className="mt-8 w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+                fullWidth
+                className="mt-8"
               >
                 Continue →
-              </button>
+              </GoldButton>
             </div>
           </motion.div>
         )}
@@ -635,48 +631,48 @@ const Onboarding = () => {
         {/* STEP 6 — Your World */}
         {step === 6 && (
           <motion.div key="world" variants={slideVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5">
-            <button onClick={() => setStep(5)} className="absolute top-6 left-5 text-sm font-body text-foreground/40 hover:text-foreground/70 transition-colors">← Back</button>
+            <GlassButton onClick={() => setStep(5)} className="absolute top-6 left-5 !px-3 !py-2 text-sm">← Back</GlassButton>
             <div className="absolute top-6 right-5"><StepDots current={6} /></div>
             <div className="w-full max-w-sm">
-              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Which world do you want to master?</h2>
-              <p className="text-sm font-body text-foreground/50 mt-2 text-center">Every lesson, every practice, every session — tailored to the English you actually need</p>
-              <p className="text-xs font-body text-primary/60 mt-1 text-center">Select one or both</p>
+              <h2 className="text-2xl font-bold text-center" style={{ fontFamily: "var(--fd)", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Which world do you want to master?</h2>
+              <p className="text-sm mt-2 text-center" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Every lesson, every practice, every session — tailored to the English you actually need</p>
+              <p className="text-xs mt-1 text-center" style={{ color: "rgba(255,193,0,0.6)", fontFamily: "var(--fb)" }}>Select one or both</p>
               <div className="mt-8 space-y-3">
                 {[
                   { key: "professional", title: "Professional", subtitle: "Workplace English", lines: ["Client meetings & presentations", "Emails, reports, leadership", "Interviews & corporate life"], quote: "Speak like a leader" },
                   { key: "casual", title: "Casual", subtitle: "Everyday English", lines: ["Friends, family, social life", "Social media & daily talk", "Natural, real conversations"], quote: "Speak like yourself" },
                 ].map((w) => (
-                  <button
-                    key={w.key}
-                    onClick={() => setChosenWorlds(prev => prev.includes(w.key) ? prev.filter(x => x !== w.key) : [...prev, w.key])}
-                    className={`w-full p-5 rounded-xl text-left transition-all duration-200 ${
-                      chosenWorlds.includes(w.key) ? "glass-card-gold border-2 border-primary" : "glass-card"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-base font-display font-bold text-primary">{w.title}</p>
-                        <p className="text-xs font-body text-foreground/50 mt-0.5">{w.subtitle}</p>
+                  <GoldCard key={w.key} padding="20px" glow={chosenWorlds.includes(w.key)}>
+                    <button
+                      onClick={() => setChosenWorlds(prev => prev.includes(w.key) ? prev.filter(x => x !== w.key) : [...prev, w.key])}
+                      className="w-full text-left"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-base font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>{w.title}</p>
+                          <p className="text-xs mt-0.5" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>{w.subtitle}</p>
+                        </div>
+                        {chosenWorlds.includes(w.key) && <span className="text-lg" style={{ color: "#ffc300" }}>✓</span>}
                       </div>
-                      {chosenWorlds.includes(w.key) && <span className="text-primary text-lg">✓</span>}
-                    </div>
-                    <ul className="mt-3 space-y-1">
-                      {w.lines.map((line) => (
-                        <li key={line} className="text-xs font-body text-foreground/50">· {line}</li>
-                      ))}
-                    </ul>
-                    <p className="mt-3 text-xs font-body italic" style={{ color: "#fed141", opacity: 0.8 }}>"{w.quote}"</p>
-                  </button>
+                      <ul className="mt-3 space-y-1">
+                        {w.lines.map((line) => (
+                          <li key={line} className="text-xs" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>· {line}</li>
+                        ))}
+                      </ul>
+                      <p className="mt-3 text-xs italic" style={{ color: "#fed141", opacity: 0.8, fontFamily: "var(--fb)" }}>"{w.quote}"</p>
+                    </button>
+                  </GoldCard>
                 ))}
               </div>
-              <p className="text-center text-xs font-body text-foreground/30 mt-4">You can change this anytime in your profile</p>
-              <button
+              <p className="text-center text-xs mt-4" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>You can change this anytime in your profile</p>
+              <GoldButton
                 onClick={nextStep}
                 disabled={chosenWorlds.length === 0}
-                className="mt-6 w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+                fullWidth
+                className="mt-6"
               >
                 Continue →
-              </button>
+              </GoldButton>
             </div>
           </motion.div>
         )}
@@ -684,11 +680,11 @@ const Onboarding = () => {
         {/* STEP 7 — Your North Star */}
         {step === 7 && (
           <motion.div key="goal" variants={slideVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col items-center justify-center px-5">
-            <button onClick={() => setStep(6)} className="absolute top-6 left-5 text-sm font-body text-foreground/40 hover:text-foreground/70 transition-colors">← Back</button>
+            <GlassButton onClick={() => setStep(6)} className="absolute top-6 left-5 !px-3 !py-2 text-sm">← Back</GlassButton>
             <div className="absolute top-6 right-5"><StepDots current={7} /></div>
             <div className="w-full max-w-sm">
-              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">What are your goals?</h2>
-              <p className="text-sm font-body text-foreground/50 mt-2 text-center">Select all that apply</p>
+              <h2 className="text-2xl font-bold text-center" style={{ fontFamily: "var(--fd)", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>What are your goals?</h2>
+              <p className="text-sm mt-2 text-center" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Select all that apply</p>
               <div className="mt-8 grid grid-cols-2 gap-3">
                 {[
                   { key: "workplace_confidence", label: "Speak confidently at work" },
@@ -701,23 +697,26 @@ const Onboarding = () => {
                   <button
                     key={g.key}
                     onClick={() => setPrimaryGoals(prev => prev.includes(g.key) ? prev.filter(x => x !== g.key) : [...prev, g.key])}
-                    className={`p-4 rounded-xl text-left text-sm font-body font-medium leading-snug transition-all duration-200 ${
-                      primaryGoals.includes(g.key)
-                        ? "glass-card-gold border-2 border-primary text-primary"
-                        : "glass-card text-foreground/60"
-                    }`}
+                    className="p-4 rounded-xl text-left text-sm font-medium leading-snug transition-all duration-200"
+                    style={{
+                      fontFamily: "var(--fb)",
+                      ...(primaryGoals.includes(g.key)
+                        ? { background: "rgba(253,193,65,0.1)", border: "2px solid #ffc300", color: "#ffc300" }
+                        : { background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.1)", color: "rgba(255,252,239,0.6)" }),
+                    }}
                   >
                     {g.label}
                   </button>
                 ))}
               </div>
-              <button
+              <GoldButton
                 onClick={nextStep}
                 disabled={primaryGoals.length === 0}
-                className="mt-8 w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body gold-shimmer-btn active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+                fullWidth
+                className="mt-8"
               >
                 Almost there →
-              </button>
+              </GoldButton>
             </div>
           </motion.div>
         )}
@@ -725,56 +724,63 @@ const Onboarding = () => {
         {/* STEP 8 — Our Promise + Consent */}
         {step === 8 && (
           <motion.div key="promise" variants={slideVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.4 }} className="fixed inset-0 overflow-y-auto py-16 px-5 flex flex-col items-center">
-            <button onClick={() => setStep(7)} className="fixed top-6 left-5 text-sm font-body text-foreground/40 hover:text-foreground/70 transition-colors z-10">← Back</button>
+            <GlassButton onClick={() => setStep(7)} className="fixed top-6 left-5 z-10 !px-3 !py-2 text-sm">← Back</GlassButton>
             <div className="fixed top-6 right-5 z-10"><StepDots current={8} /></div>
             <div className="w-full max-w-sm mt-4">
-              <h2 className="text-2xl font-display font-bold text-primary gold-text-glow text-center">Our promise to you 🦋</h2>
+              <h2 className="text-2xl font-bold text-center" style={{ fontFamily: "var(--fd)", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Our promise to you 🦋</h2>
               <div className="mt-8 space-y-3">
                 {[
                   { symbol: "✦", heading: "Your data belongs to you", body: "We never sell, share, or misuse your personal information. Ever." },
                   { symbol: "✦", heading: "Your transformation is our goal", body: "Built with one question at every step: will this transform the student? If the answer was no — we didn't build it." },
                   { symbol: "✦", heading: "You are seen as an individual", body: "Your coaching is built for you — your language, your region, your goals. Never generic." },
                 ].map((p) => (
-                  <div key={p.heading} className="glass-card p-4 flex gap-3 items-start">
-                    <span className="text-primary text-lg mt-0.5 flex-shrink-0">{p.symbol}</span>
-                    <div>
-                      <p className="text-sm font-display font-bold text-foreground">{p.heading}</p>
-                      <p className="text-xs font-body text-foreground/50 mt-1 leading-relaxed">{p.body}</p>
+                  <GoldCard key={p.heading} padding="16px">
+                    <div className="flex gap-3 items-start">
+                      <span className="text-lg mt-0.5 flex-shrink-0" style={{ color: "#ffc300" }}>{p.symbol}</span>
+                      <div>
+                        <p className="text-sm font-bold" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>{p.heading}</p>
+                        <p className="text-xs mt-1 leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>{p.body}</p>
+                      </div>
                     </div>
-                  </div>
+                  </GoldCard>
                 ))}
               </div>
               <div className="mt-6 space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 accent-primary flex-shrink-0" />
-                  <span className="text-xs font-body text-foreground/60 leading-relaxed">
+                  <span className="text-xs leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>
                     I have read and agree to the{" "}
-                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.co.in")} className="text-primary underline hover:text-primary/80 transition-colors">Privacy Policy</button>
+                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.co.in")} className="underline transition-colors" style={{ color: "#ffc300" }}>Privacy Policy</button>
                     {" "}and{" "}
-                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.co.in")} className="text-primary underline hover:text-primary/80 transition-colors">Terms of Service</button>
+                    <button type="button" onClick={() => toast("Our Privacy Policy and Terms of Service are being finalised. For any questions write to us at hello@ujjwalbhavishya.co.in")} className="underline transition-colors" style={{ color: "#ffc300" }}>Terms of Service</button>
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={ageVerified} onChange={(e) => setAgeVerified(e.target.checked)} className="mt-0.5 accent-primary flex-shrink-0" />
-                  <span className="text-xs font-body text-foreground/60 leading-relaxed">I confirm I am 18 or older, or I have parental or guardian consent to enroll</span>
+                  <span className="text-xs leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>I confirm I am 18 or older, or I have parental or guardian consent to enroll</span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={whatsappOptIn} onChange={(e) => setWhatsappOptIn(e.target.checked)} className="mt-0.5 accent-primary flex-shrink-0" />
-                  <span className="text-xs font-body text-foreground/60 leading-relaxed">
+                  <span className="text-xs leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>
                     Send me progress updates and encouragement on WhatsApp
-                    <span className="text-foreground/30"> (recommended)</span>
+                    <span style={{ color: "rgba(255,252,239,0.3)" }}> (recommended)</span>
                   </span>
                 </label>
               </div>
-              <motion.button
-                onClick={handleFinish}
-                disabled={!consentGiven || !ageVerified || saving}
+              <motion.div
                 animate={consentGiven && ageVerified ? { boxShadow: ["0 0 0px rgba(254,209,65,0)", "0 0 20px rgba(254,209,65,0.4)", "0 0 0px rgba(254,209,65,0)"] } : {}}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="mt-8 w-full h-14 rounded-lg bg-primary text-primary-foreground font-semibold text-base font-body active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+                className="mt-8"
               >
-                {saving ? "Starting your journey..." : "Begin My Transformation →"}
-              </motion.button>
+                <GoldButton
+                  onClick={handleFinish}
+                  disabled={!consentGiven || !ageVerified || saving}
+                  fullWidth
+                  className="h-14"
+                >
+                  {saving ? "Starting your journey..." : "Begin My Transformation →"}
+                </GoldButton>
+              </motion.div>
             </div>
           </motion.div>
         )}

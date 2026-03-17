@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { COURSE_ID } from "@/lib/constants";
 import AudioRecorderButton from "@/components/AudioRecorderButton";
 import BottomNav from "@/components/BottomNav";
+import GoldButton from "@/components/ui/GoldButton";
+import GlassButton from "@/components/ui/GlassButton";
+import GoldCard from "@/components/ui/GoldCard";
 
 type Phase = "write" | "speak-sentences" | "speak-free" | "evaluating" | "results";
 
@@ -27,31 +30,24 @@ const AnubhavPage = () => {
   const [lesson, setLesson] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Phase
   const [phase, setPhase] = useState<Phase>("write");
 
-  // Write phase
   const [sentences, setSentences] = useState<string[]>([]);
   const [writeCount, setWriteCount] = useState(3);
 
-  // IDs
   const [writingId, setWritingId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Speak sentences phase
   const [showSentences, setShowSentences] = useState(true);
   const [countdown, setCountdown] = useState(5);
 
-  // Results
   const [results, setResults] = useState<any>(null);
 
-  // Loading text cycling
   const [loadingTextIdx, setLoadingTextIdx] = useState(0);
 
   const masterName = (profile?.selected_master?.toLowerCase() === "gyanu") ? "Gyanu" : "Gyani";
   const masterEmoji = masterName === "Gyanu" ? "🔥" : "🧙‍♂️";
 
-  // Fetch data on mount
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -64,7 +60,6 @@ const AnubhavPage = () => {
         .maybeSingle();
       setProfile(profileData);
 
-      // Fetch lesson by day_number only (single course)
       const { data: lessonData } = await supabase
         .from("lessons")
         .select("*")
@@ -80,7 +75,6 @@ const AnubhavPage = () => {
     fetchData();
   }, [dayNumber, navigate]);
 
-  // Countdown for showing sentences in speak phase
   useEffect(() => {
     if (phase === "speak-sentences" && showSentences && countdown > 0) {
       const t = setTimeout(() => setCountdown(c => c - 1), 1000);
@@ -91,7 +85,6 @@ const AnubhavPage = () => {
     }
   }, [phase, showSentences, countdown]);
 
-  // Loading text cycling
   useEffect(() => {
     if (phase !== "evaluating") return;
     const interval = setInterval(() => {
@@ -110,7 +103,6 @@ const AnubhavPage = () => {
 
   const allFilled = sentences.every(s => s.trim().length >= 3);
 
-  // Submit writing phase
   const submitWriting = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -153,7 +145,6 @@ const AnubhavPage = () => {
     setCountdown(5);
   };
 
-  // Upload audio helper
   const uploadAudio = async (blob: Blob, pathSuffix: string): Promise<string | null> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
@@ -259,7 +250,6 @@ const AnubhavPage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Update progress: anubhav_complete = true
     const { data: existing } = await supabase.from("progress")
       .select("id").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle();
 
@@ -300,7 +290,6 @@ const AnubhavPage = () => {
         audio.play();
       }
     } catch {
-      // Fallback to browser TTS
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "en-IN";
       utterance.rate = 0.85;
@@ -316,9 +305,9 @@ const AnubhavPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "#000e09" }}>
         <span className="text-6xl">🎯</span>
-        <p className="text-sm text-foreground/40 mt-4">Loading practice...</p>
+        <p className="text-sm mt-4" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Loading practice...</p>
       </div>
     );
   }
@@ -328,12 +317,12 @@ const AnubhavPage = () => {
     : `Write ${writeCount} sentences from YOUR life using today's lesson.`;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-20">
+    <div className="min-h-screen flex flex-col pb-20" style={{ background: "#000e09" }}>
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
-        <button onClick={() => navigate("/dashboard")} className="text-sm text-foreground/40">← Back</button>
-        <span className="font-display font-bold text-primary text-base">🎯 Anubhav</span>
-        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Day {dayNumber}</span>
+        <GlassButton onClick={() => navigate("/dashboard")} className="!px-3 !py-1.5 text-sm">← Back</GlassButton>
+        <span className="font-bold text-base" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>🎯 Anubhav</span>
+        <span className="text-xs px-2 py-1 rounded-full" style={{ background: "rgba(253,193,65,0.1)", color: "#ffc300", fontFamily: "var(--fa)" }}>Day {dayNumber}</span>
       </div>
 
       {/* Phase indicator */}
@@ -349,9 +338,14 @@ const AnubhavPage = () => {
           return (
             <React.Fragment key={p.key}>
               {i > 0 && <div className={`flex-1 h-[2px] ${isDone ? "bg-primary" : "bg-foreground/10"}`} />}
-              <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-body font-medium transition-colors ${
-                isActive ? "bg-primary/20 text-primary" : isDone ? "bg-primary/10 text-primary/60" : "bg-foreground/5 text-foreground/30"
-              }`}>
+              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors" style={{
+                fontFamily: "var(--fa)",
+                ...(isActive
+                  ? { background: "rgba(253,193,65,0.2)", color: "#ffc300" }
+                  : isDone
+                    ? { background: "rgba(253,193,65,0.1)", color: "rgba(255,193,0,0.6)" }
+                    : { background: "rgba(255,252,239,0.04)", color: "rgba(255,252,239,0.3)" }),
+              }}>
                 {isDone && <span>✓</span>}
                 {p.label}
               </div>
@@ -362,84 +356,83 @@ const AnubhavPage = () => {
 
       <div className="flex-1 overflow-y-auto px-5 py-2">
         <AnimatePresence mode="wait">
-          {/* ═══ WRITE PHASE ═══ */}
+          {/* WRITE PHASE */}
           {phase === "write" && (
             <motion.div key="write" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-              <h2 className="font-display text-xl font-bold text-foreground">Day {dayNumber}: {lesson?.title?.replace(/^Day\s*\d+:\s*/i, "") || "Practice"}</h2>
-              <p className="text-sm text-foreground/50 font-body mt-1">{writePrompt}</p>
+              <h2 className="text-xl font-bold" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Day {dayNumber}: {lesson?.title?.replace(/^Day\s*\d+:\s*/i, "") || "Practice"}</h2>
+              <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>{writePrompt}</p>
 
-              {/* Grammar hint */}
               {lesson?.grammar_hint && (
-                <div className="mt-4 p-4 rounded-2xl border border-amber-500/20" style={{ background: "rgba(254,209,65,0.05)" }}>
+                <GoldCard padding="16px" className="mt-4">
                   <div className="flex items-start gap-2">
                     <span className="text-lg">💡</span>
-                    <p className="text-sm text-foreground/70 font-body">{lesson.grammar_hint}</p>
+                    <p className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>{lesson.grammar_hint}</p>
                   </div>
-                </div>
+                </GoldCard>
               )}
 
-              {/* Sentence inputs */}
               <div className="mt-4 flex flex-col gap-3">
                 {sentences.map((s, i) => (
                   <div key={i}>
-                    <label className="text-xs text-foreground/40 font-body mb-1 block">Sentence {i + 1}</label>
+                    <label className="text-xs mb-1 block" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Sentence {i + 1}</label>
                     <input
                       value={s}
                       onChange={e => updateSentence(i, e.target.value)}
                       placeholder="Write your sentence here..."
-                      className="w-full p-3 rounded-xl bg-foreground/5 border border-foreground/10 focus:border-primary outline-none font-body text-sm text-foreground placeholder:text-foreground/20 transition-colors"
+                      className="w-full p-3 rounded-xl text-sm outline-none transition-colors"
+                      style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.1)", color: "#fffcef" }}
                       maxLength={100}
                     />
-                    <p className="text-[10px] text-foreground/20 text-right mt-0.5">{s.length}/100</p>
+                    <p className="text-[10px] text-right mt-0.5" style={{ color: "rgba(255,252,239,0.2)" }}>{s.length}/100</p>
                   </div>
                 ))}
               </div>
 
-              {/* Example */}
               {lesson?.write_example && (
-                <div className="mt-4 glass-card p-3 rounded-xl">
-                  <p className="text-[10px] text-foreground/30 uppercase tracking-wider font-body">Example</p>
-                  <p className="text-sm text-foreground/50 font-body italic mt-1">{lesson.write_example}</p>
-                </div>
+                <GoldCard padding="12px" className="mt-4">
+                  <p className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>Example</p>
+                  <p className="text-sm italic mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>{lesson.write_example}</p>
+                </GoldCard>
               )}
 
-              <button
+              <GoldButton
                 onClick={submitWriting}
                 disabled={!allFilled}
-                className="w-full mt-6 bg-primary text-primary-foreground py-4 rounded-2xl font-body font-bold text-base disabled:opacity-40"
+                fullWidth
+                className="mt-6"
               >
                 Next: Time to Speak →
-              </button>
+              </GoldButton>
             </motion.div>
           )}
 
-          {/* ═══ SPEAK SENTENCES ═══ */}
+          {/* SPEAK SENTENCES */}
           {phase === "speak-sentences" && (
             <motion.div key="speak-sentences" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-              <h2 className="font-display text-xl font-bold text-foreground text-center">Now speak your sentences</h2>
+              <h2 className="text-xl font-bold text-center" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Now speak your sentences</h2>
 
-              {/* Show sentences with countdown */}
               <AnimatePresence>
                 {showSentences && (
-                  <motion.div exit={{ opacity: 0, scale: 0.95 }} className="mt-4 glass-card-gold p-4 rounded-2xl">
-                    <p className="text-xs text-foreground/40 font-body text-center mb-3">
-                      Hiding in {countdown}...
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      {sentences.filter(s => s.trim()).map((s, i) => (
-                        <p key={i} className="text-sm text-foreground/70 font-body">{i + 1}. {s}</p>
-                      ))}
-                    </div>
+                  <motion.div exit={{ opacity: 0, scale: 0.95 }} className="mt-4">
+                    <GoldCard padding="16px" glow>
+                      <p className="text-xs text-center mb-3" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>
+                        Hiding in {countdown}...
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {sentences.filter(s => s.trim()).map((s, i) => (
+                          <p key={i} className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>{i + 1}. {s}</p>
+                        ))}
+                      </div>
+                    </GoldCard>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Speak example hint */}
               {lesson?.speak_example && !showSentences && (
-                <div className="mt-3 glass-card p-3 rounded-xl">
-                  <p className="text-[10px] text-foreground/30 uppercase tracking-wider font-body">Hint</p>
-                  <p className="text-xs text-foreground/40 font-body italic mt-1">{lesson.speak_example}</p>
-                </div>
+                <GoldCard padding="12px" className="mt-3">
+                  <p className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>Hint</p>
+                  <p className="text-xs italic mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>{lesson.speak_example}</p>
+                </GoldCard>
               )}
 
               <div className="mt-6">
@@ -454,54 +447,49 @@ const AnubhavPage = () => {
             </motion.div>
           )}
 
-          {/* ═══ FREE SPEAKING ═══ */}
+          {/* FREE SPEAKING */}
           {phase === "speak-free" && (
             <motion.div key="speak-free" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-              <h2 className="font-display text-xl font-bold text-foreground text-center">Free Speaking Challenge</h2>
+              <h2 className="text-xl font-bold text-center" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Free Speaking Challenge</h2>
 
               {lesson?.free_speak_context && (
-                <div className="mt-4 glass-card-gold p-4 rounded-2xl">
-                  <p className="text-sm text-foreground/70 font-body">{lesson.free_speak_context}</p>
-                </div>
+                <GoldCard padding="16px" glow className="mt-4">
+                  <p className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>{lesson.free_speak_context}</p>
+                </GoldCard>
               )}
 
               <div className="flex justify-center mt-3">
-                <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-body">
-                  {lesson?.title?.replace(/^Day\s*\d+:\s*/i, "") || "Today's Lesson"}
+                <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(253,193,65,0.1)", color: "#ffc300", fontFamily: "var(--fa)" }}>
+                  {lesson?.speak_min_seconds || 30}–{lesson?.speak_max_seconds || 120}s
                 </span>
               </div>
 
               <div className="mt-6">
                 <AudioRecorderButton
                   onRecordingComplete={onFreeSpeechRecorded}
-                  minDurationSeconds={120}
-                  maxDurationSeconds={300}
-                  promptText="Speak freely about your life using today's lesson"
+                  minDurationSeconds={lesson?.speak_min_seconds || 30}
+                  maxDurationSeconds={lesson?.speak_max_seconds || 120}
+                  promptText="Speak freely about the topic above"
                   showWaveform
                 />
               </div>
 
-              <button
+              <GoldButton
                 onClick={submitForEvaluation}
-                className="w-full mt-6 bg-primary text-primary-foreground py-4 rounded-2xl font-body font-bold text-base"
+                fullWidth
+                className="mt-6"
               >
-                Submit for Evaluation ✦
-              </button>
-
-              <button
-                onClick={retryFromSpeak}
-                className="w-full mt-3 text-sm text-foreground/40 font-body underline text-center"
-              >
-                Retry Speaking
-              </button>
+                Submit for Evaluation →
+              </GoldButton>
             </motion.div>
           )}
 
-          {/* ═══ EVALUATING ═══ */}
+          {/* EVALUATING */}
           {phase === "evaluating" && (
             <motion.div key="evaluating" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center min-h-[60vh]">
               <motion.div
-                className="w-24 h-24 rounded-3xl bg-primary/15 border-2 border-primary/30 flex items-center justify-center"
+                className="w-24 h-24 rounded-3xl flex items-center justify-center"
+                style={{ background: "rgba(253,193,65,0.15)", border: "2px solid rgba(253,193,65,0.3)" }}
                 animate={{ scale: [1, 1.06, 1] }}
                 transition={{ repeat: Infinity, duration: 2 }}
               >
@@ -515,7 +503,8 @@ const AnubhavPage = () => {
                 key={loadingTextIdx}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="font-display text-lg font-bold text-foreground text-center mt-6"
+                className="text-lg font-bold text-center mt-6"
+                style={{ fontFamily: "var(--fd)", color: "#fffcef" }}
               >
                 {loadingTexts[loadingTextIdx].replace("{masterName}", masterName)}
               </motion.p>
@@ -527,106 +516,103 @@ const AnubhavPage = () => {
             </motion.div>
           )}
 
-          {/* ═══ RESULTS ═══ */}
+          {/* RESULTS */}
           {phase === "results" && results && (
             <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              {/* 3 Score cards */}
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: "Word Clarity", score: results.word_clarity_score, emoji: "🎯" },
                   { label: "Smoothness", score: results.smoothness_score, emoji: "🌊" },
                   { label: "Natural Sound", score: results.natural_sound_score, emoji: "🎶" },
                 ].map((card) => (
-                  <div key={card.label} className="glass-card p-3 rounded-xl text-center">
-                    <span className="text-xl">{card.emoji}</span>
-                    <p className="font-display text-2xl font-bold text-foreground mt-1">{card.score ?? 0}</p>
-                    <div className="w-full h-2 rounded-full bg-foreground/10 mt-2 overflow-hidden">
-                      <motion.div
-                        className={`h-full rounded-full ${getScoreColor(card.score ?? 0)}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${card.score ?? 0}%` }}
-                        transition={{ duration: 0.8, delay: 0.3 }}
-                      />
+                  <GoldCard key={card.label} padding="12px">
+                    <div className="text-center">
+                      <span className="text-xl">{card.emoji}</span>
+                      <p className="text-2xl font-bold mt-1" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>{card.score ?? 0}</p>
+                      <div className="w-full h-2 rounded-full mt-2 overflow-hidden" style={{ background: "rgba(255,252,239,0.1)" }}>
+                        <motion.div
+                          className={`h-full rounded-full ${getScoreColor(card.score ?? 0)}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${card.score ?? 0}%` }}
+                          transition={{ duration: 0.8, delay: 0.3 }}
+                        />
+                      </div>
+                      <p className="text-[10px] mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>{card.label}</p>
                     </div>
-                    <p className="text-[10px] text-foreground/40 font-body mt-1">{card.label}</p>
-                  </div>
+                  </GoldCard>
                 ))}
               </div>
 
-              {/* Writing checks */}
               {results.writing_checks?.length > 0 && (
                 <div className="mt-6">
-                  <p className="text-xs text-foreground/30 uppercase tracking-widest font-body mb-3">Your Writing</p>
+                  <p className="text-xs uppercase tracking-widest mb-3" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>Your Writing</p>
                   <div className="flex flex-col gap-2">
                     {results.writing_checks.map((wc: any, i: number) => (
-                      <div key={i} className="glass-card p-3 rounded-xl">
+                      <GoldCard key={i} padding="12px">
                         <div className="flex items-start gap-2">
                           <span className="text-base mt-0.5">{wc.correct ? "✅" : "⚠️"}</span>
                           <div className="flex-1">
-                            <p className="text-sm font-body text-foreground/70">{wc.sentence}</p>
+                            <p className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>{wc.sentence}</p>
                             {!wc.correct && wc.correction && (
-                              <p className="text-sm font-body text-primary mt-1">→ {wc.correction}</p>
+                              <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "#ffc300" }}>→ {wc.correction}</p>
                             )}
                             {!wc.correct && wc.simple_reason && (
-                              <p className="text-xs font-body text-foreground/40 mt-1">{wc.simple_reason}</p>
+                              <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>{wc.simple_reason}</p>
                             )}
                           </div>
                         </div>
-                      </div>
+                      </GoldCard>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Error cards — max 2 */}
               {results.word_errors?.length > 0 && (
                 <div className="mt-6">
-                  <p className="text-xs text-foreground/30 uppercase tracking-widest font-body mb-3">Let's Fix This</p>
+                  <p className="text-xs uppercase tracking-widest mb-3" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>Let's Fix This</p>
                   <div className="flex flex-col gap-3">
                     {results.word_errors.slice(0, 2).map((err: any, i: number) => (
-                      <div key={i} className="glass-card p-4 rounded-xl border border-amber-500/20">
+                      <GoldCard key={i} padding="16px">
                         <div className="flex flex-col gap-1">
-                          <p className="text-xs text-foreground/30 font-body">You said</p>
-                          <p className="text-sm font-body text-foreground/70">"{err.word}"</p>
-                          <p className="text-xs text-foreground/30 font-body mt-1">Because</p>
-                          <p className="text-sm font-body text-foreground/50">{err.issue}</p>
+                          <p className="text-xs" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>You said</p>
+                          <p className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>"{err.word}"</p>
+                          <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>Because</p>
+                          <p className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>{err.issue}</p>
                         </div>
-                      </div>
+                      </GoldCard>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Master feedback */}
               {results.ai_feedback && (
                 <div className="mt-6">
-                  <p className="text-xs text-foreground/30 uppercase tracking-widest font-body mb-3">{masterName} says</p>
-                  <div className={`p-4 rounded-2xl border ${masterName === "Gyani" ? "border-primary/40 glass-card-gold" : "border-blue-400/40 glass-card"}`}>
-                    <p className="text-sm font-body text-foreground leading-relaxed">{results.ai_feedback}</p>
-                  </div>
-                  <button
+                  <p className="text-xs uppercase tracking-widest mb-3" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>{masterName} says</p>
+                  <GoldCard padding="16px" glow>
+                    <p className="text-sm leading-relaxed" style={{ fontFamily: "var(--fb)", color: "#fffcef" }}>{results.ai_feedback}</p>
+                  </GoldCard>
+                  <GlassButton
                     onClick={() => playMasterVoice(results.ai_feedback)}
-                    className="mt-3 glass-card px-4 py-2 rounded-full text-xs font-body border border-primary/30 text-primary flex items-center gap-2 mx-auto"
+                    className="mt-3 mx-auto flex items-center gap-2 text-xs"
                   >
                     ▶ Hear {masterName} Say This
-                  </button>
+                  </GlassButton>
                 </div>
               )}
 
-              {/* Action buttons */}
               <div className="mt-6 flex flex-col gap-3 pb-8">
-                <button
+                <GlassButton
                   onClick={retryFromSpeak}
-                  className="w-full glass-card border border-primary/30 text-primary font-body font-semibold py-4 rounded-2xl"
+                  className="w-full"
                 >
                   Retry Speaking 🔄
-                </button>
-                <button
+                </GlassButton>
+                <GoldButton
                   onClick={markDone}
-                  className="w-full bg-primary text-primary-foreground font-body font-bold py-4 rounded-2xl"
+                  fullWidth
                 >
                   Light Your Flame 🔥
-                </button>
+                </GoldButton>
               </div>
             </motion.div>
           )}

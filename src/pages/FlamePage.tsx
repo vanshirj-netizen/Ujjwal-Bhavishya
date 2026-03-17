@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
+import GoldButton from "@/components/ui/GoldButton";
+import GlassButton from "@/components/ui/GlassButton";
+import GoldCard from "@/components/ui/GoldCard";
 
 const Particle = ({ delay, x, size }: { delay: number; x: number; size: number }) => (
   <motion.div
@@ -49,23 +52,19 @@ const FlamePage = () => {
   const [practiceSession, setPracticeSession] = useState<any>(null);
   const [writings, setWritings] = useState<any>(null);
 
-  // Reflection inputs
   const [confRating, setConfRating] = useState(0);
   const [spokeAbout, setSpokeAbout] = useState("");
   const [biggestChallenge, setBiggestChallenge] = useState("");
   const [tomorrowsIntention, setTomorrowsIntention] = useState("");
 
-  // Master response
   const [aiResponse, setAiResponse] = useState("");
   const [flameId, setFlameId] = useState<string | null>(null);
   const [streakCount, setStreakCount] = useState(0);
 
-  // Audio
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Loading text cycling
   const [loadingTextIdx, setLoadingTextIdx] = useState(0);
   const [saving, setSaving] = useState(false);
 
@@ -94,7 +93,6 @@ const FlamePage = () => {
       const anubhavComplete = progressRes.data?.anubhav_complete === true;
 
       if (flameComplete && flameRes.data) {
-        // Read-only memory
         setExistingFlame(flameRes.data);
         setAiResponse(flameRes.data.ai_response || "");
         setConfRating(flameRes.data.confidence_rating || 0);
@@ -112,7 +110,6 @@ const FlamePage = () => {
     fetchData();
   }, [dayNumber, navigate]);
 
-  // Loading text cycling for master screen
   useEffect(() => {
     if (screen !== "master-loading") return;
     const interval = setInterval(() => {
@@ -174,7 +171,6 @@ const FlamePage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // Build written sentences string
     const sentencesList = [writings?.sentence_1, writings?.sentence_2, writings?.sentence_3, writings?.sentence_4, writings?.sentence_5]
       .filter(Boolean).join("; ");
 
@@ -211,7 +207,6 @@ const FlamePage = () => {
       const responseText = data?.aiResponse ?? `${profile?.full_name ?? "Friend"}, you did amazing today. Keep going! ✦`;
       setAiResponse(responseText);
 
-      // Save to daily_flames
       await supabase.from("daily_flames").update({
         ai_response: responseText,
         ai_generated_at: new Date().toISOString(),
@@ -235,7 +230,6 @@ const FlamePage = () => {
       return;
     }
 
-    // If we have a saved ElevenLabs URL, play that directly
     if (savedUrl) {
       try {
         const audio = new Audio(savedUrl);
@@ -244,7 +238,7 @@ const FlamePage = () => {
         audio.play();
         setIsPlaying(true);
         return;
-      } catch { /* fall through to generate */ }
+      } catch { /* fall through */ }
     }
 
     setAudioLoading(true);
@@ -273,7 +267,6 @@ const FlamePage = () => {
         audio.play();
         setIsPlaying(true);
 
-        // Save elevenlabs URL to flame if we have a flameId
         if (flameId) {
           await supabase.from("daily_flames").update({
             elevenlabs_audio_url: `data:audio/mpeg;base64,${data.audioBase64}`,
@@ -362,57 +355,54 @@ const FlamePage = () => {
 
   if (screen === "loading") {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <span className="text-6xl animate-pulse">🔥</span>
-        <p className="text-sm text-foreground/40 mt-4 font-body">Loading your flame...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "#000e09" }}>
+        <span className="text-6xl">🔥</span>
+        <p className="text-sm mt-4" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Loading your flame...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-24">
+    <div className="min-h-screen flex flex-col pb-24" style={{ background: "#000e09" }}>
       <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
-        <button onClick={() => navigate("/dashboard")} className="text-sm text-foreground/40 font-body">← Back</button>
-        <span className="font-display font-bold text-primary text-base">🔥 Daily Flame</span>
-        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-body">Day {dayNumber}</span>
+        <GlassButton onClick={() => navigate("/dashboard")} className="!px-3 !py-1.5 text-sm">← Back</GlassButton>
+        <span className="font-bold text-base" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>🔥 Daily Flame</span>
+        <span className="text-xs px-2 py-1 rounded-full" style={{ background: "rgba(253,193,65,0.1)", color: "#ffc300", fontFamily: "var(--fa)" }}>Day {dayNumber}</span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
         <AnimatePresence mode="wait">
 
-          {/* ─── READ-ONLY MEMORY ─── */}
+          {/* READ-ONLY MEMORY */}
           {screen === "readonly" && existingFlame && (
             <motion.div key="readonly" variants={slideVariants} initial="initial" animate="animate" exit="exit" className="pb-8">
-              <h2 className="font-display text-xl font-bold text-foreground text-center">
+              <h2 className="text-xl font-bold text-center" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>
                 Day {dayNumber} — Complete ✦
               </h2>
-              <p className="text-xs text-foreground/30 text-center mt-1 font-body">
+              <p className="text-xs text-center mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>
                 {existingFlame.submitted_at ? new Date(existingFlame.submitted_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""}
               </p>
 
-              {/* Confidence stars */}
               <div className="flex justify-center mt-6 gap-1">
                 {[1, 2, 3, 4, 5].map(i => (
-                  <span key={i} className="text-2xl">{i <= confRating ? <span className="text-primary">★</span> : <span className="text-foreground/15">☆</span>}</span>
+                  <span key={i} className="text-2xl">{i <= confRating ? <span style={{ color: "#ffc300" }}>★</span> : <span style={{ color: "rgba(255,252,239,0.15)" }}>☆</span>}</span>
                 ))}
               </div>
-              <p className="text-xs text-foreground/30 text-center mt-1 font-body">Confidence Rating</p>
+              <p className="text-xs text-center mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>Confidence Rating</p>
 
-              {/* Reflection answers */}
               <div className="mt-6 space-y-4">
                 {[
                   { label: "What I spoke about", value: existingFlame.spoke_about },
                   { label: "My biggest challenge", value: existingFlame.biggest_challenge },
                   { label: "Tomorrow I will practice", value: existingFlame.tomorrows_intention },
                 ].map(item => item.value && (
-                  <div key={item.label} className="glass-card p-4 rounded-xl">
-                    <p className="text-[10px] text-foreground/30 uppercase tracking-wider font-body">{item.label}</p>
-                    <p className="text-sm text-foreground/70 font-body mt-1">{item.value}</p>
-                  </div>
+                  <GoldCard key={item.label} padding="16px">
+                    <p className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>{item.label}</p>
+                    <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>{item.value}</p>
+                  </GoldCard>
                 ))}
               </div>
 
-              {/* Anubhav scores */}
               {practiceSession && (
                 <div className="grid grid-cols-3 gap-3 mt-6">
                   {[
@@ -420,119 +410,123 @@ const FlamePage = () => {
                     { label: "Smoothness", score: practiceSession.smoothness_score },
                     { label: "Natural Sound", score: practiceSession.natural_sound_score },
                   ].map(s => (
-                    <div key={s.label} className="glass-card p-3 rounded-xl text-center">
-                      <p className="font-display text-xl font-bold text-foreground">{Math.round(Number(s.score) || 0)}</p>
-                      <p className="text-[10px] text-foreground/40 font-body mt-1">{s.label}</p>
-                    </div>
+                    <GoldCard key={s.label} padding="12px">
+                      <div className="text-center">
+                        <p className="text-xl font-bold" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>{Math.round(Number(s.score) || 0)}</p>
+                        <p className="text-[10px] mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>{s.label}</p>
+                      </div>
+                    </GoldCard>
                   ))}
                 </div>
               )}
 
-              {/* Master feedback */}
               {aiResponse && (
                 <div className="mt-6">
-                  <p className="text-xs text-foreground/30 uppercase tracking-widest font-body mb-3">{masterName}'s Summary</p>
-                  <div className={`p-5 rounded-2xl border ${masterName === "Gyani" ? "border-primary/40 glass-card-gold" : "border-blue-400/40 glass-card"}`}>
-                    <p className="text-sm font-body text-foreground leading-relaxed">{aiResponse}</p>
-                  </div>
-                  <button
+                  <p className="text-xs uppercase tracking-widest mb-3" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>{masterName}'s Summary</p>
+                  <GoldCard padding="20px" glow>
+                    <p className="text-sm leading-relaxed" style={{ fontFamily: "var(--fb)", color: "#fffcef" }}>{aiResponse}</p>
+                  </GoldCard>
+                  <GlassButton
                     onClick={() => playVoice(aiResponse, existingFlame.elevenlabs_audio_url)}
-                    className="mt-3 glass-card px-4 py-2 rounded-full text-xs font-body border border-primary/30 text-primary flex items-center gap-2 mx-auto"
+                    className="mt-3 mx-auto flex items-center gap-2 text-xs"
                   >
                     {audioLoading ? "Loading..." : isPlaying ? `⏸ Pause` : `▶ Hear ${masterName} Again`}
-                  </button>
+                  </GlassButton>
                 </div>
               )}
 
-              <button onClick={() => navigate("/dashboard")} className="w-full mt-8 glass-card border border-foreground/10 text-foreground/60 font-body py-4 rounded-2xl">
+              <GlassButton onClick={() => navigate("/dashboard")} className="w-full mt-8">
                 ← Back to Home
-              </button>
+              </GlassButton>
             </motion.div>
           )}
 
-          {/* ─── GATE ─── */}
+          {/* GATE */}
           {screen === "gate" && (
             <motion.div key="gate" variants={slideVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh]">
               <motion.span className="text-6xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>🔒</motion.span>
-              <h2 className="font-display text-2xl font-bold text-foreground text-center mt-6">Your Flame is Waiting</h2>
-              <p className="text-sm text-foreground/50 font-body text-center mt-2 max-w-[260px]">
+              <h2 className="text-2xl font-bold text-center mt-6" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Your Flame is Waiting</h2>
+              <p className="text-sm text-center mt-2 max-w-[260px]" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>
                 Complete today's practice first to earn your Flame reward.
               </p>
-              <button onClick={() => navigate(`/anubhav/${dayNumber}`)} className="mt-8 bg-primary text-primary-foreground py-4 px-8 rounded-2xl font-body font-bold text-base">
+              <GoldButton onClick={() => navigate(`/anubhav/${dayNumber}`)} className="mt-8">
                 Go to Practice 🎯
-              </button>
+              </GoldButton>
             </motion.div>
           )}
 
-          {/* ─── REFLECTION ─── */}
+          {/* REFLECTION */}
           {screen === "reflection" && (
             <motion.div key="reflection" variants={slideVariants} initial="initial" animate="animate" exit="exit">
-              <h2 className="font-display text-xl font-bold text-foreground text-center">Your Daily Flame</h2>
-              <p className="text-xs text-foreground/40 text-center font-body mt-1">Day {dayNumber}</p>
+              <h2 className="text-xl font-bold text-center" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Your Daily Flame</h2>
+              <p className="text-xs text-center mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Day {dayNumber}</p>
 
-              {/* Confidence stars */}
               <div className="mt-6">
-                <label className="text-sm font-body text-foreground/60">How confident did you feel today?</label>
+                <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>How confident did you feel today?</label>
                 <div className="flex justify-center mt-3 gap-3">
                   {[1, 2, 3, 4, 5].map(i => (
                     <motion.button key={i} whileTap={{ scale: 0.85 }} onClick={() => setConfRating(i)} className="text-4xl cursor-pointer transition-transform hover:scale-110">
-                      {i <= confRating ? <span className="text-primary">★</span> : <span className="text-foreground/20">☆</span>}
+                      {i <= confRating ? <span style={{ color: "#ffc300" }}>★</span> : <span style={{ color: "rgba(255,252,239,0.2)" }}>☆</span>}
                     </motion.button>
                   ))}
                 </div>
               </div>
 
-              {/* Text inputs */}
               <div className="mt-6 space-y-5">
                 <div>
-                  <label className="text-sm font-body text-foreground/60">What did you speak about today?</label>
+                  <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>What did you speak about today?</label>
                   <textarea
                     value={spokeAbout}
                     onChange={e => setSpokeAbout(e.target.value.slice(0, 150))}
-                    className="w-full mt-2 p-3 rounded-xl bg-foreground/5 border border-foreground/10 focus:border-primary outline-none font-body text-sm text-foreground resize-none min-h-[80px]"
+                    className="w-full mt-2 p-3 rounded-xl text-sm resize-none min-h-[80px] outline-none"
+                    style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.1)", color: "#fffcef" }}
                     maxLength={150}
                   />
-                  <p className="text-[10px] text-foreground/20 text-right mt-0.5">{spokeAbout.length}/150</p>
+                  <p className="text-[10px] text-right mt-0.5" style={{ color: "rgba(255,252,239,0.2)" }}>{spokeAbout.length}/150</p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-body text-foreground/60">What felt most difficult today?</label>
+                  <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>What felt most difficult today?</label>
                   <textarea
                     value={biggestChallenge}
                     onChange={e => setBiggestChallenge(e.target.value.slice(0, 150))}
-                    className="w-full mt-2 p-3 rounded-xl bg-foreground/5 border border-foreground/10 focus:border-primary outline-none font-body text-sm text-foreground resize-none min-h-[80px]"
+                    className="w-full mt-2 p-3 rounded-xl text-sm resize-none min-h-[80px] outline-none"
+                    style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.1)", color: "#fffcef" }}
                     maxLength={150}
                   />
-                  <p className="text-[10px] text-foreground/20 text-right mt-0.5">{biggestChallenge.length}/150</p>
+                  <p className="text-[10px] text-right mt-0.5" style={{ color: "rgba(255,252,239,0.2)" }}>{biggestChallenge.length}/150</p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-body text-foreground/60">What will you say in English tomorrow?</label>
+                  <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>What will you say in English tomorrow?</label>
                   <textarea
                     value={tomorrowsIntention}
                     onChange={e => setTomorrowsIntention(e.target.value.slice(0, 100))}
-                    className="w-full mt-2 p-3 rounded-xl bg-foreground/5 border border-foreground/10 focus:border-primary outline-none font-body text-sm text-foreground resize-none min-h-[60px]"
+                    className="w-full mt-2 p-3 rounded-xl text-sm resize-none min-h-[60px] outline-none"
+                    style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.1)", color: "#fffcef" }}
                     maxLength={100}
                   />
-                  <p className="text-[10px] text-foreground/20 text-right mt-0.5">{tomorrowsIntention.length}/100</p>
+                  <p className="text-[10px] text-right mt-0.5" style={{ color: "rgba(255,252,239,0.2)" }}>{tomorrowsIntention.length}/100</p>
                 </div>
               </div>
 
-              <button
+              <GoldButton
                 disabled={!reflectionValid || saving}
                 onClick={submitReflection}
-                className="w-full mt-6 bg-primary text-primary-foreground py-4 rounded-2xl font-body font-bold text-base disabled:opacity-40"
+                fullWidth
+                className="mt-6"
               >
                 {saving ? "Saving..." : "Continue →"}
-              </button>
+              </GoldButton>
             </motion.div>
           )}
 
-          {/* ─── MASTER LOADING ─── */}
+          {/* MASTER LOADING */}
           {screen === "master-loading" && (
             <motion.div key="master-loading" variants={slideVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col items-center justify-center min-h-[50vh]">
               <motion.div
-                className="w-20 h-20 rounded-2xl bg-primary/15 border-2 border-primary/30 flex items-center justify-center"
+                className="w-20 h-20 rounded-2xl flex items-center justify-center"
+                style={{ background: "rgba(253,193,65,0.15)", border: "2px solid rgba(253,193,65,0.3)" }}
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ repeat: Infinity, duration: 1.5 }}
               >
@@ -542,7 +536,8 @@ const FlamePage = () => {
                 key={loadingTextIdx}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="font-display text-lg font-bold text-primary text-center mt-6"
+                className="text-lg font-bold text-center mt-6"
+                style={{ fontFamily: "var(--fd)", color: "#ffc300" }}
               >
                 {loadingTexts[loadingTextIdx].replace("{masterName}", masterName)}
               </motion.p>
@@ -554,66 +549,68 @@ const FlamePage = () => {
             </motion.div>
           )}
 
-          {/* ─── MASTER RESPONSE ─── */}
+          {/* MASTER RESPONSE */}
           {screen === "master" && (
             <motion.div key="master" variants={slideVariants} initial="initial" animate="animate" exit="exit">
               <div className="flex flex-col items-center">
-                <div className="w-14 h-14 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center" style={{ boxShadow: "0 0 20px hsl(44 99% 68% / 0.2)" }}>
-                  <span className="text-2xl font-bold text-primary">{masterName[0]}</span>
+                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(253,193,65,0.2)", border: "2px solid rgba(253,193,65,0.4)", boxShadow: "0 0 20px rgba(253,193,65,0.2)" }}>
+                  <span className="text-2xl font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>{masterName[0]}</span>
                 </div>
-                <p className="text-xs text-foreground/40 mt-2 text-center uppercase tracking-wider font-body">{masterName}'s Summary</p>
+                <p className="text-xs mt-2 text-center uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.4)" }}>{masterName}'s Summary</p>
 
                 <motion.div
-                  className={`mt-4 p-6 rounded-3xl w-full ${masterName === "Gyani" ? "glass-card-gold" : "glass-card border border-blue-400/40"}`}
+                  className="mt-4 w-full"
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
                 >
-                  <p className="font-body text-base text-foreground leading-relaxed text-center">{aiResponse}</p>
+                  <GoldCard padding="24px" glow>
+                    <p className="text-base leading-relaxed text-center" style={{ fontFamily: "var(--fb)", color: "#fffcef" }}>{aiResponse}</p>
+                  </GoldCard>
                 </motion.div>
 
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
+                <GlassButton
                   onClick={() => playVoice()}
-                  className="mt-4 glass-card px-5 py-3 rounded-full text-sm font-body font-medium border border-primary/30 bg-primary/10 text-primary flex items-center gap-2"
+                  className="mt-4 flex items-center gap-2 text-sm"
                 >
                   {audioLoading ? "Loading voice..." : isPlaying ? `⏸ Pause ${masterName}` : `▶ Hear ${masterName}`}
-                </motion.button>
+                </GlassButton>
 
-                <button
+                <GoldButton
                   onClick={() => setScreen("streak")}
-                  className="w-full mt-6 bg-primary text-primary-foreground py-4 rounded-2xl font-body font-bold text-base"
+                  fullWidth
+                  className="mt-6"
                 >
                   Continue to Complete Day →
-                </button>
+                </GoldButton>
               </div>
             </motion.div>
           )}
 
-          {/* ─── STREAK & COMPLETION ─── */}
+          {/* STREAK & COMPLETION */}
           {screen === "streak" && (
             <motion.div key="streak" variants={slideVariants} initial="initial" animate="animate" exit="exit">
               <div className="relative flex flex-col items-center" style={{ background: "radial-gradient(ellipse at center, rgba(254,209,65,0.05) 0%, transparent 70%)" }}>
                 <Particles />
                 <motion.div className="flex flex-col items-center relative z-10" initial={{ scale: 0.8, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} transition={{ type: "spring", duration: 0.7, delay: 0.2 }}>
                   <motion.span className="text-[80px]" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>🔥</motion.span>
-                  <h2 className="font-display text-3xl font-bold text-primary text-center mt-4" style={{ filter: "drop-shadow(0 0 20px #fed141)" }}>
+                  <h2 className="text-3xl font-bold text-center mt-4" style={{ fontFamily: "var(--fd)", color: "#ffc300", filter: "drop-shadow(0 0 20px #fed141)" }}>
                     {getStreakMessage()}
                   </h2>
 
-                  <div className="w-12 h-px bg-primary/30 mx-auto mt-5 mb-5" />
+                  <div className="w-12 h-px mx-auto mt-5 mb-5" style={{ background: "rgba(253,193,65,0.3)" }} />
 
-                  <button
+                  <GoldButton
                     onClick={completeDay}
                     disabled={saving}
-                    className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-body font-bold text-base disabled:opacity-40"
+                    fullWidth
                   >
                     {saving ? "Completing..." : `Complete Day ${dayNumber} ✦`}
-                  </button>
+                  </GoldButton>
 
-                  <button onClick={() => navigate("/dashboard")} className="w-full mt-3 glass-card border border-foreground/10 text-foreground/60 font-body py-4 rounded-2xl">
+                  <GlassButton onClick={() => navigate("/dashboard")} className="w-full mt-3">
                     ← Back to Home
-                  </button>
+                  </GlassButton>
                 </motion.div>
               </div>
             </motion.div>
