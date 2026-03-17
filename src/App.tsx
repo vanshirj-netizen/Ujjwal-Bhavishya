@@ -4,6 +4,8 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
+import SplashScreen from "./components/SplashScreen";
+import AuroraBackground from "./components/AuroraBackground";
 import Splash from "./pages/Splash";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -43,28 +45,34 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Splash />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/journey" element={<ProtectedRoute><Journey /></ProtectedRoute>} />
-          <Route path="/day/:dayNumber" element={<ProtectedRoute><DayScreen /></ProtectedRoute>} />
-          <Route path="/flame" element={<ProtectedRoute><FlameRedirect /></ProtectedRoute>} />
-          <Route path="/flame/:dayNumber" element={<ProtectedRoute><FlamePage /></ProtectedRoute>} />
-          <Route path="/anubhav/:dayNumber" element={<ProtectedRoute><AnubhavPage /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [splashDone, setSplashDone] = useState(false);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Sonner />
+        {!splashDone && <SplashScreen onComplete={() => setSplashDone(true)} />}
+        <AuroraBackground />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Splash />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/journey" element={<ProtectedRoute><Journey /></ProtectedRoute>} />
+            <Route path="/day/:dayNumber" element={<ProtectedRoute><DayScreen /></ProtectedRoute>} />
+            <Route path="/flame" element={<ProtectedRoute><FlameRedirect /></ProtectedRoute>} />
+            <Route path="/flame/:dayNumber" element={<ProtectedRoute><FlamePage /></ProtectedRoute>} />
+            <Route path="/anubhav/:dayNumber" element={<ProtectedRoute><AnubhavPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
