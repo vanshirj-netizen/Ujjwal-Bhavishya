@@ -1,13 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --gg: linear-gradient(135deg, #fed141 0%, #ffe180 30%, #f9be00 65%, #ffc300 100%);
+  --ggh: linear-gradient(90deg, #fed141, #ffe180, #ffc300, #f9be00, #fed141);
+  --gold: #ffc300;
+  --green: #003326;
+  --cream: #FFFCEF;
+  --card-bg: rgba(0, 26, 16, 0.97);
+  --fd: 'Playfair Display', serif;
+  --fa: 'Space Grotesk', sans-serif;
+  --fb: 'Inter', sans-serif;
+}
+
 @layer base {
   :root {
     /* UB Sacred Palette — all HSL */
-    --background: 161 96% 8%;          /* #01271d deep sacred green */
+    --background: 155 100% 3%;          /* #000e09 deep sacred dark */
     --foreground: 46 100% 94%;         /* #fffcef cream */
 
     --card: 161 96% 8%;
