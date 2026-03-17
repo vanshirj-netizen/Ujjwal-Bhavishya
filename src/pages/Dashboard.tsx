@@ -1,33 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PAYMENT_URL, COURSE_ID } from "@/lib/constants";
 import BottomNav from "@/components/BottomNav";
+import GoldCard from "@/components/ui/GoldCard";
+import GoldButton from "@/components/ui/GoldButton";
+import SectionLabel from "@/components/ui/SectionLabel";
 
-const courseCards = [
-  { name: "Aarambh", icon: "🗣️", tagline: "English Communication", active: true },
-  { name: "Vikas", icon: "📈", tagline: "Personal Development", active: false },
-  { name: "Utkarsh", icon: "💻", tagline: "Tech & AI Skills", active: false },
-  { name: "Margdarshan", icon: "🧭", tagline: "Career Counselling", active: false },
-];
+const GYANI_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyani.webp";
+const GYANU_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyanu.webp";
 
-type DayProgress = {
-  day_number: number;
-  day_complete: boolean | null;
-  lesson_complete: boolean | null;
-  anubhav_complete: boolean | null;
-  flame_complete: boolean | null;
-  gamma_complete: boolean | null;
-  gyani_complete: boolean | null;
-  gyanu_complete: boolean | null;
-  quiz_complete: boolean | null;
-};
-
-type LessonInfo = {
-  day_number: number;
-  title: string;
+const useCountUp = (end: number, duration = 1200) => {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (end === 0) return;
+    const start = Date.now();
+    const frame = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      setVal(Math.round(progress * end));
+      if (progress < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }, [end, duration]);
+  return val;
 };
 
 const Dashboard = () => {
@@ -41,8 +39,15 @@ const Dashboard = () => {
   const [todayProgress, setTodayProgress] = useState<any>(null);
   const [enrollmentData, setEnrollmentData] = useState<any>(null);
   const [displayDay, setDisplayDay] = useState(1);
-  const [allProgress, setAllProgress] = useState<DayProgress[]>([]);
-  const [allLessons, setAllLessons] = useState<LessonInfo[]>([]);
+  const [selectedMaster, setSelectedMaster] = useState("gyani");
+  const [avgConfidence, setAvgConfidence] = useState<string>("—");
+  const [daysActive, setDaysActive] = useState(0);
+  const [quoteText, setQuoteText] = useState("Every expert was once a beginner.");
+  const [quoteAuthor, setQuoteAuthor] = useState("Helen Hayes");
+
+  // Audio state
+  const [quoteAudioState, setQuoteAudioState] = useState<"idle" | "loading" | "playing" | "played">("idle");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -50,374 +55,367 @@ const Dashboard = () => {
       if (!session) return;
       const user = session.user;
 
-      const { data: profile } = await supabase.from("profiles").select("full_name, current_streak").eq("id", user.id).maybeSingle();
+      const { data: profile } = await supabase.from("profiles").select("full_name, current_streak, selected_master").eq("id", user.id).maybeSingle();
       const fullName = (profile?.full_name && profile.full_name !== "Student") ? profile.full_name : user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "";
       setFirstName(fullName ? fullName.split(" ")[0] : "");
       setStreak(profile?.current_streak ?? 0);
+      setSelectedMaster((profile?.selected_master ?? "gyani").toLowerCase());
 
       const { data: enrollData } = await supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).maybeSingle();
       setEnrollmentData(enrollData);
 
-      let allProg: DayProgress[] = [];
-      try {
-        const { data } = await supabase.from("progress").select("day_number, day_complete, lesson_complete, anubhav_complete, flame_complete, gamma_complete, gyani_complete, gyanu_complete, quiz_complete").eq("user_id", user.id);
-        allProg = (data ?? []) as DayProgress[];
-        setAllProgress(allProg);
-      } catch { /* ignore */ }
-
-      const completedFromProgress = allProg.filter(p => p.day_complete).length;
+      const { data: progressData } = await supabase.from("progress").select("day_number, day_complete").eq("user_id", user.id);
+      const completedFromProgress = progressData?.filter(p => p.day_complete).length ?? 0;
       const resolvedCompleted = enrollData?.days_completed ?? completedFromProgress;
       setCompletedDays(resolvedCompleted);
+      setDaysActive(progressData?.length ?? 0);
 
       const day = (enrollData?.current_day ?? 0) > 0 ? enrollData!.current_day! : (completedFromProgress > 0 ? completedFromProgress + 1 : 1);
       setDisplayDay(day);
 
-      const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number").eq("day_number", day).eq("course_id", COURSE_ID).maybeSingle();
+      const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number, quote_text, quote_author").eq("day_number", day).eq("course_id", COURSE_ID).maybeSingle();
       setTodayLesson(lessonData);
+      if (lessonData?.quote_text) setQuoteText(lessonData.quote_text);
+      if (lessonData?.quote_author) setQuoteAuthor(lessonData.quote_author);
 
-      const { data: progressData } = await supabase.from("progress").select("lesson_complete, anubhav_complete, flame_complete, gamma_complete, gyani_complete, gyanu_complete, quiz_complete, day_complete").eq("user_id", user.id).eq("day_number", day).maybeSingle();
-      setTodayProgress(progressData);
+      const { data: todayProg } = await supabase.from("progress").select("lesson_complete, anubhav_complete, flame_complete, gamma_complete, gyani_complete, gyanu_complete, quiz_complete, day_complete").eq("user_id", user.id).eq("day_number", day).maybeSingle();
+      setTodayProgress(todayProg);
 
-      const { count: flamesCount } = await supabase.from("daily_flames").select("id", { count: "exact", head: true }).eq("user_id", user.id);
-      setFlamesSubmitted(flamesCount ?? 0);
+      const { data: flameData } = await supabase.from("daily_flames").select("id, confidence_rating").eq("user_id", user.id);
+      setFlamesSubmitted(flameData?.length ?? 0);
 
-      try {
-        const { data: allLess } = await supabase.from("lessons").select("day_number, title").eq("course_id", COURSE_ID);
-        setAllLessons(allLess ?? []);
-      } catch { /* ignore */ }
+      const ratings = flameData?.map(f => f.confidence_rating).filter(Boolean) ?? [];
+      setAvgConfidence(ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : "—");
+
+      // Check if quote already played today
+      if (sessionStorage.getItem("quotePlayedDay") === String(day)) {
+        setQuoteAudioState("played");
+      }
     };
     fetchUserData();
   }, [location.key]);
 
-  const getDayProgress = (dayNum: number) => allProgress.find(p => p.day_number === dayNum);
-  const getDayTitle = (dayNum: number) => {
-    const l = allLessons.find(l => l.day_number === dayNum);
-    return l?.title?.replace(/^Day\s*\d+:\s*/i, "") || "";
-  };
+  const masterName = selectedMaster === "gyanu" ? "Gyanu" : "Gyani";
+  const masterImg = selectedMaster === "gyanu" ? GYANU_IMG : GYANI_IMG;
 
-  // Phase icon component
-  const PhaseIcon = ({ emoji, state }: { emoji: string; state: "locked" | "active" | "done" }) => {
-    if (state === "done") {
-      return <span className="text-sm brightness-125">{emoji}</span>;
+  const animStreak = useCountUp(streak);
+  const animFlames = useCountUp(flamesSubmitted);
+  const animDaysActive = useCountUp(daysActive);
+
+  const navigateToDayScreen = () => {
+    if (displayDay > 5 && enrollmentData?.payment_status === "free") {
+      window.open(PAYMENT_URL, "_blank");
+      return;
     }
-    if (state === "active") {
-      return <span className="text-sm opacity-70">{emoji}</span>;
+    navigate("/day/" + displayDay);
+  };
+
+  const playQuoteAudio = async () => {
+    if (quoteAudioState === "loading" || quoteAudioState === "playing") return;
+
+    setQuoteAudioState("loading");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-daily-quote-voice`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            quote: quoteText,
+            author: quoteAuthor,
+            userName: firstName || "Friend",
+            masterName,
+            dayNumber: displayDay,
+          }),
+        }
+      );
+
+      if (response.status === 429) {
+        toast.error("Too many requests — please try again later");
+        setQuoteAudioState("idle");
+        return;
+      }
+      if (response.status === 402) {
+        toast.error("AI credits exhausted — please try again later");
+        setQuoteAudioState("idle");
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        toast.error("Couldn't load audio — please try again");
+        setQuoteAudioState("idle");
+        return;
+      }
+
+      if (data.audioBase64) {
+        const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
+        audioRef.current = audio;
+        audio.onended = () => {
+          setQuoteAudioState("played");
+          sessionStorage.setItem("quotePlayedDay", String(displayDay));
+        };
+        audio.play();
+        setQuoteAudioState("playing");
+      } else {
+        toast.error("Couldn't load audio — please try again");
+        setQuoteAudioState("idle");
+      }
+    } catch {
+      toast.error("Couldn't load audio — please try again");
+      setQuoteAudioState("idle");
     }
-    return (
-      <span className="text-sm opacity-25 relative">
-        {emoji}
-        <span className="absolute -top-0.5 -right-0.5 text-[8px]">🔒</span>
-      </span>
-    );
   };
 
-  const getPhaseStates = (prog: DayProgress | undefined) => {
-    const lessonDone = prog?.lesson_complete || prog?.gamma_complete || prog?.quiz_complete || prog?.day_complete;
-    const anubhavDone = prog?.anubhav_complete;
-    const flameDone = prog?.flame_complete;
-
-    const lessonState: "locked" | "active" | "done" = lessonDone ? "done" : "active";
-    const anubhavState: "locked" | "active" | "done" = anubhavDone ? "done" : lessonDone ? "active" : "locked";
-    const flameState: "locked" | "active" | "done" = flameDone ? "done" : anubhavDone ? "active" : "locked";
-
-    return { lessonState, anubhavState, flameState };
-  };
-
-  const seq = {
-    butterfly: { delay: 0, duration: 0.6 },
-    header: { delay: 0.3, duration: 0.3 },
-    ring: { delay: 0.5, duration: 0.4 },
-    lesson: { delay: 0.7, duration: 0.35 },
-    courseBase: 0.9,
-    courseStagger: 0.15,
-    nav: { delay: 1.2, duration: 0.3 },
-  };
+  const stats = [
+    { emoji: "🔥", value: animStreak, label: "DAY STREAK" },
+    { emoji: "✨", value: animFlames, label: "FLAMES LIT" },
+    { emoji: "📅", value: animDaysActive, label: "DAYS ACTIVE" },
+    { emoji: "💬", value: avgConfidence, label: "AVG CONFIDENCE" },
+  ];
 
   return (
-    <div className="min-h-screen bg-background pb-24 safe-top relative overflow-hidden">
-      {/* Butterfly entry */}
-      <motion.div
-        className="absolute left-1/2 -translate-x-1/2 text-3xl z-20 pointer-events-none"
-        initial={{ bottom: -40, opacity: 0 }}
-        animate={{ bottom: "50%", opacity: [0, 1, 1, 0] }}
-        transition={{ delay: seq.butterfly.delay, duration: seq.butterfly.duration, ease: "easeOut" }}
-      >
-        🦋
-      </motion.div>
-
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="absolute left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary pointer-events-none z-10"
-          initial={{ bottom: -40, opacity: 0 }}
-          animate={{ bottom: "48%", opacity: [0, 0.6, 0] }}
-          transition={{ delay: seq.butterfly.delay + 0.1 * i, duration: seq.butterfly.duration * 0.8, ease: "easeOut" }}
-        />
-      ))}
-
-      {/* Hero Logo Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="relative w-full overflow-hidden h-[110px] sm:h-[130px] lg:h-[150px]"
-        style={{
-          background: "linear-gradient(180deg, hsl(161 96% 6%) 0%, hsl(161 96% 8%) 50%, hsl(161 96% 10%) 100%)",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-        }}
-      >
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, hsl(44 99% 68% / 0.12) 0%, transparent 70%)" }} />
-        <div className="absolute inset-0 pointer-events-none profile-hero-shimmer" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <img src="https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo-Horizontal.png" alt="Ujjwal Bhavishya" className="w-[65%] max-w-[400px] h-auto object-contain drop-shadow-lg" />
-        </div>
-      </motion.div>
-
-      <div className="px-5 pt-4 max-w-lg mx-auto">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: seq.header.delay, duration: seq.header.duration }}>
-          <p className="text-sm text-foreground/60 mt-2">
-            Namaste{firstName ? `, ${firstName}` : ""} 👋 &nbsp;•&nbsp; Day {displayDay} of 60 &nbsp;•&nbsp; 🔥 {streak}-day streak
-          </p>
-        </motion.div>
-
-        {/* Overall progress bar */}
+    <div className="min-h-screen pb-[100px] safe-top relative z-[2]">
+      <div className="px-5 pt-8 max-w-lg mx-auto">
+        {/* SECTION 1 — Hero Greeting */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-4"
+          transition={{ duration: 0.6 }}
         >
-          <div className="flex items-center justify-between text-xs font-body text-foreground/50 mb-1">
-            <span>{completedDays} / 60 Days Complete</span>
-            <span>{Math.round((completedDays / 60) * 100)}%</span>
-          </div>
-          <div className="h-2 w-full bg-foreground/10 rounded-full overflow-hidden">
+          <div className="overflow-hidden">
             <motion.div
-              className="h-full bg-primary rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${(completedDays / 60) * 100}%` }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-            />
-          </div>
-        </motion.div>
-
-        {/* Progress Ring */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: seq.ring.delay, duration: seq.ring.duration }}
-          className="flex flex-col items-center mt-6"
-        >
-          <div className="relative w-40 h-40">
-            <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
-              <motion.circle
-                cx="60" cy="60" r="52" fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 52}
-                initial={{ strokeDashoffset: 2 * Math.PI * 52 }}
-                animate={{ strokeDashoffset: 2 * Math.PI * 52 * (1 - completedDays / 60) }}
-                transition={{ duration: 0.8, ease: "easeOut", delay: seq.ring.delay + 0.1 }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold text-primary font-display">{completedDays}/60</span>
-              <span className="text-xs text-foreground/50">Days Complete</span>
-            </div>
-          </div>
-          <p className="text-xs text-foreground/50 mt-3">🦋 {flamesSubmitted} Flames submitted this journey</p>
-        </motion.div>
-
-        {/* Today's Lesson Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: seq.lesson.delay, duration: seq.lesson.duration }}
-          className="glass-card-gold p-5 mt-6 relative overflow-hidden cursor-pointer"
-          onClick={() => {
-            if (displayDay > 5 && enrollmentData?.payment_status === "free") {
-              window.open(PAYMENT_URL, "_blank");
-              return;
-            }
-            navigate("/day/" + displayDay);
-          }}
-        >
-          {displayDay > 5 && enrollmentData?.payment_status === "free" && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-xl">
-              <span className="text-3xl">🔒</span>
-              <span className="text-xs text-foreground/50 mt-1">Upgrade to unlock</span>
-            </div>
-          )}
-
-          {/* TODAY label */}
-          <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[9px] font-bold px-3 py-0.5 rounded-b-lg tracking-widest uppercase">TODAY</div>
-
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-[10px] text-foreground/40 uppercase tracking-wider">
-              {todayLesson?.week_number ? `Week ${todayLesson.week_number}` : "Today"}
-            </p>
-            {streak > 0 && <span className="text-xs text-primary font-bold">🔥 {streak}</span>}
-          </div>
-          <p className="text-3xl font-display font-bold text-primary mt-1">Day {displayDay}</p>
-          <h2 className="text-lg font-display font-bold text-foreground mt-1 line-clamp-2">
-            {todayLesson?.title?.replace(/^Day\s*\d+:\s*/i, "") || "Loading..."}
-          </h2>
-
-          {/* 3-phase indicators */}
-          {(() => {
-            const phases = getPhaseStates(todayProgress);
-            return (
-              <div className="flex items-center gap-3 mt-3">
-                <div className="flex items-center gap-1">
-                  <PhaseIcon emoji="📖" state={phases.lessonState} />
-                  <span className={`text-[10px] font-body ${phases.lessonState === "done" ? "text-primary" : "text-foreground/30"}`}>Lesson</span>
-                </div>
-                <div className={`flex-1 h-px ${phases.lessonState === "done" ? "bg-primary/40" : "bg-foreground/10"}`} />
-                <div className="flex items-center gap-1">
-                  <PhaseIcon emoji="🎤" state={phases.anubhavState} />
-                  <span className={`text-[10px] font-body ${phases.anubhavState === "done" ? "text-primary" : "text-foreground/30"}`}>Practice</span>
-                </div>
-                <div className={`flex-1 h-px ${phases.anubhavState === "done" ? "bg-primary/40" : "bg-foreground/10"}`} />
-                <div className="flex items-center gap-1">
-                  <PhaseIcon emoji="🔥" state={phases.flameState} />
-                  <span className={`text-[10px] font-body ${phases.flameState === "done" ? "text-primary" : "text-foreground/30"}`}>Flame</span>
-                </div>
-              </div>
-            );
-          })()}
-
-          <button className="w-full mt-4 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm gold-glow transition-transform active:scale-[0.98]">
-            {todayProgress?.day_complete ? "Day Complete ✦" : todayProgress?.gamma_complete ? "Continue →" : `Start Day ${displayDay} →`}
-          </button>
-        </motion.div>
-
-        {/* Course Cards */}
-        <div className="mt-8">
-          <motion.h3
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: seq.courseBase }}
-            className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3"
-          >
-            Your UB Journey
-          </motion.h3>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
-            {courseCards.map((course, i) => (
-              <motion.div
-                key={course.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: seq.courseBase + i * seq.courseStagger, duration: 0.3 }}
-                className={`flex-shrink-0 w-40 p-4 rounded-xl ${course.active ? "glass-card-gold" : "glass-card opacity-50"}`}
+              initial={{ y: "110%" }}
+              animate={{ y: 0 }}
+              transition={{ duration: 0.9, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <h1
+                className="font-display"
+                style={{
+                  fontSize: "clamp(2rem, 6vw, 3.5rem)",
+                  fontWeight: 900,
+                  color: "#FFFCEF",
+                  lineHeight: 1.1,
+                }}
               >
-                <span className="text-2xl">{course.icon}</span>
-                <p className="text-sm font-semibold text-foreground mt-2">{course.name}</p>
-                <p className="text-xs text-foreground/50 mt-0.5">{course.tagline}</p>
-                {course.active ? (
-                  <p className="text-xs text-primary mt-2 font-medium">{completedDays}/60 days</p>
-                ) : (
-                  <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-foreground/10 text-foreground/50">Coming Soon</span>
-                )}
-              </motion.div>
-            ))}
+                Namaste
+              </h1>
+            </motion.div>
           </div>
+          <div className="overflow-hidden">
+            <motion.div
+              initial={{ y: "110%" }}
+              animate={{ y: 0 }}
+              transition={{ duration: 0.9, delay: 0.15, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <h1
+                className="font-display"
+                style={{
+                  fontSize: "clamp(2.4rem, 7vw, 4rem)",
+                  fontWeight: 900,
+                  background: "var(--gg)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  lineHeight: 1.1,
+                }}
+              >
+                {firstName || "Friend"}!
+              </h1>
+            </motion.div>
+          </div>
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+            className="font-display italic mt-3"
+            style={{
+              fontSize: "clamp(0.85rem, 1.35vw, 1.1rem)",
+              color: "rgba(255,252,239,0.75)",
+            }}
+          >
+            Your journey continues. One day at a time.
+          </motion.p>
+        </motion.div>
+
+        {/* SECTION 2 — Stats Row */}
+        <div className="grid grid-cols-4 gap-3 mt-8">
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 44 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + i * 0.1, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <GoldCard padding="18px 14px">
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-lg">{s.emoji}</span>
+                  <span
+                    className="font-display mt-1"
+                    style={{
+                      fontSize: "clamp(1.8rem, 4vw, 2.6rem)",
+                      fontWeight: 900,
+                      background: "var(--gg)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {typeof s.value === "number" ? s.value : s.value}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontSize: "0.58rem",
+                      letterSpacing: 2,
+                      textTransform: "uppercase",
+                      color: "rgba(255,252,239,0.65)",
+                      marginTop: 4,
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              </GoldCard>
+            </motion.div>
+          ))}
         </div>
 
-        {/* 60-Day Map */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }} className="mt-8">
-          <h3 className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3">60-Day Map</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {Array.from({ length: 60 }, (_, i) => {
-              const day = i + 1;
-              const prog = getDayProgress(day);
-              const title = getDayTitle(day);
-              const isFreeUser = enrollmentData?.payment_status === "free" || !enrollmentData;
-              const isCompleted = prog?.day_complete === true;
-              const isToday = day === displayDay;
-              const phases = getPhaseStates(prog);
+        {/* SECTION 3 — Today's Lesson */}
+        <motion.div
+          initial={{ opacity: 0, y: 44 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.5 }}
+          className="mt-8"
+        >
+          <GoldCard padding="24px" glow>
+            <SectionLabel>TODAY'S LESSON</SectionLabel>
+            <p
+              className="mt-3"
+              style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                textTransform: "uppercase",
+                color: "rgba(255,252,239,0.55)",
+                fontSize: "0.75rem",
+              }}
+            >
+              DAY {displayDay} OF 60
+            </p>
+            <h2
+              className="font-display mt-1.5"
+              style={{
+                fontSize: "clamp(1.2rem, 2.5vw, 1.6rem)",
+                fontWeight: 900,
+                color: "#FFFCEF",
+              }}
+            >
+              {todayLesson?.title?.replace(/^Day\s*\d+:\s*/i, "") || "Loading..."}
+            </h2>
+            <div className="mt-5">
+              <GoldButton fullWidth onClick={navigateToDayScreen}>
+                Continue Day {displayDay} →
+              </GoldButton>
+            </div>
+          </GoldCard>
+        </motion.div>
 
-              // Sequential unlock: Day 1 always unlocked, others need previous day flame_complete
-              const prevProg = day > 1 ? getDayProgress(day - 1) : null;
-              const isSequentiallyLocked = day > 1 && prevProg?.flame_complete !== true;
-              // Free user lock for days > 5
-              const isPayLocked = isFreeUser && day > 5;
-              const isLocked = isPayLocked || (isSequentiallyLocked && !isCompleted);
+        {/* SECTION 4 — Quote of the Day */}
+        <motion.div
+          initial={{ opacity: 0, y: 44 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.5 }}
+          className="mt-6"
+        >
+          <GoldCard padding="24px">
+            <SectionLabel>YOUR DAILY WISDOM</SectionLabel>
 
-              if (isPayLocked) {
-                return (
-                  <div key={day} onClick={() => window.open(PAYMENT_URL, "_blank")} className="glass-card p-3 rounded-xl relative opacity-60 cursor-not-allowed">
-                    <p className="text-xs font-body text-foreground/30">Day {day}</p>
-                    <div className="flex items-center justify-center my-2"><span className="text-2xl text-foreground/20">🔒</span></div>
-                    <p className="text-[10px] font-body text-foreground/20">Upgrade to unlock</p>
-                  </div>
-                );
-              }
+            <span
+              className="font-display block mt-3"
+              style={{
+                fontSize: "4rem",
+                background: "var(--gg)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                lineHeight: 0.5,
+                marginBottom: 8,
+              }}
+            >
+              "
+            </span>
 
-              if (isLocked) {
-                return (
-                  <div key={day} onClick={() => toast("Complete the previous day first ✦")} className="glass-card p-3 rounded-xl relative opacity-50 cursor-not-allowed">
-                    <p className="text-xs font-body text-foreground/30">Day {day}</p>
-                    <div className="flex items-center justify-center my-2"><span className="text-2xl text-foreground/20">🔒</span></div>
-                    {title && <p className="text-[10px] font-body text-foreground/20 line-clamp-1">{title}</p>}
-                  </div>
-                );
-              }
+            <p
+              className="font-display italic"
+              style={{
+                fontSize: "clamp(0.92rem, 1.4vw, 1.08rem)",
+                color: "rgba(255,252,239,0.88)",
+                lineHeight: 1.8,
+              }}
+            >
+              {quoteText}
+            </p>
 
-              if (isCompleted) {
-                return (
-                  <div key={day} onClick={() => navigate("/day/" + day)} className={`glass-card p-3 rounded-xl cursor-pointer relative transition-transform active:scale-[0.97] border border-primary/40 ${isToday ? "shadow-[0_0_20px_hsl(var(--gold-glow))]" : ""}`}>
-                    {isToday && <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[7px] font-bold px-2 py-0 rounded-b tracking-widest">TODAY</div>}
-                    <div className="absolute top-2 right-2 bg-green-500/20 text-green-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">✓</div>
-                    <p className="text-xs font-body text-foreground/40">Day {day}</p>
-                    {title && <p className="text-sm font-display font-semibold text-foreground line-clamp-2 mt-1">{title}</p>}
-                    <div className="flex gap-2 mt-2">
-                      <PhaseIcon emoji="📖" state={phases.lessonState} />
-                      <PhaseIcon emoji="🎤" state={phases.anubhavState} />
-                      <PhaseIcon emoji="🔥" state={phases.flameState} />
-                    </div>
-                  </div>
-                );
-              }
+            <p
+              className="mt-3"
+              style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: "0.62rem",
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                background: "var(--gg)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              — {quoteAuthor}
+            </p>
 
-              // Not started / in progress
-              const isInProgress = prog && !prog.day_complete && (prog.gamma_complete || prog.gyani_complete || prog.lesson_complete || prog.anubhav_complete);
+            {/* Master row */}
+            <div className="flex items-center gap-2.5 mt-4">
+              <div
+                className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0"
+                style={{ border: "1.5px solid #ffc300" }}
+              >
+                <img src={masterImg} alt={masterName} className="w-full h-full object-cover" />
+              </div>
+              <span style={{ color: "#FFFCEF", fontSize: "0.8rem" }}>— {masterName}</span>
+              <span
+                style={{
+                  background: "var(--gg)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontSize: "0.7rem",
+                  fontFamily: "'Space Grotesk', sans-serif",
+                }}
+              >
+                Your Master
+              </span>
+            </div>
 
-              return (
-                <div
-                  key={day}
-                  onClick={() => title ? navigate("/day/" + day) : toast("Day " + day + " content coming soon ✦")}
-                  className={`glass-card p-3 rounded-xl cursor-pointer transition-transform active:scale-[0.97] ${isToday ? "shadow-[0_0_20px_hsl(var(--gold-glow))] border border-primary/30" : ""}`}
-                >
-                  {isToday && <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[7px] font-bold px-2 py-0 rounded-b tracking-widest relative">TODAY</div>}
-                  <p className="text-xs font-body text-foreground/40">Day {day}</p>
-                  {title ? (
-                    <p className="text-sm font-display font-semibold text-foreground line-clamp-2 mt-1">{title}</p>
-                  ) : (
-                    <p className="text-xs text-foreground/20 mt-1">Coming soon</p>
-                  )}
-                  {isInProgress && (
-                    <div className="flex gap-2 mt-2">
-                      <PhaseIcon emoji="📖" state={phases.lessonState} />
-                      <PhaseIcon emoji="🎤" state={phases.anubhavState} />
-                      <PhaseIcon emoji="🔥" state={phases.flameState} />
-                    </div>
-                  )}
-                  {!isInProgress && <p className="text-[10px] text-foreground/30 mt-2">Start →</p>}
-                </div>
-              );
-            })}
-          </div>
+            {/* Play button */}
+            <div className="mt-4">
+              <GoldButton
+                onClick={playQuoteAudio}
+                disabled={quoteAudioState === "played" || quoteAudioState === "loading" || quoteAudioState === "playing"}
+                fullWidth
+              >
+                {quoteAudioState === "loading" && "⏳ Loading..."}
+                {quoteAudioState === "playing" && "🔊 Playing..."}
+                {quoteAudioState === "played" && "✓ Played today"}
+                {quoteAudioState === "idle" && `▶ Hear it from ${masterName}`}
+              </GoldButton>
+            </div>
+          </GoldCard>
         </motion.div>
       </div>
 
-      <motion.div initial={{ y: 80 }} animate={{ y: 0 }} transition={{ delay: seq.nav.delay, duration: seq.nav.duration, ease: "easeOut" }}>
-        <BottomNav />
-      </motion.div>
+      <BottomNav />
     </div>
   );
 };

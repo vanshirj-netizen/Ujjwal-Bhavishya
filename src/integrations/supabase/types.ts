@@ -533,6 +533,8 @@ export type Database = {
           gyanu_timestamps: string | null
           gyanu_youtube_url: string | null
           id: string
+          quote_author: string | null
+          quote_text: string | null
           speak_example: string | null
           speak_max_seconds: number | null
           speak_min_seconds: number | null
@@ -556,6 +558,8 @@ export type Database = {
           gyanu_timestamps?: string | null
           gyanu_youtube_url?: string | null
           id?: string
+          quote_author?: string | null
+          quote_text?: string | null
           speak_example?: string | null
           speak_max_seconds?: number | null
           speak_min_seconds?: number | null
@@ -579,6 +583,8 @@ export type Database = {
           gyanu_timestamps?: string | null
           gyanu_youtube_url?: string | null
           id?: string
+          quote_author?: string | null
+          quote_text?: string | null
           speak_example?: string | null
           speak_max_seconds?: number | null
           speak_min_seconds?: number | null
