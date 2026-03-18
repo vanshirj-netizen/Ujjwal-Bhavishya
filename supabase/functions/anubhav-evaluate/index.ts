@@ -500,6 +500,7 @@ Return ONLY a JSON object with these fields:
         word_clarity_score: 50,
         smoothness_score: 50,
         natural_sound_score: 50,
+        composite_score: 50,
         word_errors: [],
         writing_checks: [],
         ai_feedback: "Good effort! Keep practicing every day.",

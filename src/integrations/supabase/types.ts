@@ -67,12 +67,15 @@ export type Database = {
       anubhav_practice_sessions: {
         Row: {
           ai_feedback: string | null
+          attempt_number: number | null
           audio_freespeech_path: string | null
           audio_sentences_path: string | null
           azure_word_errors: Json | null
+          composite_score: number | null
           created_at: string | null
           day_number: number
           id: string
+          is_best_attempt: boolean | null
           lesson_topic: string | null
           natural_sound_score: number | null
           retry_count: number | null
@@ -88,12 +91,15 @@ export type Database = {
         }
         Insert: {
           ai_feedback?: string | null
+          attempt_number?: number | null
           audio_freespeech_path?: string | null
           audio_sentences_path?: string | null
           azure_word_errors?: Json | null
+          composite_score?: number | null
           created_at?: string | null
           day_number: number
           id?: string
+          is_best_attempt?: boolean | null
           lesson_topic?: string | null
           natural_sound_score?: number | null
           retry_count?: number | null
@@ -109,12 +115,15 @@ export type Database = {
         }
         Update: {
           ai_feedback?: string | null
+          attempt_number?: number | null
           audio_freespeech_path?: string | null
           audio_sentences_path?: string | null
           azure_word_errors?: Json | null
+          composite_score?: number | null
           created_at?: string | null
           day_number?: number
           id?: string
+          is_best_attempt?: boolean | null
           lesson_topic?: string | null
           natural_sound_score?: number | null
           retry_count?: number | null
@@ -527,14 +536,21 @@ export type Database = {
           day_number: number
           free_speak_context: string | null
           gamma_url: string | null
+          goal_1: string | null
+          goal_2: string | null
+          goal_3: string | null
           grammar_hint: string | null
           gyani_timestamps: string | null
           gyani_youtube_url: string | null
           gyanu_timestamps: string | null
           gyanu_youtube_url: string | null
           id: string
+          manthan_question: string | null
           quote_author: string | null
           quote_text: string | null
+          recap_point_1: string | null
+          recap_point_2: string | null
+          recap_point_3: string | null
           speak_example: string | null
           speak_max_seconds: number | null
           speak_min_seconds: number | null
@@ -545,6 +561,9 @@ export type Database = {
           write_example: string | null
           write_prompt: string | null
           write_sentence_count: number | null
+          writing_free_hint: string | null
+          writing_prompt_instruction: string | null
+          writing_prompt_type: string | null
         }
         Insert: {
           course_id?: string | null
@@ -552,14 +571,21 @@ export type Database = {
           day_number: number
           free_speak_context?: string | null
           gamma_url?: string | null
+          goal_1?: string | null
+          goal_2?: string | null
+          goal_3?: string | null
           grammar_hint?: string | null
           gyani_timestamps?: string | null
           gyani_youtube_url?: string | null
           gyanu_timestamps?: string | null
           gyanu_youtube_url?: string | null
           id?: string
+          manthan_question?: string | null
           quote_author?: string | null
           quote_text?: string | null
+          recap_point_1?: string | null
+          recap_point_2?: string | null
+          recap_point_3?: string | null
           speak_example?: string | null
           speak_max_seconds?: number | null
           speak_min_seconds?: number | null
@@ -570,6 +596,9 @@ export type Database = {
           write_example?: string | null
           write_prompt?: string | null
           write_sentence_count?: number | null
+          writing_free_hint?: string | null
+          writing_prompt_instruction?: string | null
+          writing_prompt_type?: string | null
         }
         Update: {
           course_id?: string | null
@@ -577,14 +606,21 @@ export type Database = {
           day_number?: number
           free_speak_context?: string | null
           gamma_url?: string | null
+          goal_1?: string | null
+          goal_2?: string | null
+          goal_3?: string | null
           grammar_hint?: string | null
           gyani_timestamps?: string | null
           gyani_youtube_url?: string | null
           gyanu_timestamps?: string | null
           gyanu_youtube_url?: string | null
           id?: string
+          manthan_question?: string | null
           quote_author?: string | null
           quote_text?: string | null
+          recap_point_1?: string | null
+          recap_point_2?: string | null
+          recap_point_3?: string | null
           speak_example?: string | null
           speak_max_seconds?: number | null
           speak_min_seconds?: number | null
@@ -595,6 +631,9 @@ export type Database = {
           write_example?: string | null
           write_prompt?: string | null
           write_sentence_count?: number | null
+          writing_free_hint?: string | null
+          writing_prompt_instruction?: string | null
+          writing_prompt_type?: string | null
         }
         Relationships: [
           {
