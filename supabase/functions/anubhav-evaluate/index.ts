@@ -73,7 +73,8 @@ serve(async (req) => {
   console.log("[anubhav-evaluate] Step 1: Auth verified, userId:", userId);
 
   try {
-    const { session_id, writing_id, master_name, lesson_topic, mti_zone } = await req.json();
+    const { session_id, writing_id, master_name, lesson_topic, mti_zone, attempt_number } = await req.json();
+    const attemptNumber = attempt_number ?? 1;
 
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, SERVICE_ROLE_KEY);
