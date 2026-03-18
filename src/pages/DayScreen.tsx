@@ -303,7 +303,32 @@ const DayScreen = () => {
     </AnimatePresence>
   );
 
-  // Step 6 — full celebration
+  // Step 6 — full celebration with conditional practice card
+  const [practiceAttemptData, setPracticeAttemptData] = useState<any>(null);
+  const [practiceAttemptLoading, setPracticeAttemptLoading] = useState(false);
+
+  useEffect(() => {
+    if (currentStep !== 6) return;
+    const fetchAttempts = async () => {
+      setPracticeAttemptLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setPracticeAttemptLoading(false); return; }
+      const { data } = await supabase
+        .from("anubhav_practice_sessions")
+        .select("attempt_number, composite_score, is_best_attempt")
+        .eq("user_id", user.id)
+        .eq("day_number", Number(dayNumber))
+        .eq("status", "complete")
+        .order("attempt_number", { ascending: false })
+        .limit(1);
+      setPracticeAttemptData(data && data.length > 0 ? data[0] : null);
+      setPracticeAttemptLoading(false);
+    };
+    fetchAttempts();
+  }, [currentStep, dayNumber]);
+
+  const practiceAttemptNum = practiceAttemptData?.attempt_number ?? 0;
+
   if (currentStep === 6) return (
     <div className="fixed inset-0 z-50 overflow-hidden flex flex-col items-center justify-center px-6" style={{ background: "#000e09" }}>
       {rotateOverlay}
@@ -323,23 +348,54 @@ const DayScreen = () => {
           <span className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>day streak</span>
         </div>
         <div className="w-16 h-px mx-auto mt-6 mb-6" style={{ background: "rgba(253,193,65,0.3)" }} />
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <GoldCard padding="20px" glow>
-            <div onClick={() => navigate(`/anubhav/${dayNumber}`)} className="cursor-pointer">
-              <div className="flex items-center gap-4">
-                <span className="text-3xl">🎯</span>
-                <div className="text-left">
-                  <p className="font-bold text-base" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Start Your Practice</p>
-                  <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Write → Speak → Get AI feedback from your Master</p>
-                  <p className="text-xs font-semibold mt-2" style={{ fontFamily: "var(--fa)", color: "#ffc300" }}>Write · Record · Scored · AI Feedback</p>
+
+        {/* Conditional practice card */}
+        {!practiceAttemptLoading && practiceAttemptNum === 0 && (
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <GoldCard padding="20px" glow>
+              <div onClick={() => navigate(`/anubhav/${dayNumber}`)} className="cursor-pointer">
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl">🎯</span>
+                  <div className="text-left">
+                    <p className="font-bold text-base" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Start Your Practice</p>
+                    <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Write → Speak → Get AI feedback from your Master</p>
+                    <p className="text-xs font-semibold mt-2" style={{ fontFamily: "var(--fa)", color: "#ffc300" }}>Write · Record · Scored · AI Feedback</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </GoldCard>
-        </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
-          <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm">← Back to Home</GlassButton>
-        </motion.div>
+            </GoldCard>
+          </motion.div>
+        )}
+
+        {!practiceAttemptLoading && practiceAttemptNum >= 1 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="w-full flex flex-col items-center">
+            <GoldButton onClick={() => navigate("/dashboard")} fullWidth className="mt-2">
+              ← Back to Home
+            </GoldButton>
+            {practiceAttemptNum < 3 ? (
+              <p
+                onClick={() => navigate(`/anubhav/${dayNumber}`)}
+                className="text-center mt-3"
+                style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "pointer" }}
+              >
+                ↺ Replay Practice · Attempt {practiceAttemptNum + 1} of 3
+              </p>
+            ) : (
+              <p
+                className="text-center mt-3"
+                style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "default" }}
+              >
+                ✓ Max practice reached for today
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        {practiceAttemptNum === 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
+            <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm">← Back to Home</GlassButton>
+          </motion.div>
+        )}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}>
           <GlassButton
             onClick={() => {
