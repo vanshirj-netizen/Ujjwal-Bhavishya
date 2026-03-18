@@ -429,8 +429,13 @@ Return ONLY a JSON object with these fields:
       console.error("[anubhav-evaluate] Gemini feedback error:", e);
     }
 
+    // Calculate composite score
+    const compositeScore = Math.round(
+      (avgWordClarity * 0.4) + (avgSmoothness * 0.35) + (avgNaturalSound * 0.25)
+    );
+
     // Save results
-    console.log("[anubhav-evaluate] Step 10: Complete. Saving to DB.");
+    console.log("[anubhav-evaluate] Step 10: Complete. Saving to DB. compositeScore:", compositeScore);
     await supabaseAdmin.from("anubhav_practice_sessions").update({
       transcript_sentences: transcriptSentences,
       transcript_freespeech: transcriptFreespeech,
@@ -440,9 +445,36 @@ Return ONLY a JSON object with these fields:
       azure_word_errors: allErrors,
       ai_feedback: aiFeedback,
       top_error_summary: topErrorSummary,
+      composite_score: compositeScore,
+      attempt_number: attemptNumber,
       status: "complete",
       submitted_at: new Date().toISOString(),
     }).eq("id", session_id);
+
+    // Update is_best_attempt for this user+day
+    await supabaseAdmin.from("anubhav_practice_sessions")
+      .update({ is_best_attempt: false })
+      .eq("user_id", userId)
+      .eq("day_number", session.day_number)
+      .eq("status", "complete");
+
+    const { data: bestAttempt } = await supabaseAdmin
+      .from("anubhav_practice_sessions")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("day_number", session.day_number)
+      .eq("status", "complete")
+      .not("composite_score", "is", null)
+      .order("composite_score", { ascending: false })
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (bestAttempt) {
+      await supabaseAdmin.from("anubhav_practice_sessions")
+        .update({ is_best_attempt: true })
+        .eq("id", bestAttempt.id);
+    }
 
     return new Response(
       JSON.stringify({
@@ -450,6 +482,7 @@ Return ONLY a JSON object with these fields:
         word_clarity_score: avgWordClarity,
         smoothness_score: avgSmoothness,
         natural_sound_score: avgNaturalSound,
+        composite_score: compositeScore,
         word_errors: allErrors,
         writing_checks: writingChecks,
         ai_feedback: aiFeedback,
