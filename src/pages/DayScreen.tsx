@@ -108,6 +108,30 @@ const DayScreen = () => {
   const [isReplay, setIsReplay] = useState(false);
   const streakRef = useRef<HTMLSpanElement>(null);
 
+  // Practice attempt tracking for Step 6 conditional display
+  const [practiceAttemptData, setPracticeAttemptData] = useState<any>(null);
+  const [practiceAttemptLoading, setPracticeAttemptLoading] = useState(false);
+
+  useEffect(() => {
+    if (currentStep !== 6) return;
+    const fetchAttempts = async () => {
+      setPracticeAttemptLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setPracticeAttemptLoading(false); return; }
+      const { data } = await supabase
+        .from("anubhav_practice_sessions")
+        .select("attempt_number, composite_score, is_best_attempt")
+        .eq("user_id", user.id)
+        .eq("day_number", Number(dayNumber))
+        .eq("status", "complete")
+        .order("attempt_number", { ascending: false })
+        .limit(1);
+      setPracticeAttemptData(data && data.length > 0 ? data[0] : null);
+      setPracticeAttemptLoading(false);
+    };
+    fetchAttempts();
+  }, [currentStep, dayNumber]);
+
   useEffect(() => {
     document.body.classList.add("hide-bottom-nav");
     return () => document.body.classList.remove("hide-bottom-nav");
