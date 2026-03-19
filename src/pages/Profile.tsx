@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PAYMENT_URL } from "@/lib/constants";
+import { useActiveCourse } from "@/components/CourseSwitcher";
 import BottomNav from "@/components/BottomNav";
+import PageHeader from "@/components/PageHeader";
 import GoldCard from "@/components/ui/GoldCard";
 import GoldButton from "@/components/ui/GoldButton";
 import GlassButton from "@/components/ui/GlassButton";
@@ -31,6 +33,7 @@ interface Stats {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const courseId = useActiveCourse();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<Stats>({ daysDone: 0, flames: 0, bestStreak: 0, avgConfidence: "–" });
   const [loading, setLoading] = useState(true);
@@ -59,8 +62,8 @@ const Profile = () => {
         setWhatsappOn(profileData?.whatsapp_opted_in ?? true);
         setMotherTongueDisplay(profileData?.mother_tongue ?? "");
         setChildhoodStateDisplay(profileData?.childhood_state ?? "");
-        const { data: progressData } = await supabase.from("progress").select("day_complete").eq("user_id", user.id);
-        const { data: flameData } = await supabase.from("daily_flames").select("confidence_rating").eq("user_id", user.id);
+        const { data: progressData } = await supabase.from("progress").select("day_complete").eq("user_id", user.id).eq("course_id", courseId);
+        const { data: flameData } = await supabase.from("reflection_sessions").select("confidence_rating").eq("user_id", user.id).eq("course_id", courseId);
         const { data: userData } = await supabase.from("profiles").select("current_streak, longest_streak").eq("id", user.id).maybeSingle();
         const daysDone = progressData?.filter(p => p.day_complete).length ?? 0;
         const flames = flameData?.length ?? 0;
@@ -74,7 +77,7 @@ const Profile = () => {
       } finally { setLoading(false); }
     };
     fetchProfile();
-  }, [navigate]);
+  }, [navigate, courseId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -130,8 +133,10 @@ const Profile = () => {
   return (
     <div className="min-h-screen pb-24 safe-top relative z-[2]">
       <div className="px-5 pt-6 max-w-lg mx-auto">
+        <PageHeader title={`${displayName.split(" ")[0]}'s Profile`} />
+
         {/* Profile Card */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-4">
           <GoldCard padding="24px">
             <div className="text-center">
               <div className="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center mx-auto" style={{ background: "rgba(253,193,65,0.1)" }}>

@@ -170,7 +170,7 @@ const AnubhavPage = () => {
     });
 
     const { data: writingData, error: wErr } = await supabase
-      .from("anubhav_writings")
+      .from("writing_submissions")
       .insert(payload)
       .select("id")
       .single();
@@ -329,7 +329,7 @@ const AnubhavPage = () => {
 
       // Check flame
       if (userId) {
-        const { data: flame } = await supabase.from("daily_flames")
+        const { data: flame } = await supabase.from("reflection_sessions")
           .select("id").eq("user_id", userId).eq("day_number", Number(dayNumber)).maybeSingle();
         setFlameExists(!!flame);
       }

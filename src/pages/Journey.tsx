@@ -4,15 +4,16 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PAYMENT_URL } from "@/lib/constants";
+import { useActiveCourse } from "@/components/CourseSwitcher";
 import BottomNav from "@/components/BottomNav";
+import PageHeader from "@/components/PageHeader";
 import GoldCard from "@/components/ui/GoldCard";
-import GoldButton from "@/components/ui/GoldButton";
-import GlassButton from "@/components/ui/GlassButton";
 import SectionLabel from "@/components/ui/SectionLabel";
 
 const Journey = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const courseId = useActiveCourse();
   const [loading, setLoading] = useState(true);
   const [firstName, setFirstName] = useState("Your");
   const [currentDay, setCurrentDay] = useState(1);
@@ -34,26 +35,26 @@ const Journey = () => {
         if (name) setFirstName(name.split(" ")[0] + "'s");
         setStreak(prof?.current_streak ?? 0);
         setNextDayUnlockAt(prof?.next_day_unlock_at ?? null);
-        const { data: enroll } = await supabase.from("enrollments").select("current_day, days_completed, payment_status").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+        const { data: enroll } = await supabase.from("enrollments").select("current_day, days_completed, payment_status").eq("user_id", user.id).eq("is_active", true).eq("course_id", courseId).maybeSingle();
         setCurrentDay(enroll?.current_day ?? 1);
         setDaysCompleted(enroll?.days_completed ?? 0);
         setPaymentStatus(enroll?.payment_status ?? "free");
-        const { data: progressData } = await supabase.from("progress").select("day_number, day_complete").eq("user_id", user.id);
+        const { data: progressData } = await supabase.from("progress").select("day_number, day_complete").eq("user_id", user.id).eq("course_id", courseId);
         const pMap: Record<number, boolean> = {};
         progressData?.forEach(p => { if (p.day_complete) pMap[p.day_number] = true; });
         setProgressMap(pMap);
-        const { data: flameData } = await supabase.from("daily_flames").select("day_number").eq("user_id", user.id);
+        const { data: flameData } = await supabase.from("reflection_sessions").select("day_number").eq("user_id", user.id).eq("course_id", courseId);
         const fMap: Record<number, boolean> = {};
         flameData?.forEach(f => { fMap[f.day_number] = true; });
         setFlameMap(fMap);
-        const { data: weeks } = await supabase.from("weeks").select("week_number, theme_name").order("week_number", { ascending: true });
+        const { data: weeks } = await supabase.from("course_weeks").select("week_number, theme_name").eq("course_id", courseId).order("week_number", { ascending: true });
         const wMap: Record<number, string> = {};
         weeks?.forEach(w => { wMap[w.week_number] = w.theme_name; });
         setWeekData(wMap);
       } catch { /* silent */ } finally { setLoading(false); }
     };
     load();
-  }, [location.key]);
+  }, [location.key, courseId]);
 
   const getDayState = (day: number): "completed" | "current" | "unlocked" | "locked_prev" | "locked_time" | "locked_payment" => {
     if (progressMap[day]) return "completed";
@@ -85,10 +86,8 @@ const Journey = () => {
   return (
     <div className="min-h-screen pb-24 safe-top relative z-[2]">
       <div className="px-5 pt-6 max-w-lg mx-auto">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <SectionLabel>{firstName} Journey</SectionLabel>
-          <p className="text-sm mt-2" style={{ color: "rgba(255,252,239,0.4)", fontFamily: "var(--fb)" }}>Day {currentDay} of 60</p>
-        </motion.div>
+        <PageHeader title={`${firstName} Journey`} />
+        <p className="text-sm mt-2" style={{ color: "rgba(255,252,239,0.4)", fontFamily: "var(--fb)" }}>Day {currentDay} of 60</p>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 mt-5">
@@ -131,14 +130,10 @@ const Journey = () => {
                     whileTap={{ scale: 0.92 }}
                     onClick={() => handleDayTap(day, state)}
                     className={`relative aspect-square rounded-xl flex flex-col items-center justify-center text-xs transition-all ${
-                      state === "completed"
-                        ? "border border-primary/40"
-                        : state === "current"
-                        ? "border-2 border-primary pulse-gold"
-                        : state === "unlocked"
-                        ? "border border-primary/20"
-                        : state === "locked_payment"
-                        ? "border border-primary/10 opacity-50"
+                      state === "completed" ? "border border-primary/40"
+                        : state === "current" ? "border-2 border-primary pulse-gold"
+                        : state === "unlocked" ? "border border-primary/20"
+                        : state === "locked_payment" ? "border border-primary/10 opacity-50"
                         : "opacity-40"
                     }`}
                     style={{ background: state === "completed" ? "rgba(253,193,65,0.1)" : state === "unlocked" ? "rgba(253,193,65,0.03)" : "rgba(255,252,239,0.03)" }}

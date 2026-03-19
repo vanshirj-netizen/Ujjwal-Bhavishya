@@ -55,7 +55,7 @@ export const fetchFreshUserContext = async () => {
       .order("day_number", { ascending: false });
 
     const { data: errors } = await supabase
-      .from("student_errors")
+      .from("practice_errors")
       .select(`
         error_category, error_subtype,
         error_word, correct_form,
@@ -81,7 +81,7 @@ export const fetchFreshUserContext = async () => {
       .single();
 
     const { data: recentFlames } = await supabase
-      .from("daily_flames")
+      .from("reflection_sessions")
       .select(`
         day_number, confidence_rating,
         spoke_about, biggest_challenge,
@@ -98,7 +98,7 @@ export const fetchFreshUserContext = async () => {
       .single();
 
     const { data: trainingPlan } = await supabase
-      .from("training_plan")
+      .from("student_training_plans")
       .select(`
         current_focus, week_goal,
         ai_recommendation, based_on_day
@@ -128,8 +128,6 @@ export const fetchFreshUserContext = async () => {
 
 // ─────────────────────────────────────────
 // FUNCTION 2: buildSystemPrompt
-// Builds a complete, personalised,
-// curriculum-gated AI system prompt
 // ─────────────────────────────────────────
 
 export const buildSystemPrompt = (
@@ -256,8 +254,6 @@ BEHAVIOUR RULES:
 
 // ─────────────────────────────────────────
 // FUNCTION 3: saveSessionSummary
-// Call this when a session ends.
-// Silent fail — never interrupts user.
 // ─────────────────────────────────────────
 
 export const saveSessionSummary = async (
@@ -294,7 +290,7 @@ export const saveSessionSummary = async (
   try {
     // 1. Save session record
     await supabase
-      .from("learning_sessions")
+      .from("legacy_learning_sessions")
       .insert({
         user_id: userId,
         session_type: sessionType,
@@ -309,7 +305,7 @@ export const saveSessionSummary = async (
     // 2. Save new errors detected
     for (const e of summary.errors) {
       const { data: existing } = await supabase
-        .from("student_errors")
+        .from("practice_errors")
         .select("id")
         .eq("user_id", userId)
         .eq("error_word", e.error_word)
@@ -319,7 +315,7 @@ export const saveSessionSummary = async (
 
       if (!existing) {
         await supabase
-          .from("student_errors")
+          .from("practice_errors")
           .insert({
             user_id: userId,
             session_type: sessionType,
@@ -363,7 +359,7 @@ export const saveSessionSummary = async (
     // 4. Save training plan if updated
     if (summary.training_plan) {
       await supabase
-        .from("training_plan")
+        .from("student_training_plans")
         .insert({
           user_id: userId,
           based_on_day: lessonDay,
