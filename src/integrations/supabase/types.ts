@@ -14,206 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
-      anubhav_attempts: {
+      ai_personalities: {
         Row: {
-          ai_feedback: string | null
-          attempted_at: string | null
-          day_number: number
+          context: string
           id: string
-          mti_target: string | null
-          score_awarded: number | null
-          sentence: string
-          session_id: string
-          student_response: string
-          user_id: string
-          was_correct: boolean | null
+          master_name: string
+          personality_prompt: string
+          updated_at: string | null
         }
         Insert: {
-          ai_feedback?: string | null
-          attempted_at?: string | null
-          day_number: number
+          context: string
           id?: string
-          mti_target?: string | null
-          score_awarded?: number | null
-          sentence: string
-          session_id: string
-          student_response: string
-          user_id: string
-          was_correct?: boolean | null
+          master_name: string
+          personality_prompt: string
+          updated_at?: string | null
         }
         Update: {
-          ai_feedback?: string | null
-          attempted_at?: string | null
-          day_number?: number
+          context?: string
           id?: string
-          mti_target?: string | null
-          score_awarded?: number | null
-          sentence?: string
-          session_id?: string
-          student_response?: string
-          user_id?: string
-          was_correct?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "anubhav_attempts_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "anubhav_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      anubhav_practice_sessions: {
-        Row: {
-          ai_feedback: string | null
-          attempt_number: number | null
-          audio_freespeech_path: string | null
-          audio_sentences_path: string | null
-          azure_word_errors: Json | null
-          composite_score: number | null
-          created_at: string | null
-          day_number: number
-          id: string
-          is_best_attempt: boolean | null
-          lesson_topic: string | null
-          natural_sound_score: number | null
-          retry_count: number | null
-          smoothness_score: number | null
-          status: string | null
-          submitted_at: string | null
-          top_error_summary: string | null
-          transcript_freespeech: string | null
-          transcript_sentences: string | null
-          user_id: string
-          word_clarity_score: number | null
-          writing_id: string | null
-        }
-        Insert: {
-          ai_feedback?: string | null
-          attempt_number?: number | null
-          audio_freespeech_path?: string | null
-          audio_sentences_path?: string | null
-          azure_word_errors?: Json | null
-          composite_score?: number | null
-          created_at?: string | null
-          day_number: number
-          id?: string
-          is_best_attempt?: boolean | null
-          lesson_topic?: string | null
-          natural_sound_score?: number | null
-          retry_count?: number | null
-          smoothness_score?: number | null
-          status?: string | null
-          submitted_at?: string | null
-          top_error_summary?: string | null
-          transcript_freespeech?: string | null
-          transcript_sentences?: string | null
-          user_id: string
-          word_clarity_score?: number | null
-          writing_id?: string | null
-        }
-        Update: {
-          ai_feedback?: string | null
-          attempt_number?: number | null
-          audio_freespeech_path?: string | null
-          audio_sentences_path?: string | null
-          azure_word_errors?: Json | null
-          composite_score?: number | null
-          created_at?: string | null
-          day_number?: number
-          id?: string
-          is_best_attempt?: boolean | null
-          lesson_topic?: string | null
-          natural_sound_score?: number | null
-          retry_count?: number | null
-          smoothness_score?: number | null
-          status?: string | null
-          submitted_at?: string | null
-          top_error_summary?: string | null
-          transcript_freespeech?: string | null
-          transcript_sentences?: string | null
-          user_id?: string
-          word_clarity_score?: number | null
-          writing_id?: string | null
-        }
-        Relationships: []
-      }
-      anubhav_sessions: {
-        Row: {
-          completed: boolean | null
-          completed_at: string | null
-          day_number: number
-          id: string
-          score: number | null
-          sentence_index: number | null
-          started_at: string | null
-          total_attempted: number | null
-          user_id: string
-          world_type: string
-        }
-        Insert: {
-          completed?: boolean | null
-          completed_at?: string | null
-          day_number: number
-          id?: string
-          score?: number | null
-          sentence_index?: number | null
-          started_at?: string | null
-          total_attempted?: number | null
-          user_id: string
-          world_type: string
-        }
-        Update: {
-          completed?: boolean | null
-          completed_at?: string | null
-          day_number?: number
-          id?: string
-          score?: number | null
-          sentence_index?: number | null
-          started_at?: string | null
-          total_attempted?: number | null
-          user_id?: string
-          world_type?: string
-        }
-        Relationships: []
-      }
-      anubhav_writings: {
-        Row: {
-          created_at: string | null
-          day_number: number
-          id: string
-          lesson_topic: string | null
-          sentence_1: string | null
-          sentence_2: string | null
-          sentence_3: string | null
-          sentence_4: string | null
-          sentence_5: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          day_number: number
-          id?: string
-          lesson_topic?: string | null
-          sentence_1?: string | null
-          sentence_2?: string | null
-          sentence_3?: string | null
-          sentence_4?: string | null
-          sentence_5?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          day_number?: number
-          id?: string
-          lesson_topic?: string | null
-          sentence_1?: string | null
-          sentence_2?: string | null
-          sentence_3?: string | null
-          sentence_4?: string | null
-          sentence_5?: string | null
-          user_id?: string
+          master_name?: string
+          personality_prompt?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -316,6 +137,42 @@ export type Database = {
         }
         Relationships: []
       }
+      course_weeks: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          days_in_week: number | null
+          id: string
+          is_active: boolean | null
+          theme_name: string
+          theme_subtitle: string | null
+          week_number: number
+          week_type: string | null
+        }
+        Insert: {
+          course_id?: string
+          created_at?: string | null
+          days_in_week?: number | null
+          id?: string
+          is_active?: boolean | null
+          theme_name: string
+          theme_subtitle?: string | null
+          week_number: number
+          week_type?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          days_in_week?: number | null
+          id?: string
+          is_active?: boolean | null
+          theme_name?: string
+          theme_subtitle?: string | null
+          week_number?: number
+          week_type?: string | null
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -343,57 +200,6 @@ export type Database = {
           name?: string
           slug?: string
           total_days?: number | null
-        }
-        Relationships: []
-      }
-      daily_flames: {
-        Row: {
-          ai_generated_at: string | null
-          ai_response: string | null
-          audio_url: string | null
-          biggest_challenge: string | null
-          confidence_rating: number | null
-          day_number: number
-          elevenlabs_audio_url: string | null
-          flame_date: string | null
-          id: string
-          spoke_about: string | null
-          submitted_at: string | null
-          tomorrows_intention: string | null
-          user_id: string | null
-          written_reflection: string | null
-        }
-        Insert: {
-          ai_generated_at?: string | null
-          ai_response?: string | null
-          audio_url?: string | null
-          biggest_challenge?: string | null
-          confidence_rating?: number | null
-          day_number: number
-          elevenlabs_audio_url?: string | null
-          flame_date?: string | null
-          id?: string
-          spoke_about?: string | null
-          submitted_at?: string | null
-          tomorrows_intention?: string | null
-          user_id?: string | null
-          written_reflection?: string | null
-        }
-        Update: {
-          ai_generated_at?: string | null
-          ai_response?: string | null
-          audio_url?: string | null
-          biggest_challenge?: string | null
-          confidence_rating?: number | null
-          day_number?: number
-          elevenlabs_audio_url?: string | null
-          flame_date?: string | null
-          id?: string
-          spoke_about?: string | null
-          submitted_at?: string | null
-          tomorrows_intention?: string | null
-          user_id?: string | null
-          written_reflection?: string | null
         }
         Relationships: []
       }
@@ -490,7 +296,96 @@ export type Database = {
           },
         ]
       }
-      learning_sessions: {
+      legacy_anubhav_attempts: {
+        Row: {
+          ai_feedback: string | null
+          attempted_at: string | null
+          day_number: number
+          id: string
+          mti_target: string | null
+          score_awarded: number | null
+          sentence: string
+          session_id: string
+          student_response: string
+          user_id: string
+          was_correct: boolean | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          attempted_at?: string | null
+          day_number: number
+          id?: string
+          mti_target?: string | null
+          score_awarded?: number | null
+          sentence: string
+          session_id: string
+          student_response: string
+          user_id: string
+          was_correct?: boolean | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          attempted_at?: string | null
+          day_number?: number
+          id?: string
+          mti_target?: string | null
+          score_awarded?: number | null
+          sentence?: string
+          session_id?: string
+          student_response?: string
+          user_id?: string
+          was_correct?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anubhav_attempts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "legacy_anubhav_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legacy_anubhav_sessions: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          day_number: number
+          id: string
+          score: number | null
+          sentence_index: number | null
+          started_at: string | null
+          total_attempted: number | null
+          user_id: string
+          world_type: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          day_number: number
+          id?: string
+          score?: number | null
+          sentence_index?: number | null
+          started_at?: string | null
+          total_attempted?: number | null
+          user_id: string
+          world_type: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          day_number?: number
+          id?: string
+          score?: number | null
+          sentence_index?: number | null
+          started_at?: string | null
+          total_attempted?: number | null
+          user_id?: string
+          world_type?: string
+        }
+        Relationships: []
+      }
+      legacy_learning_sessions: {
         Row: {
           ended_at: string | null
           id: string
@@ -645,6 +540,62 @@ export type Database = {
           },
         ]
       }
+      practice_errors: {
+        Row: {
+          correct_form: string | null
+          course_id: string
+          detected_at: string | null
+          error_category: string | null
+          error_subtype: string | null
+          error_word: string | null
+          id: string
+          lesson_day: number | null
+          resolved: boolean | null
+          resolved_at: string | null
+          session_type: string | null
+          student_version: string | null
+          user_id: string | null
+        }
+        Insert: {
+          correct_form?: string | null
+          course_id?: string
+          detected_at?: string | null
+          error_category?: string | null
+          error_subtype?: string | null
+          error_word?: string | null
+          id?: string
+          lesson_day?: number | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          session_type?: string | null
+          student_version?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          correct_form?: string | null
+          course_id?: string
+          detected_at?: string | null
+          error_category?: string | null
+          error_subtype?: string | null
+          error_word?: string | null
+          id?: string
+          lesson_day?: number | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          session_type?: string | null
+          student_version?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_errors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practice_sentences: {
         Row: {
           course_id: string | null
@@ -693,6 +644,84 @@ export type Database = {
           sequence_order?: number | null
           vocabulary_words?: string | null
           world_type?: string
+        }
+        Relationships: []
+      }
+      practice_sessions: {
+        Row: {
+          ai_feedback: string | null
+          attempt_number: number | null
+          audio_freespeech_path: string | null
+          audio_sentences_path: string | null
+          azure_word_errors: Json | null
+          composite_score: number | null
+          course_id: string
+          created_at: string | null
+          day_number: number
+          id: string
+          is_best_attempt: boolean | null
+          lesson_topic: string | null
+          natural_sound_score: number | null
+          retry_count: number | null
+          smoothness_score: number | null
+          status: string | null
+          submitted_at: string | null
+          top_error_summary: string | null
+          transcript_freespeech: string | null
+          transcript_sentences: string | null
+          user_id: string
+          word_clarity_score: number | null
+          writing_id: string | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          attempt_number?: number | null
+          audio_freespeech_path?: string | null
+          audio_sentences_path?: string | null
+          azure_word_errors?: Json | null
+          composite_score?: number | null
+          course_id?: string
+          created_at?: string | null
+          day_number: number
+          id?: string
+          is_best_attempt?: boolean | null
+          lesson_topic?: string | null
+          natural_sound_score?: number | null
+          retry_count?: number | null
+          smoothness_score?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          top_error_summary?: string | null
+          transcript_freespeech?: string | null
+          transcript_sentences?: string | null
+          user_id: string
+          word_clarity_score?: number | null
+          writing_id?: string | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          attempt_number?: number | null
+          audio_freespeech_path?: string | null
+          audio_sentences_path?: string | null
+          azure_word_errors?: Json | null
+          composite_score?: number | null
+          course_id?: string
+          created_at?: string | null
+          day_number?: number
+          id?: string
+          is_best_attempt?: boolean | null
+          lesson_topic?: string | null
+          natural_sound_score?: number | null
+          retry_count?: number | null
+          smoothness_score?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          top_error_summary?: string | null
+          transcript_freespeech?: string | null
+          transcript_sentences?: string | null
+          user_id?: string
+          word_clarity_score?: number | null
+          writing_id?: string | null
         }
         Relationships: []
       }
@@ -885,6 +914,63 @@ export type Database = {
           },
         ]
       }
+      reflection_sessions: {
+        Row: {
+          ai_generated_at: string | null
+          ai_response: string | null
+          audio_url: string | null
+          biggest_challenge: string | null
+          composite_score: number | null
+          confidence_rating: number | null
+          course_id: string
+          day_number: number
+          elevenlabs_audio_url: string | null
+          flame_date: string | null
+          id: string
+          spoke_about: string | null
+          submitted_at: string | null
+          tomorrows_intention: string | null
+          user_id: string | null
+          written_reflection: string | null
+        }
+        Insert: {
+          ai_generated_at?: string | null
+          ai_response?: string | null
+          audio_url?: string | null
+          biggest_challenge?: string | null
+          composite_score?: number | null
+          confidence_rating?: number | null
+          course_id?: string
+          day_number: number
+          elevenlabs_audio_url?: string | null
+          flame_date?: string | null
+          id?: string
+          spoke_about?: string | null
+          submitted_at?: string | null
+          tomorrows_intention?: string | null
+          user_id?: string | null
+          written_reflection?: string | null
+        }
+        Update: {
+          ai_generated_at?: string | null
+          ai_response?: string | null
+          audio_url?: string | null
+          biggest_challenge?: string | null
+          composite_score?: number | null
+          confidence_rating?: number | null
+          course_id?: string
+          day_number?: number
+          elevenlabs_audio_url?: string | null
+          flame_date?: string | null
+          id?: string
+          spoke_about?: string | null
+          submitted_at?: string | null
+          tomorrows_intention?: string | null
+          user_id?: string | null
+          written_reflection?: string | null
+        }
+        Relationships: []
+      }
       shabd_shakti: {
         Row: {
           antonyms: string[] | null
@@ -972,63 +1058,104 @@ export type Database = {
           },
         ]
       }
-      student_errors: {
+      student_progress: {
         Row: {
-          correct_form: string | null
-          detected_at: string | null
-          error_category: string | null
-          error_subtype: string | null
-          error_word: string | null
+          avg_confidence_gap_first5: number | null
+          avg_confidence_gap_last5: number | null
+          best_score_day: number | null
+          best_score_ever: number | null
+          biggest_single_jump_day: number | null
+          biggest_single_jump_score: number | null
+          confidence_trend: string | null
+          course_id: string
+          current_streak: number | null
+          errors_resolved: string[] | null
+          first_5_avg_score: number | null
+          first_session_date: string | null
+          first_session_score: number | null
           id: string
-          lesson_day: number | null
-          resolved: boolean | null
-          resolved_at: string | null
-          session_type: string | null
-          student_version: string | null
-          user_id: string | null
+          last_5_avg_score: number | null
+          latest_session_date: string | null
+          latest_session_score: number | null
+          longest_streak_ever: number | null
+          score_trend: string | null
+          top_error_1: string | null
+          top_error_2: string | null
+          top_error_3: string | null
+          total_days_practiced: number | null
+          total_sessions_completed: number | null
+          updated_at: string | null
+          user_id: string
+          worst_score_day: number | null
+          worst_score_ever: number | null
         }
         Insert: {
-          correct_form?: string | null
-          detected_at?: string | null
-          error_category?: string | null
-          error_subtype?: string | null
-          error_word?: string | null
+          avg_confidence_gap_first5?: number | null
+          avg_confidence_gap_last5?: number | null
+          best_score_day?: number | null
+          best_score_ever?: number | null
+          biggest_single_jump_day?: number | null
+          biggest_single_jump_score?: number | null
+          confidence_trend?: string | null
+          course_id?: string
+          current_streak?: number | null
+          errors_resolved?: string[] | null
+          first_5_avg_score?: number | null
+          first_session_date?: string | null
+          first_session_score?: number | null
           id?: string
-          lesson_day?: number | null
-          resolved?: boolean | null
-          resolved_at?: string | null
-          session_type?: string | null
-          student_version?: string | null
-          user_id?: string | null
+          last_5_avg_score?: number | null
+          latest_session_date?: string | null
+          latest_session_score?: number | null
+          longest_streak_ever?: number | null
+          score_trend?: string | null
+          top_error_1?: string | null
+          top_error_2?: string | null
+          top_error_3?: string | null
+          total_days_practiced?: number | null
+          total_sessions_completed?: number | null
+          updated_at?: string | null
+          user_id: string
+          worst_score_day?: number | null
+          worst_score_ever?: number | null
         }
         Update: {
-          correct_form?: string | null
-          detected_at?: string | null
-          error_category?: string | null
-          error_subtype?: string | null
-          error_word?: string | null
+          avg_confidence_gap_first5?: number | null
+          avg_confidence_gap_last5?: number | null
+          best_score_day?: number | null
+          best_score_ever?: number | null
+          biggest_single_jump_day?: number | null
+          biggest_single_jump_score?: number | null
+          confidence_trend?: string | null
+          course_id?: string
+          current_streak?: number | null
+          errors_resolved?: string[] | null
+          first_5_avg_score?: number | null
+          first_session_date?: string | null
+          first_session_score?: number | null
           id?: string
-          lesson_day?: number | null
-          resolved?: boolean | null
-          resolved_at?: string | null
-          session_type?: string | null
-          student_version?: string | null
-          user_id?: string | null
+          last_5_avg_score?: number | null
+          latest_session_date?: string | null
+          latest_session_score?: number | null
+          longest_streak_ever?: number | null
+          score_trend?: string | null
+          top_error_1?: string | null
+          top_error_2?: string | null
+          top_error_3?: string | null
+          total_days_practiced?: number | null
+          total_sessions_completed?: number | null
+          updated_at?: string | null
+          user_id?: string
+          worst_score_day?: number | null
+          worst_score_ever?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "student_errors_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      training_plan: {
+      student_training_plans: {
         Row: {
           ai_recommendation: string | null
           based_on_day: number | null
+          course_id: string
           current_focus: string | null
           generated_at: string | null
           id: string
@@ -1038,6 +1165,7 @@ export type Database = {
         Insert: {
           ai_recommendation?: string | null
           based_on_day?: number | null
+          course_id?: string
           current_focus?: string | null
           generated_at?: string | null
           id?: string
@@ -1047,6 +1175,7 @@ export type Database = {
         Update: {
           ai_recommendation?: string | null
           based_on_day?: number | null
+          course_id?: string
           current_focus?: string | null
           generated_at?: string | null
           id?: string
@@ -1161,39 +1290,45 @@ export type Database = {
         }
         Relationships: []
       }
-      weeks: {
+      writing_submissions: {
         Row: {
           course_id: string
           created_at: string | null
-          days_in_week: number | null
+          day_number: number
           id: string
-          is_active: boolean | null
-          theme_name: string
-          theme_subtitle: string | null
-          week_number: number
-          week_type: string | null
+          lesson_topic: string | null
+          sentence_1: string | null
+          sentence_2: string | null
+          sentence_3: string | null
+          sentence_4: string | null
+          sentence_5: string | null
+          user_id: string
         }
         Insert: {
           course_id?: string
           created_at?: string | null
-          days_in_week?: number | null
+          day_number: number
           id?: string
-          is_active?: boolean | null
-          theme_name: string
-          theme_subtitle?: string | null
-          week_number: number
-          week_type?: string | null
+          lesson_topic?: string | null
+          sentence_1?: string | null
+          sentence_2?: string | null
+          sentence_3?: string | null
+          sentence_4?: string | null
+          sentence_5?: string | null
+          user_id: string
         }
         Update: {
           course_id?: string
           created_at?: string | null
-          days_in_week?: number | null
+          day_number?: number
           id?: string
-          is_active?: boolean | null
-          theme_name?: string
-          theme_subtitle?: string | null
-          week_number?: number
-          week_type?: string | null
+          lesson_topic?: string | null
+          sentence_1?: string | null
+          sentence_2?: string | null
+          sentence_3?: string | null
+          sentence_4?: string | null
+          sentence_5?: string | null
+          user_id?: string
         }
         Relationships: []
       }
