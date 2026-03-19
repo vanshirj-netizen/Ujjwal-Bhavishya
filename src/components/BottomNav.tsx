@@ -1,12 +1,13 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Calendar, Flame, User } from "lucide-react";
+import { Home, Compass, Dumbbell, Flame, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/dashboard" },
-  { icon: Calendar, label: "Journey", path: "/journey" },
+  { icon: Compass, label: "Journey", path: "/journey" },
+  { icon: Dumbbell, label: "Anubhav", path: "/anubhav-hub" },
   { icon: Flame, label: "Flame", path: "/flame" },
-  { icon: User, label: "Profile", path: "/profile" },
+  { icon: Sparkles, label: "Profile", path: "/profile" },
 ];
 
 const BottomNav = () => {
