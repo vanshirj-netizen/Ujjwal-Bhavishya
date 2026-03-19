@@ -170,7 +170,7 @@ const AnubhavPage = () => {
     });
 
     const { data: writingData, error: wErr } = await supabase
-      .from("anubhav_writings")
+      .from("writing_submissions")
       .insert(payload)
       .select("id")
       .single();
