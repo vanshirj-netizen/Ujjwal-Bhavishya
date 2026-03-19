@@ -119,7 +119,7 @@ const DayScreen = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setPracticeAttemptLoading(false); return; }
       const { data } = await supabase
-        .from("anubhav_practice_sessions")
+        .from("practice_sessions")
         .select("attempt_number, composite_score, is_best_attempt")
         .eq("user_id", user.id)
         .eq("day_number", Number(dayNumber))

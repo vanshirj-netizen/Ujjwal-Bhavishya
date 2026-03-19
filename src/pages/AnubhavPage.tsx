@@ -329,7 +329,7 @@ const AnubhavPage = () => {
 
       // Check flame
       if (userId) {
-        const { data: flame } = await supabase.from("daily_flames")
+        const { data: flame } = await supabase.from("reflection_sessions")
           .select("id").eq("user_id", userId).eq("day_number", Number(dayNumber)).maybeSingle();
         setFlameExists(!!flame);
       }
