@@ -81,13 +81,13 @@ serve(async (req) => {
 
     // Fetch writings and session
     const { data: writing } = await supabaseAdmin
-      .from("anubhav_writings")
+      .from("writing_submissions")
       .select("*")
       .eq("id", writing_id)
       .single();
 
     const { data: session } = await supabaseAdmin
-      .from("anubhav_practice_sessions")
+      .from("practice_sessions")
       .select("*")
       .eq("id", session_id)
       .single();
@@ -436,7 +436,7 @@ Return ONLY a JSON object with these fields:
 
     // Save results
     console.log("[anubhav-evaluate] Step 10: Complete. Saving to DB. compositeScore:", compositeScore);
-    await supabaseAdmin.from("anubhav_practice_sessions").update({
+    await supabaseAdmin.from("practice_sessions").update({
       transcript_sentences: transcriptSentences,
       transcript_freespeech: transcriptFreespeech,
       word_clarity_score: avgWordClarity,
@@ -452,14 +452,14 @@ Return ONLY a JSON object with these fields:
     }).eq("id", session_id);
 
     // Update is_best_attempt for this user+day
-    await supabaseAdmin.from("anubhav_practice_sessions")
+    await supabaseAdmin.from("practice_sessions")
       .update({ is_best_attempt: false })
       .eq("user_id", userId)
       .eq("day_number", session.day_number)
       .eq("status", "complete");
 
     const { data: bestAttempt } = await supabaseAdmin
-      .from("anubhav_practice_sessions")
+      .from("practice_sessions")
       .select("id")
       .eq("user_id", userId)
       .eq("day_number", session.day_number)
@@ -471,7 +471,130 @@ Return ONLY a JSON object with these fields:
       .single();
 
     if (bestAttempt) {
-      await supabaseAdmin.from("anubhav_practice_sessions")
+      await supabaseAdmin.from("practice_sessions")
+        .update({ is_best_attempt: true })
+        .eq("id", bestAttempt.id);
+    }
+
+    // UPSERT student_progress
+    try {
+      const { data: allSessions } = await supabaseAdmin
+        .from("practice_sessions")
+        .select("day_number, composite_score, top_error_summary, submitted_at")
+        .eq("user_id", userId)
+        .eq("course_id", session.course_id || "6a860163-ea3c-4205-89b3-74a3e9be098f")
+        .eq("status", "complete")
+        .eq("is_best_attempt", true)
+        .order("submitted_at", { ascending: true });
+
+      if (allSessions && allSessions.length > 0) {
+        const totalSessionsCompleted = allSessions.length;
+        const distinctDays = new Set(allSessions.map(s => s.day_number));
+        const totalDaysPracticed = distinctDays.size;
+        const scores = allSessions.map(s => Number(s.composite_score) || 0);
+        const latestScore = scores[scores.length - 1];
+        const firstScore = scores[0];
+        const bestScoreVal = Math.max(...scores);
+        const worstScoreVal = Math.min(...scores);
+        const bestDay = allSessions.find(s => Number(s.composite_score) === bestScoreVal)?.day_number;
+        const worstDay = allSessions.find(s => Number(s.composite_score) === worstScoreVal)?.day_number;
+        const last5 = scores.slice(-5);
+        const first5 = scores.slice(0, 5);
+        const last5Avg = last5.reduce((a, b) => a + b, 0) / last5.length;
+        const first5Avg = first5.reduce((a, b) => a + b, 0) / first5.length;
+
+        let scoreTrend = "insufficient_data";
+        if (totalSessionsCompleted >= 10) {
+          if (last5Avg > first5Avg + 10) scoreTrend = "rising";
+          else if (last5Avg < first5Avg - 10) scoreTrend = "falling";
+          else scoreTrend = "steady";
+        }
+
+        // Top errors frequency
+        const errorCounts: Record<string, number> = {};
+        allSessions.forEach(s => {
+          if (s.top_error_summary) {
+            errorCounts[s.top_error_summary] = (errorCounts[s.top_error_summary] || 0) + 1;
+          }
+        });
+        const sortedErrors = Object.entries(errorCounts).sort((a, b) => b[1] - a[1]);
+
+        // Calendar streak calculation
+        const dateSet = new Set<string>();
+        allSessions.forEach(s => {
+          if (s.submitted_at) {
+            const d = new Date(s.submitted_at);
+            const istDate = new Date(d.getTime() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0];
+            dateSet.add(istDate);
+          }
+        });
+        const sortedDates = Array.from(dateSet).sort().reverse();
+        const todayIST = new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0];
+        let currentStreakVal = 0;
+        let checkDate = todayIST;
+        for (const d of sortedDates) {
+          if (d === checkDate) {
+            currentStreakVal++;
+            const prev = new Date(checkDate);
+            prev.setDate(prev.getDate() - 1);
+            checkDate = prev.toISOString().split("T")[0];
+          } else if (d < checkDate) {
+            break;
+          }
+        }
+
+        const courseIdVal = session.course_id || "6a860163-ea3c-4205-89b3-74a3e9be098f";
+
+        const { data: existing } = await supabaseAdmin
+          .from("student_progress")
+          .select("id, longest_streak_ever, first_session_score, first_session_date, first_5_avg_score")
+          .eq("user_id", userId)
+          .eq("course_id", courseIdVal)
+          .maybeSingle();
+
+        const progressData: any = {
+          total_sessions_completed: totalSessionsCompleted,
+          total_days_practiced: totalDaysPracticed,
+          latest_session_score: latestScore,
+          best_score_ever: bestScoreVal,
+          best_score_day: bestDay,
+          worst_score_ever: worstScoreVal,
+          worst_score_day: worstDay,
+          last_5_avg_score: Math.round(last5Avg * 10) / 10,
+          score_trend: scoreTrend,
+          top_error_1: sortedErrors[0]?.[0] || null,
+          top_error_2: sortedErrors[1]?.[0] || null,
+          top_error_3: sortedErrors[2]?.[0] || null,
+          current_streak: currentStreakVal,
+          latest_session_date: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        if (existing) {
+          progressData.longest_streak_ever = Math.max(currentStreakVal, existing.longest_streak_ever || 0);
+          if (!existing.first_session_score) {
+            progressData.first_session_score = firstScore;
+            progressData.first_session_date = allSessions[0].submitted_at;
+          }
+          if (!existing.first_5_avg_score && totalSessionsCompleted >= 5) {
+            progressData.first_5_avg_score = Math.round(first5Avg * 10) / 10;
+          }
+          await supabaseAdmin.from("student_progress").update(progressData).eq("id", existing.id);
+        } else {
+          progressData.user_id = userId;
+          progressData.course_id = courseIdVal;
+          progressData.first_session_score = firstScore;
+          progressData.first_session_date = allSessions[0].submitted_at;
+          progressData.longest_streak_ever = currentStreakVal;
+          if (totalSessionsCompleted >= 5) {
+            progressData.first_5_avg_score = Math.round(first5Avg * 10) / 10;
+          }
+          await supabaseAdmin.from("student_progress").insert(progressData);
+        }
+      }
+    } catch (e) {
+      console.error("[anubhav-evaluate] student_progress upsert error:", e);
+    }
         .update({ is_best_attempt: true })
         .eq("id", bestAttempt.id);
     }

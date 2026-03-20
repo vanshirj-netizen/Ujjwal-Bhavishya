@@ -1,20 +1,40 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveCourse } from "@/components/CourseSwitcher";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import BottomNav from "@/components/BottomNav";
+import PageHeader from "@/components/PageHeader";
+import GoldCard from "@/components/ui/GoldCard";
+import { X } from "lucide-react";
 
 const FlameRedirect = () => {
+  const navigate = useNavigate();
+  const courseId = useActiveCourse();
   const [loading, setLoading] = useState(true);
-  const [streak, setStreak] = useState(0);
-  const [longestStreak, setLongestStreak] = useState(0);
-  const [avgConfidence, setAvgConfidence] = useState("–");
+  const [firstName, setFirstName] = useState("");
+  const [masterName, setMasterName] = useState("Gyani");
+
+  // Stats
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [beliefScore, setBeliefScore] = useState("–");
   const [flamesLit, setFlamesLit] = useState(0);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [flameDates, setFlameDates] = useState<Set<string>>(new Set());
-  const [bestScore, setBestScore] = useState<string | null>(null);
-  const [totalPracticeMin, setTotalPracticeMin] = useState(0);
-  const [sessionsCount, setSessionsCount] = useState(0);
+  const [bestBeliefDay, setBestBeliefDay] = useState<string | null>(null);
+
+  // Chart
+  const [chartData, setChartData] = useState<{ name: string; rating: number }[]>([]);
+
+  // Memory Lane
+  const [weeks, setWeeks] = useState<any[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<number, any>>({});
+  const [reflectionMap, setReflectionMap] = useState<Record<number, any>>({});
+  const [lessonMap, setLessonMap] = useState<Record<number, any>>({});
+  const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
+
+  // Modal
+  const [modalDay, setModalDay] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -22,71 +42,140 @@ const FlameRedirect = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Profiles
+        // Profile
         const { data: prof } = await supabase
           .from("profiles")
-          .select("current_streak, longest_streak")
+          .select("full_name, selected_master")
           .eq("id", user.id)
           .maybeSingle();
-        setStreak(prof?.current_streak ?? 0);
-        setLongestStreak(prof?.longest_streak ?? 0);
+        const name = prof?.full_name?.split(" ")[0] || "Student";
+        setFirstName(name);
+        setMasterName(prof?.selected_master?.toLowerCase() === "gyanu" ? "Gyanu" : "Gyani");
 
-        // Daily flames
-        const { data: flames } = await supabase
-          .from("daily_flames")
-          .select("confidence_rating, flame_date")
-          .eq("user_id", user.id);
-        setFlamesLit(flames?.length ?? 0);
-
-        const ratings = flames?.map(f => f.confidence_rating).filter(Boolean) as number[] ?? [];
-        setAvgConfidence(
-          ratings.length > 0
-            ? `${(ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)} / 5`
-            : "–"
-        );
-
-        const dates = new Set<string>();
-        flames?.forEach(f => { if (f.flame_date) dates.add(f.flame_date); });
-        setFlameDates(dates);
-
-        // Anubhav practice sessions (completed)
-        const { data: sessions } = await supabase
-          .from("anubhav_practice_sessions")
-          .select("word_clarity_score, smoothness_score, natural_sound_score, day_number, status")
+        // Student progress
+        const { data: sp } = await supabase
+          .from("student_progress")
+          .select("current_streak, longest_streak_ever")
           .eq("user_id", user.id)
-          .eq("status", "complete")
-          .order("day_number", { ascending: true });
+          .eq("course_id", courseId)
+          .maybeSingle();
+        setCurrentStreak(sp?.current_streak ?? 0);
+        setBestStreak(sp?.longest_streak_ever ?? 0);
 
-        setSessionsCount(sessions?.length ?? 0);
-        setTotalPracticeMin((sessions?.length ?? 0) * 8);
+        // Reflection sessions for this course
+        const { data: reflections } = await supabase
+          .from("reflection_sessions")
+          .select("day_number, confidence_rating, ai_response, written_reflection, composite_score, submitted_at, flame_date")
+          .eq("user_id", user.id)
+          .eq("course_id", courseId);
 
-        if (sessions && sessions.length > 0) {
-          const data = sessions.map(s => ({
-            name: `Day ${s.day_number}`,
-            score: Math.round(((Number(s.word_clarity_score) || 0) + (Number(s.smoothness_score) || 0) + (Number(s.natural_sound_score) || 0)) / 3),
-          }));
-          setChartData(data);
+        // Flames lit = has ai_response
+        const litFlames = reflections?.filter(r => r.ai_response) ?? [];
+        setFlamesLit(litFlames.length);
 
-          const best = Math.max(...data.map(d => d.score));
-          setBestScore(`${best}%`);
+        // Belief score = avg confidence_rating
+        const ratings = reflections?.map(r => r.confidence_rating).filter(Boolean) as number[] ?? [];
+        setBeliefScore(ratings.length > 0 ? `${(ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)} / 5` : "–");
+
+        // Best belief day
+        if (ratings.length > 0 && reflections) {
+          const best = reflections.reduce((a, b) => (b.confidence_rating ?? 0) > (a.confidence_rating ?? 0) ? b : a);
+          setBestBeliefDay(`Day ${best.day_number} — ${"★".repeat(best.confidence_rating ?? 0)}${"☆".repeat(5 - (best.confidence_rating ?? 0))}`);
         }
-      } catch {
-        // silent
-      } finally {
-        setLoading(false);
-      }
+
+        // Chart — grouped by day_number, max confidence
+        const dayMap = new Map<number, number>();
+        reflections?.forEach(r => {
+          if (r.confidence_rating) {
+            const existing = dayMap.get(r.day_number) ?? 0;
+            dayMap.set(r.day_number, Math.max(existing, r.confidence_rating));
+          }
+        });
+        const sorted = Array.from(dayMap.entries()).sort((a, b) => a[0] - b[0]);
+        setChartData(sorted.map(([d, r]) => ({ name: `Day ${d}`, rating: r })));
+
+        // Build reflection map
+        const rMap: Record<number, any> = {};
+        reflections?.forEach(r => {
+          if (!rMap[r.day_number] || (r.ai_response && !rMap[r.day_number].ai_response)) {
+            rMap[r.day_number] = r;
+          }
+        });
+        setReflectionMap(rMap);
+
+        // Progress for anubhav_complete check
+        const { data: progressData } = await supabase
+          .from("progress")
+          .select("day_number, anubhav_complete")
+          .eq("user_id", user.id)
+          .eq("course_id", courseId);
+        const pMap: Record<number, any> = {};
+        progressData?.forEach(p => { pMap[p.day_number] = p; });
+        setProgressMap(pMap);
+
+        // Weeks
+        const { data: weeksData } = await supabase
+          .from("course_weeks")
+          .select("week_number, theme_name, days_in_week")
+          .eq("course_id", courseId)
+          .eq("is_active", true)
+          .order("week_number", { ascending: true });
+        setWeeks(weeksData ?? []);
+
+        // Find current week
+        if (weeksData && weeksData.length > 0) {
+          let currentW = 1;
+          let dayCounter = 0;
+          const maxCompletedDay = Math.max(0, ...Object.keys(pMap).map(Number).filter(d => pMap[d]?.anubhav_complete));
+          for (const w of weeksData) {
+            const daysInWeek = w.days_in_week ?? 5;
+            if (maxCompletedDay > dayCounter + daysInWeek) {
+              dayCounter += daysInWeek;
+              currentW = w.week_number + 1;
+            } else {
+              currentW = w.week_number;
+              break;
+            }
+          }
+          setExpandedWeek(currentW);
+        }
+
+        // Lessons for modal
+        const { data: lessonsData } = await supabase
+          .from("lessons")
+          .select("day_number, title, manthan_question")
+          .eq("course_id", courseId);
+        const lMap: Record<number, any> = {};
+        lessonsData?.forEach(l => { lMap[l.day_number] = l; });
+        setLessonMap(lMap);
+
+      } catch { /* silent */ } finally { setLoading(false); }
     };
     load();
-  }, []);
+  }, [courseId]);
 
-  // Generate last 30 days for calendar
-  const last30Days = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (29 - i));
-    return d.toISOString().split("T")[0];
-  });
+  const getDayRange = (weekNum: number): number[] => {
+    let startDay = 1;
+    for (const w of weeks) {
+      if (w.week_number === weekNum) break;
+      startDay += w.days_in_week ?? 5;
+    }
+    const daysInWeek = weeks.find(w => w.week_number === weekNum)?.days_in_week ?? 5;
+    return Array.from({ length: daysInWeek }, (_, i) => startDay + i);
+  };
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const getDayState = (day: number): "locked" | "available" | "lit" => {
+    const reflection = reflectionMap[day];
+    if (reflection?.ai_response) return "lit";
+    const prog = progressMap[day];
+    if (prog?.anubhav_complete) return "available";
+    return "locked";
+  };
+
+  const modalData = modalDay ? {
+    reflection: reflectionMap[modalDay],
+    lesson: lessonMap[modalDay],
+  } : null;
 
   if (loading) {
     return (
@@ -98,60 +187,22 @@ const FlameRedirect = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24 safe-top">
-      {/* Hero Logo */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="relative w-full overflow-hidden h-[110px] sm:h-[130px] lg:h-[150px]"
-        style={{
-          background: "linear-gradient(180deg, hsl(161 96% 6%) 0%, hsl(161 96% 8%) 50%, hsl(161 96% 10%) 100%)",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-        }}
-      >
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, hsl(44 99% 68% / 0.12) 0%, transparent 70%)" }} />
-        <div className="absolute inset-0 pointer-events-none profile-hero-shimmer" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <img src="https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/UB-Logo-Horizontal.png" alt="Ujjwal Bhavishya" className="w-[65%] max-w-[400px] h-auto object-contain drop-shadow-lg" />
-        </div>
-      </motion.div>
-
       <div className="px-5 pt-4 max-w-lg mx-auto">
-        <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-display font-bold text-primary gold-text-glow">
-          Progress Sanctuary 🦋
-        </motion.h1>
+        <PageHeader title={`${firstName}'s Flame`} />
 
-        {/* Streak Hero */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15 }}
-          className="glass-card-gold p-8 mt-6 text-center rounded-3xl"
-        >
-          <motion.span
-            className="text-6xl block flame-breath"
-          >
-            🔥
-          </motion.span>
-          <p className="font-display text-5xl font-bold text-primary mt-3 gold-text-glow">{streak}</p>
-          <p className="text-sm text-foreground/50 font-body">Day Streak</p>
-          <p className="text-xs text-foreground/30 font-body mt-1">Best: {longestStreak} days</p>
-        </motion.div>
-
-        {/* Stats Row */}
-        <div className="flex gap-3 overflow-x-auto pb-2 mt-6 -mx-5 px-5">
+        {/* 3 Stat Cards */}
+        <div className="flex gap-3 mt-4">
           {[
-            { icon: "🔥", value: String(streak), label: "Current Streak" },
-            { icon: "🏆", value: String(longestStreak), label: "Best Streak" },
-            { icon: "⭐", value: avgConfidence, label: "Avg Confidence" },
-            { icon: "🦋", value: String(flamesLit), label: "Flames Lit" },
+            { icon: "🔥", value: String(currentStreak), label: "Current Streak" },
+            { icon: "🏆", value: String(bestStreak), label: "Best Streak" },
+            { icon: "⭐", value: beliefScore, label: "My Belief Score" },
           ].map((s, i) => (
             <motion.div
               key={s.label}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + i * 0.1 }}
-              className="flex-shrink-0 glass-card p-4 min-w-[100px] text-center"
+              transition={{ delay: 0.1 + i * 0.1 }}
+              className="flex-1 glass-card p-4 text-center"
             >
               <span className="text-lg">{s.icon}</span>
               <p className="text-xl font-bold text-primary mt-1">{s.value}</p>
@@ -161,81 +212,234 @@ const FlameRedirect = () => {
         </div>
 
         {/* Confidence Journey Chart */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass-card p-5 mt-6">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card p-5 mt-6">
           <h3 className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">Your Confidence Journey</h3>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={chartData}>
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(46 100% 94% / 0.4)" }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "hsl(46 100% 94% / 0.4)" }} axisLine={false} tickLine={false} />
+                <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 10, fill: "hsl(46 100% 94% / 0.4)" }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid hsl(44 99% 68% / 0.2)", borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: "hsl(46 100% 94%)" }}
                   itemStyle={{ color: "#fed141" }}
-                  formatter={(value: number) => [`${value}%`, "Score"]}
+                  formatter={(value: number) => [`${value}/5`, "Confidence"]}
                 />
-                <Line type="monotone" dataKey="score" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="rating" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
             <div className="h-40 flex items-center justify-center text-foreground/30 text-sm">
-              Complete your first Anubhav session to see your confidence chart 📈
+              Submit your first Flame reflection to see your confidence chart 📈
             </div>
           )}
         </motion.div>
 
-        {/* Flame Calendar */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6">
-          <h3 className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3">🦋 Your Flame Calendar</h3>
-          <div className="glass-card p-4">
-            <div className="grid grid-cols-7 gap-2">
-              {last30Days.map(date => {
-                const hasFlame = flameDates.has(date);
-                const isToday = date === todayStr;
-                return (
-                  <div key={date} className="flex items-center justify-center">
-                    <div
-                      className={`w-6 h-6 rounded-full transition-all ${
-                        hasFlame
-                          ? "bg-primary shadow-[0_0_8px_rgba(254,209,65,0.4)]"
-                          : "bg-foreground/10"
-                      } ${isToday ? "ring-2 ring-primary/50 ring-offset-1 ring-offset-background" : ""}`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-foreground/30 text-center mt-3 font-body">Last 30 days · Gold = flame submitted</p>
+        {/* Memory Lane */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6">
+          <h3 className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-1">{firstName}'s Memory Lane ✦</h3>
+          <p className="text-[11px] text-foreground/30 mb-4 font-body">Your reflections. Your journey. Your story.</p>
+
+          <div className="space-y-2">
+            {weeks.map(w => {
+              const days = getDayRange(w.week_number);
+              const isExpanded = expandedWeek === w.week_number;
+              const litCount = days.filter(d => getDayState(d) === "lit").length;
+
+              return (
+                <div key={w.week_number} className="glass-card overflow-hidden">
+                  <button
+                    onClick={() => setExpandedWeek(isExpanded ? null : w.week_number)}
+                    className="w-full flex items-center justify-between p-4 text-left"
+                  >
+                    <span className="text-sm font-semibold text-foreground/80" style={{ fontFamily: "var(--fa)" }}>
+                      Week {w.week_number}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        {days.map(d => (
+                          <div
+                            key={d}
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{
+                              background: getDayState(d) === "lit" ? "hsl(var(--primary))" : getDayState(d) === "available" ? "hsl(var(--foreground) / 0.3)" : "hsl(var(--foreground) / 0.1)",
+                              boxShadow: getDayState(d) === "lit" ? "0 0 6px hsl(var(--primary) / 0.4)" : "none",
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[10px] text-foreground/30">{isExpanded ? "▲" : "▼"}</span>
+                    </div>
+                  </button>
+
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex justify-center gap-4 px-4 pb-4">
+                          {days.map(d => {
+                            const state = getDayState(d);
+                            return (
+                              <button
+                                key={d}
+                                onClick={() => {
+                                  if (state === "lit") setModalDay(d);
+                                  else if (state === "available") navigate(`/flame/${d}`);
+                                }}
+                                className="flex flex-col items-center gap-1"
+                                disabled={state === "locked"}
+                              >
+                                <div
+                                  className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                                  style={{
+                                    ...(state === "lit" ? {
+                                      background: "linear-gradient(135deg, hsl(var(--primary)), hsl(44 99% 48%))",
+                                      color: "hsl(161 96% 6%)",
+                                      boxShadow: "0 0 12px hsl(var(--primary) / 0.4)",
+                                    } : state === "available" ? {
+                                      border: "1.5px solid hsl(var(--foreground) / 0.3)",
+                                      color: "hsl(var(--foreground) / 0.5)",
+                                    } : {
+                                      background: "hsl(var(--foreground) / 0.06)",
+                                      color: "hsl(var(--foreground) / 0.2)",
+                                    }),
+                                  }}
+                                >
+                                  {state === "lit" ? "🔥" : state === "locked" ? "🔒" : d}
+                                </div>
+                                <span className="text-[9px] text-foreground/30">Day {d}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
         </motion.div>
 
         {/* Personal Bests */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-6">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6">
           <h3 className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3">🏆 Personal Bests</h3>
-          {sessionsCount > 0 ? (
-            <div className="glass-card p-4 space-y-3">
-              {bestScore && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-foreground/50 font-body">Best Session Score</span>
-                  <span className="text-sm font-bold text-primary">{bestScore}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-foreground/50 font-body">Total Sessions</span>
-                <span className="text-sm font-bold text-primary">{sessionsCount}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-foreground/50 font-body">Total Practice Time</span>
-                <span className="text-sm font-bold text-primary">~{totalPracticeMin} minutes</span>
-              </div>
+          <div className="glass-card p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-foreground/50 font-body">Flames Lit</span>
+              <span className="text-sm font-bold text-primary">{flamesLit}</span>
             </div>
-          ) : (
-            <div className="glass-card p-5 text-center text-foreground/30 text-sm">
-              Complete your first Anubhav session to unlock your personal bests 🎯
+            {bestBeliefDay && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-foreground/50 font-body">Best Belief Day</span>
+                <span className="text-sm font-bold text-primary">{bestBeliefDay}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-foreground/50 font-body">Longest Flame Streak</span>
+              <span className="text-sm font-bold text-primary">{bestStreak} days</span>
             </div>
-          )}
+          </div>
         </motion.div>
       </div>
+
+      {/* Memory Lane Modal */}
+      <AnimatePresence>
+        {modalDay && modalData?.reflection && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center"
+            style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+            onClick={() => setModalDay(null)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25 }}
+              className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-t-3xl"
+              style={{ background: "hsl(161 96% 6%)", border: "1px solid hsl(var(--primary) / 0.15)" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-lg font-bold text-primary" style={{ fontFamily: "var(--fd)" }}>🔥 Day {modalDay}</p>
+                    <p className="text-sm text-foreground/60" style={{ fontFamily: "var(--fb)" }}>
+                      {modalData.lesson?.title || ""}
+                    </p>
+                    {modalData.reflection.submitted_at && (
+                      <p className="text-xs text-foreground/30 mt-0.5">
+                        {new Date(modalData.reflection.submitted_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                      </p>
+                    )}
+                  </div>
+                  <button onClick={() => setModalDay(null)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--foreground) / 0.1)" }}>
+                    <X size={16} className="text-foreground/50" />
+                  </button>
+                </div>
+
+                {/* Manthan Question */}
+                {modalData.lesson?.manthan_question && (
+                  <div className="mb-4">
+                    <p className="text-[10px] uppercase tracking-widest text-foreground/30 mb-1" style={{ fontFamily: "var(--fa)" }}>THE QUESTION</p>
+                    <GoldCard padding="16px">
+                      <p className="text-sm italic text-foreground/70" style={{ fontFamily: "var(--fb)" }}>"{modalData.lesson.manthan_question}"</p>
+                    </GoldCard>
+                  </div>
+                )}
+
+                {/* Written Reflection */}
+                {modalData.reflection.written_reflection && (
+                  <div className="mb-4">
+                    <p className="text-[10px] uppercase tracking-widest text-foreground/30 mb-1" style={{ fontFamily: "var(--fa)" }}>YOUR ANSWER</p>
+                    <GoldCard padding="16px">
+                      <p className="text-sm text-foreground/80" style={{ fontFamily: "var(--fb)" }}>"{modalData.reflection.written_reflection}"</p>
+                    </GoldCard>
+                  </div>
+                )}
+
+                {/* AI Response */}
+                {modalData.reflection.ai_response && (
+                  <div className="mb-4">
+                    <p className="text-[10px] uppercase tracking-widest text-foreground/30 mb-1" style={{ fontFamily: "var(--fa)" }}>{masterName.toUpperCase()}'S WORDS TO YOU</p>
+                    <GoldCard padding="16px" glow>
+                      <p className="text-sm text-foreground leading-relaxed" style={{ fontFamily: "var(--fb)" }}>"{modalData.reflection.ai_response}"</p>
+                    </GoldCard>
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div className="flex gap-4 mt-2">
+                  {modalData.reflection.confidence_rating && (
+                    <div>
+                      <p className="text-[10px] text-foreground/30 uppercase" style={{ fontFamily: "var(--fa)" }}>Your Belief</p>
+                      <p className="text-lg text-primary">
+                        {"★".repeat(modalData.reflection.confidence_rating)}{"☆".repeat(5 - modalData.reflection.confidence_rating)}
+                      </p>
+                    </div>
+                  )}
+                  {modalData.reflection.composite_score != null && (
+                    <div>
+                      <p className="text-[10px] text-foreground/30 uppercase" style={{ fontFamily: "var(--fa)" }}>Your Score</p>
+                      <p className="text-lg font-bold text-primary">{modalData.reflection.composite_score}/100</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <BottomNav />
     </div>
   );

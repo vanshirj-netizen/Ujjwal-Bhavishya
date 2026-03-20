@@ -78,10 +78,10 @@ const FlamePage = () => {
       const [profileRes, lessonRes, flameRes, progressRes, sessionRes, writingsRes] = await Promise.all([
         supabase.from("profiles").select("full_name, selected_master, current_streak, longest_streak").eq("id", user.id).maybeSingle(),
         supabase.from("lessons").select("title, week_number").eq("day_number", Number(dayNumber)).maybeSingle(),
-        supabase.from("daily_flames").select("*").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle(),
+        supabase.from("reflection_sessions").select("*").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle(),
         supabase.from("progress").select("anubhav_complete, flame_complete").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle(),
-        supabase.from("anubhav_practice_sessions").select("word_clarity_score, smoothness_score, natural_sound_score, top_error_summary").eq("user_id", user.id).eq("day_number", Number(dayNumber)).eq("status", "complete").order("submitted_at", { ascending: false }).maybeSingle(),
-        supabase.from("anubhav_writings").select("sentence_1, sentence_2, sentence_3, sentence_4, sentence_5").eq("user_id", user.id).eq("day_number", Number(dayNumber)).order("created_at", { ascending: false }).maybeSingle(),
+        supabase.from("practice_sessions").select("word_clarity_score, smoothness_score, natural_sound_score, top_error_summary").eq("user_id", user.id).eq("day_number", Number(dayNumber)).eq("status", "complete").order("submitted_at", { ascending: false }).maybeSingle(),
+        supabase.from("writing_submissions").select("sentence_1, sentence_2, sentence_3, sentence_4, sentence_5").eq("user_id", user.id).eq("day_number", Number(dayNumber)).order("created_at", { ascending: false }).maybeSingle(),
       ]);
 
       setProfile(profileRes.data);
@@ -143,7 +143,7 @@ const FlamePage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await supabase.from("daily_flames").insert({
+    const { data, error } = await supabase.from("reflection_sessions").insert({
       user_id: user.id,
       day_number: Number(dayNumber),
       flame_date: new Date().toISOString().split("T")[0],
@@ -207,7 +207,7 @@ const FlamePage = () => {
       const responseText = data?.aiResponse ?? `${profile?.full_name ?? "Friend"}, you did amazing today. Keep going! ✦`;
       setAiResponse(responseText);
 
-      await supabase.from("daily_flames").update({
+      await supabase.from("reflection_sessions").update({
         ai_response: responseText,
         ai_generated_at: new Date().toISOString(),
       }).eq("id", fId);
@@ -217,7 +217,7 @@ const FlamePage = () => {
       console.error(err);
       const fallback = "You showed up today. That alone is legendary. ✦";
       setAiResponse(fallback);
-      await supabase.from("daily_flames").update({ ai_response: fallback }).eq("id", fId);
+      await supabase.from("reflection_sessions").update({ ai_response: fallback }).eq("id", fId);
       setScreen("master");
     }
   };
@@ -268,7 +268,7 @@ const FlamePage = () => {
         setIsPlaying(true);
 
         if (flameId) {
-          await supabase.from("daily_flames").update({
+          await supabase.from("reflection_sessions").update({
             elevenlabs_audio_url: `data:audio/mpeg;base64,${data.audioBase64}`,
           }).eq("id", flameId);
         }

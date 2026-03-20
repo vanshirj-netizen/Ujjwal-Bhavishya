@@ -7,29 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GYANI_PERSONA = `You are Gyani — a warm, wise, and deeply patient English teacher. You have 30 years of experience teaching spoken English to Indian students. You love your students like a grandfather loves his grandchildren.
-
-YOUR VOICE:
-- Always encouraging, never harsh
-- Find what they did RIGHT before noting what is wrong
-- Use simple comparisons: "Think of it like this..."
-- Celebrate small wins loudly: "Wah! You are getting it!"
-- When correcting: "Almost perfect! Just one small thing..."
-- Never make the student feel stupid. Ever.
-- End feedback with a motivational push forward`;
-
-const GYANU_PERSONA = `You are Gyanu — sharp, direct, and brutally honest. You are the strict coach who produces champions. You have zero patience for careless mistakes. You care deeply — but you show it through high standards.
-
-YOUR VOICE:
-- Direct and short. No sugar-coating.
-- Call out the exact mistake with zero softening
-- "Your Hindi brain is driving. Kick it out."
-- "Wrong. Again. Say it correctly: [correction]"
-- "You know better than this. Don't be lazy."
-- No praise unless it is truly earned
-- When they get it right: "Good. Now do it again faster."
-- You push because you believe they can be excellent`;
-
 const MTI_ZONE_CONTEXT: Record<string, string> = {
   hindi_heartland: "Student likely adds 'only' at end of sentences, uses 'doing' for simple present, says 'is having' for 'has', drops articles 'a/an/the'.",
   punjabi_northwest: "Student likely over-stresses syllables, says 'will you come?' as 'you will come?', uses 'yaar' filler, confuses v/w sounds.",
@@ -48,6 +25,9 @@ Maximum vocabulary level: B1 (intermediate).
 These students are at A0-A2 level (complete beginners).
 NEVER use these words: copula, retroflex, diphthong, phoneme, syntax, morphology, lexical, semantics, grammatical, auxiliary, predicate, nominative, conjugation, tense aspect, clause, or ANY linguistic technical term.
 If you must explain a grammar rule — describe it in plain words a 14-year-old would understand on first reading. No exceptions.`;
+
+const FALLBACK_GYANI = `You are Gyani — a warm, wise, and deeply patient English teacher. Always encouraging, never harsh. Find what they did RIGHT before noting what is wrong. Celebrate small wins loudly. Never make the student feel stupid. Ever.`;
+const FALLBACK_GYANU = `You are Gyanu — sharp, direct, and brutally honest. You are the strict coach who produces champions. Call out the exact mistake with zero softening. You push because you believe they can be excellent.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -86,7 +66,21 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const masterPersona = masterName === "Gyanu" ? GYANU_PERSONA : GYANI_PERSONA;
+    // Fetch personality from ai_personalities table
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(supabaseUrl, SERVICE_ROLE_KEY);
+
+    const { data: personality } = await supabaseAdmin
+      .from("ai_personalities")
+      .select("personality_prompt")
+      .eq("master_name", masterName?.toLowerCase() === "gyanu" ? "Gyanu" : "Gyani")
+      .eq("context", "anubhav")
+      .limit(1)
+      .maybeSingle();
+
+    const masterPersona = personality?.personality_prompt
+      || (masterName?.toLowerCase() === "gyanu" ? FALLBACK_GYANU : FALLBACK_GYANI);
+
     const mtiContext = MTI_ZONE_CONTEXT[mtiBackground] ?? MTI_ZONE_CONTEXT["urban_neutral"];
 
     const sentenceBlock = sentences

@@ -179,7 +179,7 @@ const AnubhavPage = () => {
 
     // Get attempt count
     const { data: prevAttempts } = await supabase
-      .from("anubhav_practice_sessions")
+      .from("practice_sessions")
       .select("attempt_number")
       .eq("user_id", userId)
       .eq("day_number", Number(dayNumber))
@@ -190,7 +190,7 @@ const AnubhavPage = () => {
     setAttemptNumber(nextAttempt);
 
     const { data: sessionData, error: sErr } = await supabase
-      .from("anubhav_practice_sessions")
+      .from("practice_sessions")
       .insert({
         user_id: userId,
         day_number: Number(dayNumber),
@@ -287,7 +287,7 @@ const AnubhavPage = () => {
         const combined = new Blob(validBlobs, { type: validBlobs[0].type });
         const path = await uploadAudio(combined, "sentences");
         if (path && sessionId) {
-          await supabase.from("anubhav_practice_sessions")
+          await supabase.from("practice_sessions")
             .update({ audio_sentences_path: path })
             .eq("id", sessionId);
         }
