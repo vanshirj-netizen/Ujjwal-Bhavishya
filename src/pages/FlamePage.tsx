@@ -268,7 +268,7 @@ const FlamePage = () => {
         setIsPlaying(true);
 
         if (flameId) {
-          await supabase.from("daily_flames").update({
+          await supabase.from("reflection_sessions").update({
             elevenlabs_audio_url: `data:audio/mpeg;base64,${data.audioBase64}`,
           }).eq("id", flameId);
         }

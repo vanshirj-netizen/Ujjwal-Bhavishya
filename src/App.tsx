@@ -17,6 +17,7 @@ import FlameRedirect from "./pages/FlameRedirect";
 import FlamePage from "./pages/FlamePage";
 import DayScreen from "./pages/DayScreen";
 import AnubhavPage from "./pages/AnubhavPage";
+import AnubhavHub from "./pages/AnubhavHub";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => {
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/journey" element={<ProtectedRoute><Journey /></ProtectedRoute>} />
             <Route path="/day/:dayNumber" element={<ProtectedRoute><DayScreen /></ProtectedRoute>} />
+            <Route path="/anubhav-hub" element={<ProtectedRoute><AnubhavHub /></ProtectedRoute>} />
             <Route path="/flame" element={<ProtectedRoute><FlameRedirect /></ProtectedRoute>} />
             <Route path="/flame/:dayNumber" element={<ProtectedRoute><FlamePage /></ProtectedRoute>} />
             <Route path="/anubhav/:dayNumber" element={<ProtectedRoute><AnubhavPage /></ProtectedRoute>} />

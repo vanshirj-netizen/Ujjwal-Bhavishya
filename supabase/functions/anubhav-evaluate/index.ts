@@ -471,7 +471,7 @@ Return ONLY a JSON object with these fields:
       .single();
 
     if (bestAttempt) {
-      await supabaseAdmin.from("anubhav_practice_sessions")
+      await supabaseAdmin.from("practice_sessions")
         .update({ is_best_attempt: true })
         .eq("id", bestAttempt.id);
     }
