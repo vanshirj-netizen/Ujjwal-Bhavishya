@@ -371,7 +371,8 @@ const DayScreen = () => {
   );
 
 
-  const practiceAttemptNum = practiceAttemptData?.attempt_number ?? 0;
+  const maxReached = todaySessionsCount >= 3;
+  const remainingToday = 3 - todaySessionsCount;
 
 
   if (currentStep === 6) return (
@@ -394,8 +395,8 @@ const DayScreen = () => {
         </div>
         <div className="w-16 h-px mx-auto mt-6 mb-6" style={{ background: "rgba(253,193,65,0.3)" }} />
 
-        {/* Conditional practice card */}
-        {!practiceAttemptLoading && practiceAttemptNum === 0 && (
+        {/* Practice card — based on global daily limit */}
+        {!practiceAttemptLoading && !maxReached && !thisDayHasSession && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <GoldCard padding="20px" glow>
               <div onClick={() => navigate(`/anubhav/${dayNumber}`)} className="cursor-pointer">
@@ -412,31 +413,36 @@ const DayScreen = () => {
           </motion.div>
         )}
 
-        {!practiceAttemptLoading && practiceAttemptNum >= 1 && (
+        {!practiceAttemptLoading && !maxReached && thisDayHasSession && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="w-full flex flex-col items-center">
             <GoldButton onClick={() => navigate("/dashboard")} fullWidth className="mt-2">
               ← Back to Home
             </GoldButton>
-            {practiceAttemptNum < 3 ? (
-              <p
-                onClick={() => navigate(`/anubhav/${dayNumber}`)}
-                className="text-center mt-3"
-                style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "pointer" }}
-              >
-                ↺ Replay Practice · Attempt {practiceAttemptNum + 1} of 3
-              </p>
-            ) : (
-              <p
-                className="text-center mt-3"
-                style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "default" }}
-              >
-                ✓ Max practice reached for today
-              </p>
-            )}
+            <p
+              onClick={() => navigate(`/anubhav/${dayNumber}`)}
+              className="text-center mt-3"
+              style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "pointer" }}
+            >
+              ↺ Replay Practice · {remainingToday} of 3 remaining today
+            </p>
           </motion.div>
         )}
 
-        {practiceAttemptNum === 0 && (
+        {!practiceAttemptLoading && maxReached && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="w-full flex flex-col items-center">
+            <GoldButton onClick={() => navigate("/dashboard")} fullWidth className="mt-2">
+              ← Back to Home
+            </GoldButton>
+            <p
+              className="text-center mt-3"
+              style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "default" }}
+            >
+              ✓ Max practice reached for today
+            </p>
+          </motion.div>
+        )}
+
+        {!practiceAttemptLoading && !maxReached && !thisDayHasSession && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
             <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm">← Back to Home</GlassButton>
           </motion.div>
