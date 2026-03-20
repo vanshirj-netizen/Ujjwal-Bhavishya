@@ -664,11 +664,10 @@ const AnubhavPage = () => {
                       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontFamily: "var(--fd)", fontSize: "0.9rem", color: "hsl(var(--primary))" }}>
                         Recorded ✓
                       </motion.p>
-                      {/* Playback preview */}
-                      {recordedBlobsRef.current[speakIndex] && (
+                      {audioRecorder.audioURL && (
                         <audio
                           controls
-                          src={URL.createObjectURL(recordedBlobsRef.current[speakIndex]!)}
+                          src={audioRecorder.audioURL}
                           className="w-full max-w-xs"
                           style={{ height: "36px", borderRadius: "8px" }}
                         />
