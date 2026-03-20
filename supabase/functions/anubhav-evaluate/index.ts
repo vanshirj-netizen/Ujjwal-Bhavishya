@@ -436,7 +436,7 @@ Return ONLY a JSON object with these fields:
 
     // Save results
     console.log("[anubhav-evaluate] Step 10: Complete. Saving to DB. compositeScore:", compositeScore);
-    await supabaseAdmin.from("anubhav_practice_sessions").update({
+    await supabaseAdmin.from("practice_sessions").update({
       transcript_sentences: transcriptSentences,
       transcript_freespeech: transcriptFreespeech,
       word_clarity_score: avgWordClarity,
