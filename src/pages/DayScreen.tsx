@@ -109,7 +109,8 @@ const DayScreen = () => {
   const streakRef = useRef<HTMLSpanElement>(null);
 
   // Practice attempt tracking for Step 6 conditional display
-  const [practiceAttemptData, setPracticeAttemptData] = useState<any>(null);
+  const [todaySessionsCount, setTodaySessionsCount] = useState(0);
+  const [thisDayHasSession, setThisDayHasSession] = useState(false);
   const [practiceAttemptLoading, setPracticeAttemptLoading] = useState(false);
 
   useEffect(() => {
@@ -118,15 +119,57 @@ const DayScreen = () => {
       setPracticeAttemptLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setPracticeAttemptLoading(false); return; }
-      const { data } = await supabase
+
+      // Helper: get today's 5:30 AM IST cutoff as UTC ISO string
+      const getTodayISTCutoff = (): string => {
+        const now = new Date();
+        const istOffsetMs = 5.5 * 60 * 60 * 1000;
+        const istNow = new Date(now.getTime() + istOffsetMs);
+        let year = istNow.getUTCFullYear();
+        let month = istNow.getUTCMonth();
+        let date = istNow.getUTCDate();
+        const istHour = istNow.getUTCHours();
+        const istMin = istNow.getUTCMinutes();
+        // If before 5:30 AM IST, reset belongs to previous day
+        if (istHour < 5 || (istHour === 5 && istMin < 30)) {
+          const prev = new Date(Date.UTC(year, month, date));
+          prev.setUTCDate(prev.getUTCDate() - 1);
+          year = prev.getUTCFullYear();
+          month = prev.getUTCMonth();
+          date = prev.getUTCDate();
+        }
+        // 5:30 AM IST = 00:00 UTC on the same calendar date
+        return new Date(Date.UTC(year, month, date, 0, 0, 0)).toISOString();
+      };
+
+      const cutoff = getTodayISTCutoff();
+
+      // Query 1: Count ALL completed sessions today (across all days)
+      const { count, error: countError } = await supabase
         .from("practice_sessions")
-        .select("attempt_number, composite_score, is_best_attempt")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("course_id", COURSE_ID)
+        .eq("status", "complete")
+        .gte("submitted_at", cutoff);
+
+      // On error or null → default to 0 (NEVER block the student)
+      if (countError || count === null || count === undefined) {
+        setTodaySessionsCount(0);
+      } else {
+        setTodaySessionsCount(count);
+      }
+
+      // Query 2: Check if THIS specific day has any completed session ever
+      const { data: dayData } = await supabase
+        .from("practice_sessions")
+        .select("id")
         .eq("user_id", user.id)
         .eq("day_number", Number(dayNumber))
         .eq("status", "complete")
-        .order("attempt_number", { ascending: false })
         .limit(1);
-      setPracticeAttemptData(data && data.length > 0 ? data[0] : null);
+
+      setThisDayHasSession(!!(dayData && dayData.length > 0));
       setPracticeAttemptLoading(false);
     };
     fetchAttempts();
@@ -328,7 +371,8 @@ const DayScreen = () => {
   );
 
 
-  const practiceAttemptNum = practiceAttemptData?.attempt_number ?? 0;
+  const maxReached = todaySessionsCount >= 3;
+  const remainingToday = 3 - todaySessionsCount;
 
 
   if (currentStep === 6) return (
@@ -351,8 +395,8 @@ const DayScreen = () => {
         </div>
         <div className="w-16 h-px mx-auto mt-6 mb-6" style={{ background: "rgba(253,193,65,0.3)" }} />
 
-        {/* Conditional practice card */}
-        {!practiceAttemptLoading && practiceAttemptNum === 0 && (
+        {/* Practice card — based on global daily limit */}
+        {!practiceAttemptLoading && !maxReached && !thisDayHasSession && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <GoldCard padding="20px" glow>
               <div onClick={() => navigate(`/anubhav/${dayNumber}`)} className="cursor-pointer">
@@ -369,31 +413,36 @@ const DayScreen = () => {
           </motion.div>
         )}
 
-        {!practiceAttemptLoading && practiceAttemptNum >= 1 && (
+        {!practiceAttemptLoading && !maxReached && thisDayHasSession && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="w-full flex flex-col items-center">
             <GoldButton onClick={() => navigate("/dashboard")} fullWidth className="mt-2">
               ← Back to Home
             </GoldButton>
-            {practiceAttemptNum < 3 ? (
-              <p
-                onClick={() => navigate(`/anubhav/${dayNumber}`)}
-                className="text-center mt-3"
-                style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "pointer" }}
-              >
-                ↺ Replay Practice · Attempt {practiceAttemptNum + 1} of 3
-              </p>
-            ) : (
-              <p
-                className="text-center mt-3"
-                style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "default" }}
-              >
-                ✓ Max practice reached for today
-              </p>
-            )}
+            <p
+              onClick={() => navigate(`/anubhav/${dayNumber}`)}
+              className="text-center mt-3"
+              style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "pointer" }}
+            >
+              ↺ Replay Practice · {remainingToday} of 3 remaining today
+            </p>
           </motion.div>
         )}
 
-        {practiceAttemptNum === 0 && (
+        {!practiceAttemptLoading && maxReached && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="w-full flex flex-col items-center">
+            <GoldButton onClick={() => navigate("/dashboard")} fullWidth className="mt-2">
+              ← Back to Home
+            </GoldButton>
+            <p
+              className="text-center mt-3"
+              style={{ fontFamily: "var(--fb)", fontSize: "0.75rem", color: "rgba(255,252,239,0.3)", padding: 12, cursor: "default" }}
+            >
+              ✓ Max practice reached for today
+            </p>
+          </motion.div>
+        )}
+
+        {!practiceAttemptLoading && !maxReached && !thisDayHasSession && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
             <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm">← Back to Home</GlassButton>
           </motion.div>
