@@ -452,7 +452,7 @@ Return ONLY a JSON object with these fields:
     }).eq("id", session_id);
 
     // Update is_best_attempt for this user+day
-    await supabaseAdmin.from("anubhav_practice_sessions")
+    await supabaseAdmin.from("practice_sessions")
       .update({ is_best_attempt: false })
       .eq("user_id", userId)
       .eq("day_number", session.day_number)
