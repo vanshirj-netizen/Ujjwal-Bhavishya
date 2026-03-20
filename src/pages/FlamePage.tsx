@@ -143,7 +143,7 @@ const FlamePage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await supabase.from("daily_flames").insert({
+    const { data, error } = await supabase.from("reflection_sessions").insert({
       user_id: user.id,
       day_number: Number(dayNumber),
       flame_date: new Date().toISOString().split("T")[0],
