@@ -190,7 +190,7 @@ const AnubhavPage = () => {
     setAttemptNumber(nextAttempt);
 
     const { data: sessionData, error: sErr } = await supabase
-      .from("anubhav_practice_sessions")
+      .from("practice_sessions")
       .insert({
         user_id: userId,
         day_number: Number(dayNumber),
