@@ -207,7 +207,7 @@ const FlamePage = () => {
       const responseText = data?.aiResponse ?? `${profile?.full_name ?? "Friend"}, you did amazing today. Keep going! ✦`;
       setAiResponse(responseText);
 
-      await supabase.from("daily_flames").update({
+      await supabase.from("reflection_sessions").update({
         ai_response: responseText,
         ai_generated_at: new Date().toISOString(),
       }).eq("id", fId);
