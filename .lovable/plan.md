@@ -1,97 +1,69 @@
+# Bug Fix: "Max practice reached" showing incorrectly
 
+## Root Cause
 
-# Remaining Batches — Fix Build Errors + Complete Implementation
+The current code in `DayScreen.tsx` (lines 121-131) queries `practice_sessions` for the highest `attempt_number` for **this specific day_number** with **no date filter**. So if a student practiced Day 1 three times **yesterday**, `attempt_number = 3` is returned today, and the UI shows "Max practice reached for today" even though they haven't practiced at all today.
 
-## Current Build Errors (Critical — Batch 1 Fix)
+Two problems:
 
-Three files still reference old table names, causing all the TS errors:
+1. **No date filter** — it reads lifetime attempts, not today's
+2. **Per-day instead of global** — the 3-attempt limit is shared across ALL lesson days per calendar day, but the query only checks one day_number
 
-### File 1: `src/pages/AnubhavPage.tsx` (3 references)
-- Line 182: `"anubhav_practice_sessions"` → `"practice_sessions"`
-- Line 193: `"anubhav_practice_sessions"` → `"practice_sessions"`
-- Line 290: `"anubhav_practice_sessions"` → `"practice_sessions"`
+## Fix (single file: `src/pages/DayScreen.tsx`)
 
-### File 2: `src/pages/FlamePage.tsx` (8 references)
-- Line 81: `"daily_flames"` → `"reflection_sessions"`
-- Line 83: `"anubhav_practice_sessions"` → `"practice_sessions"`
-- Line 84: `"anubhav_writings"` → `"writing_submissions"`
-- Line 146: `"daily_flames"` → `"reflection_sessions"`
-- Line 210: `"daily_flames"` → `"reflection_sessions"`
-- Line 220: `"daily_flames"` → `"reflection_sessions"`
-- Line 271: `"daily_flames"` → `"reflection_sessions"`
+### Replace the attempt-tracking state and query (lines 111-133)
 
-### File 3: `src/pages/FlameRedirect.tsx` (2 references)
-- Line 36: `"daily_flames"` → `"reflection_sessions"`
-- Line 54: `"anubhav_practice_sessions"` → `"practice_sessions"`
+**New state:**
 
----
+- `todaySessionsCount: number` (0 by default — never blocks on failure)
+- `thisDayHasSession: boolean` (whether this specific day has any completed session ever — for showing "Start" vs "Replay")
+- `practiceDataLoading: boolean`
 
-## Batch 2: Edge Function Table Renames
+**New query logic:**
 
-### `supabase/functions/anubhav-evaluate/index.ts` (6 references)
-- Line 84: `"anubhav_writings"` → `"writing_submissions"`
-- Line 90: `"anubhav_practice_sessions"` → `"practice_sessions"`
-- Line 439: `"anubhav_practice_sessions"` → `"practice_sessions"`
-- Line 455: `"anubhav_practice_sessions"` → `"practice_sessions"`
-- Line 462: `"anubhav_practice_sessions"` → `"practice_sessions"`
-- Line 474: `"anubhav_practice_sessions"` → `"practice_sessions"`
+1. Count ALL completed sessions today across all days using `getTodayISTCutoff()`:
+  ```
+   supabase.from('practice_sessions')
+     .select('*', { count: 'exact', head: true })
+     .eq('user_id', userId)
+     .eq('status', 'complete')
+     .gte('submitted_at', cutoff)
+  ```
+   On error → default to 0 (allow practice)
+2. Check if this specific day has ANY completed session (no date filter):
+  ```
+   supabase.from('practice_sessions')
+     .select('id')
+     .eq('user_id', userId)
+     .eq('day_number', dayNumber)
+     .eq('status', 'complete')
+     .limit(1)
+  ```
 
-### `supabase/functions/anubhav-coach/index.ts` — No table references to rename (uses AI gateway only)
+**Add helper function** `getTodayISTCutoff()`:
 
-### `supabase/functions/generate-flame-response/index.ts` — No table references to rename (uses AI gateway only)
+- Gets current time in IST
+- If IST hour < 5 (or hour=5 and min<30), the "today" is actually yesterday's 5:30 AM
+- Returns the UTC ISO string for 5:30 AM IST of the current reset day
+- Formula: today's date in IST at 05:30 = `Date.UTC(year, month, date, 0, 0, 0)` (since 5:30 AM IST = 00:00 UTC)
 
----
+### Update the display logic (lines 331, 354-400)
 
-## Batch 3: New Pages + Routes
+Replace `practiceAttemptNum` logic with:
 
-### Create `src/pages/AnubhavHub.tsx`
-New Anubhav tab page with:
-- 3 stat cards (streak, best streak, avg score from `student_progress` + `practice_sessions`)
-- Week accordion (12 weeks × 5 days) with day circles (locked/available/practiced)
-- Personal bests section
-- Uses `useActiveCourse()` for course filtering
+- `todaySessionsCount >= 3` → show "Max practice reached"
+- `todaySessionsCount < 3 && thisDayHasSession` → show "Replay Practice · {todaySessionsCount} of 3 used today"
+- `todaySessionsCount < 3 && !thisDayHasSession` → show "Start Your Practice" card
+- `todaySessionsCount === 0 && !thisDayHasSession` → also show "Back to Home" button below
 
-### Update `src/App.tsx`
-- Add route: `/anubhav-hub` → `AnubhavHub` (protected)
+### Files changed
 
-### Redesign `src/pages/FlameRedirect.tsx`
-Full rewrite to new Flame tab with:
-- `PageHeader` with `"{firstName}'s Flame"` + course switcher
-- 3 stat cards (streak, best streak, belief score from `student_progress` + `reflection_sessions`)
-- Confidence Journey chart (grouped by day_number, no duplicates, Y axis 1-5)
-- Memory Lane accordion (week-based, day circles: locked/available/lit)
-- Tap LIT day → full-screen modal with reflection details joined with lessons
-- Personal bests section
-
----
-
-## Batch 4: Session Retry Logic + Streak Fix + Edge Function Updates
-
-### AnubhavPage.tsx — Retry logic
-Before starting practice, count completed sessions today (server-side SQL with 5:30 AM IST cutoff). If >= 3, show rest message overlay.
-
-### FlamePage.tsx — Streak fix
-Replace `calculateStreak` function: instead of counting consecutive `day_number`, query distinct calendar dates from `practice_sessions` with `status = 'complete'`, walk backwards from today in IST.
-
-### Edge Functions — Dynamic personality
-- `anubhav-coach`: Fetch `personality_prompt` from `ai_personalities` table, remove hardcoded GYANI/GYANU persona strings
-- `anubhav-evaluate`: Fetch personality, add history context (last 5 sessions), UPSERT `student_progress` after save
-- `generate-flame-response`: Rewrite with new inputs (manthanQuestion, manthanAnswer, compositeScore), fetch personality, calculate felt-vs-actual gap, UPSERT `reflection_sessions`
-
----
-
-## Summary of All Files Changed
-
-| File | Action |
-|------|--------|
-| `src/pages/AnubhavPage.tsx` | Fix 3 table references |
-| `src/pages/FlamePage.tsx` | Fix 8 table references |
-| `src/pages/FlameRedirect.tsx` | Full rewrite — new Flame tab |
-| `src/pages/AnubhavHub.tsx` | Create — new Anubhav tab |
-| `src/App.tsx` | Add `/anubhav-hub` route |
-| `supabase/functions/anubhav-evaluate/index.ts` | Fix 6 table references + add personality/history/progress upsert |
-| `supabase/functions/anubhav-coach/index.ts` | Dynamic personality from DB |
-| `supabase/functions/generate-flame-response/index.ts` | Full rewrite |
-
-All 4 batches implemented in sequence without stopping.
-
+Only `src/pages/DayScreen.tsx`  
+  
+**Fix approved. One addition needed:**  
+**In the todaySessionsCount query, add:**  
+**.eq('course_id', courseId)**  
+**after .eq('user_id', userId)**  
+  
+**This future-proofs the limit when **  
+**multiple courses exist. No other changes.**
