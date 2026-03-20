@@ -81,7 +81,7 @@ serve(async (req) => {
 
     // Fetch writings and session
     const { data: writing } = await supabaseAdmin
-      .from("anubhav_writings")
+      .from("writing_submissions")
       .select("*")
       .eq("id", writing_id)
       .single();
