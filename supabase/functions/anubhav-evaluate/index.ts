@@ -87,7 +87,7 @@ serve(async (req) => {
       .single();
 
     const { data: session } = await supabaseAdmin
-      .from("anubhav_practice_sessions")
+      .from("practice_sessions")
       .select("*")
       .eq("id", session_id)
       .single();
