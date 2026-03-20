@@ -217,7 +217,7 @@ const FlamePage = () => {
       console.error(err);
       const fallback = "You showed up today. That alone is legendary. ✦";
       setAiResponse(fallback);
-      await supabase.from("daily_flames").update({ ai_response: fallback }).eq("id", fId);
+      await supabase.from("reflection_sessions").update({ ai_response: fallback }).eq("id", fId);
       setScreen("master");
     }
   };
