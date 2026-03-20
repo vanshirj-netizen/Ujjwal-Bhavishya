@@ -179,7 +179,7 @@ const AnubhavPage = () => {
 
     // Get attempt count
     const { data: prevAttempts } = await supabase
-      .from("anubhav_practice_sessions")
+      .from("practice_sessions")
       .select("attempt_number")
       .eq("user_id", userId)
       .eq("day_number", Number(dayNumber))
