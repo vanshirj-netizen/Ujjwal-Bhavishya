@@ -664,6 +664,15 @@ const AnubhavPage = () => {
                       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontFamily: "var(--fd)", fontSize: "0.9rem", color: "hsl(var(--primary))" }}>
                         Recorded ✓
                       </motion.p>
+                      {/* Playback preview */}
+                      {recordedBlobsRef.current[speakIndex] && (
+                        <audio
+                          controls
+                          src={URL.createObjectURL(recordedBlobsRef.current[speakIndex]!)}
+                          className="w-full max-w-xs"
+                          style={{ height: "36px", borderRadius: "8px" }}
+                        />
+                      )}
                       <div className="flex gap-3 w-full">
                         {!redoUsed[speakIndex] && (
                           <GlassButton onClick={handleRedo} className="flex-1">
