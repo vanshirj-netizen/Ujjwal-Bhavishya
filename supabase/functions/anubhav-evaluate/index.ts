@@ -459,7 +459,7 @@ Return ONLY a JSON object with these fields:
       .eq("status", "complete");
 
     const { data: bestAttempt } = await supabaseAdmin
-      .from("anubhav_practice_sessions")
+      .from("practice_sessions")
       .select("id")
       .eq("user_id", userId)
       .eq("day_number", session.day_number)
