@@ -649,11 +649,7 @@ export type Database = {
       }
       practice_sessions: {
         Row: {
-          ai_feedback: string | null
           attempt_number: number | null
-          audio_freespeech_path: string | null
-          audio_sentences_path: string | null
-          azure_word_errors: Json | null
           composite_score: number | null
           course_id: string
           created_at: string | null
@@ -661,24 +657,25 @@ export type Database = {
           id: string
           is_best_attempt: boolean | null
           lesson_topic: string | null
+          master_message: string | null
+          master_message_audio_url: string | null
+          master_message_voice: string | null
           natural_sound_score: number | null
-          retry_count: number | null
+          selected_world: string | null
           smoothness_score: number | null
           status: string | null
           submitted_at: string | null
           top_error_summary: string | null
-          transcript_freespeech: string | null
-          transcript_sentences: string | null
           user_id: string
           word_clarity_score: number | null
+          word_errors: Json | null
+          world_recordings: Json | null
+          writing_checks: Json | null
           writing_id: string | null
+          writing_recordings: Json | null
         }
         Insert: {
-          ai_feedback?: string | null
           attempt_number?: number | null
-          audio_freespeech_path?: string | null
-          audio_sentences_path?: string | null
-          azure_word_errors?: Json | null
           composite_score?: number | null
           course_id?: string
           created_at?: string | null
@@ -686,24 +683,25 @@ export type Database = {
           id?: string
           is_best_attempt?: boolean | null
           lesson_topic?: string | null
+          master_message?: string | null
+          master_message_audio_url?: string | null
+          master_message_voice?: string | null
           natural_sound_score?: number | null
-          retry_count?: number | null
+          selected_world?: string | null
           smoothness_score?: number | null
           status?: string | null
           submitted_at?: string | null
           top_error_summary?: string | null
-          transcript_freespeech?: string | null
-          transcript_sentences?: string | null
           user_id: string
           word_clarity_score?: number | null
+          word_errors?: Json | null
+          world_recordings?: Json | null
+          writing_checks?: Json | null
           writing_id?: string | null
+          writing_recordings?: Json | null
         }
         Update: {
-          ai_feedback?: string | null
           attempt_number?: number | null
-          audio_freespeech_path?: string | null
-          audio_sentences_path?: string | null
-          azure_word_errors?: Json | null
           composite_score?: number | null
           course_id?: string
           created_at?: string | null
@@ -711,17 +709,22 @@ export type Database = {
           id?: string
           is_best_attempt?: boolean | null
           lesson_topic?: string | null
+          master_message?: string | null
+          master_message_audio_url?: string | null
+          master_message_voice?: string | null
           natural_sound_score?: number | null
-          retry_count?: number | null
+          selected_world?: string | null
           smoothness_score?: number | null
           status?: string | null
           submitted_at?: string | null
           top_error_summary?: string | null
-          transcript_freespeech?: string | null
-          transcript_sentences?: string | null
           user_id?: string
           word_clarity_score?: number | null
+          word_errors?: Json | null
+          world_recordings?: Json | null
+          writing_checks?: Json | null
           writing_id?: string | null
+          writing_recordings?: Json | null
         }
         Relationships: []
       }
@@ -927,6 +930,7 @@ export type Database = {
           elevenlabs_audio_url: string | null
           flame_date: string | null
           id: string
+          master_message_voice: string | null
           spoke_about: string | null
           submitted_at: string | null
           tomorrows_intention: string | null
@@ -945,6 +949,7 @@ export type Database = {
           elevenlabs_audio_url?: string | null
           flame_date?: string | null
           id?: string
+          master_message_voice?: string | null
           spoke_about?: string | null
           submitted_at?: string | null
           tomorrows_intention?: string | null
@@ -963,6 +968,7 @@ export type Database = {
           elevenlabs_audio_url?: string | null
           flame_date?: string | null
           id?: string
+          master_message_voice?: string | null
           spoke_about?: string | null
           submitted_at?: string | null
           tomorrows_intention?: string | null

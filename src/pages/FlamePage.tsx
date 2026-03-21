@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { COURSE_ID } from "@/lib/constants";
 import BottomNav from "@/components/BottomNav";
 import GoldButton from "@/components/ui/GoldButton";
 import GlassButton from "@/components/ui/GlassButton";
@@ -51,6 +52,7 @@ const FlamePage = () => {
   const [existingFlame, setExistingFlame] = useState<any>(null);
   const [practiceSession, setPracticeSession] = useState<any>(null);
   const [writings, setWritings] = useState<any>(null);
+  const [progressSummary, setProgressSummary] = useState<any>({});
 
   const [confRating, setConfRating] = useState(0);
   const [spokeAbout, setSpokeAbout] = useState("");
@@ -75,19 +77,21 @@ const FlamePage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/"); return; }
 
-      const [profileRes, lessonRes, flameRes, progressRes, sessionRes, writingsRes] = await Promise.all([
-        supabase.from("profiles").select("full_name, selected_master, current_streak, longest_streak").eq("id", user.id).maybeSingle(),
-        supabase.from("lessons").select("title, week_number").eq("day_number", Number(dayNumber)).maybeSingle(),
+      const [profileRes, lessonRes, flameRes, progressRes, sessionRes, writingsRes, progressSummaryRes] = await Promise.all([
+        supabase.from("profiles").select("full_name, selected_master, current_streak, longest_streak, mother_tongue, mti_zone").eq("id", user.id).maybeSingle(),
+        supabase.from("lessons").select("title, week_number, manthan_question").eq("day_number", Number(dayNumber)).maybeSingle(),
         supabase.from("reflection_sessions").select("*").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle(),
         supabase.from("progress").select("anubhav_complete, flame_complete").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle(),
-        supabase.from("practice_sessions").select("word_clarity_score, smoothness_score, natural_sound_score, top_error_summary").eq("user_id", user.id).eq("day_number", Number(dayNumber)).eq("status", "complete").order("submitted_at", { ascending: false }).maybeSingle(),
+        supabase.from("practice_sessions").select("word_clarity_score, smoothness_score, natural_sound_score, composite_score, top_error_summary, master_message_audio_url").eq("user_id", user.id).eq("day_number", Number(dayNumber)).eq("status", "complete").order("submitted_at", { ascending: false }).maybeSingle(),
         supabase.from("writing_submissions").select("sentence_1, sentence_2, sentence_3, sentence_4, sentence_5").eq("user_id", user.id).eq("day_number", Number(dayNumber)).order("created_at", { ascending: false }).maybeSingle(),
+        supabase.from("student_progress").select("*").eq("user_id", user.id).eq("course_id", COURSE_ID).maybeSingle(),
       ]);
 
       setProfile(profileRes.data);
       setLesson(lessonRes.data);
       setPracticeSession(sessionRes.data);
       setWritings(writingsRes.data);
+      setProgressSummary(progressSummaryRes.data ?? {});
 
       const flameComplete = progressRes.data?.flame_complete === true;
       const anubhavComplete = progressRes.data?.anubhav_complete === true;
@@ -119,21 +123,45 @@ const FlamePage = () => {
   }, [screen]);
 
   const calculateStreak = async (userId: string): Promise<number> => {
+    // Calendar-date streak from practice_sessions.submitted_at converted to IST
     const { data } = await supabase
-      .from("progress")
-      .select("day_number")
+      .from("practice_sessions")
+      .select("submitted_at")
       .eq("user_id", userId)
-      .eq("day_complete", true)
-      .order("day_number", { ascending: false });
+      .eq("course_id", COURSE_ID)
+      .eq("status", "complete")
+      .eq("is_best_attempt", true)
+      .order("submitted_at", { ascending: false })
+      .limit(60);
 
     if (!data || data.length === 0) return 1;
-    const days = data.map(d => d.day_number).sort((a, b) => b - a);
-    let streak = 1;
-    for (let i = 1; i < days.length; i++) {
-      if (days[i - 1] - days[i] === 1) streak++;
-      else break;
+
+    const dateSet = new Set<string>();
+    data.forEach(s => {
+      if (s.submitted_at) {
+        const d = new Date(s.submitted_at);
+        const istDate = new Date(d.getTime() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0];
+        dateSet.add(istDate);
+      }
+    });
+
+    const sortedDates = Array.from(dateSet).sort().reverse();
+    const todayIST = new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    let streak = 0;
+    let checkDate = todayIST;
+    for (const d of sortedDates) {
+      if (d === checkDate) {
+        streak++;
+        const prev = new Date(checkDate);
+        prev.setDate(prev.getDate() - 1);
+        checkDate = prev.toISOString().split("T")[0];
+      } else if (d < checkDate) {
+        break;
+      }
     }
-    return streak;
+
+    return Math.max(streak, 1);
   };
 
   const reflectionValid = confRating > 0 && spokeAbout.trim().length > 0 && biggestChallenge.trim().length > 0 && tomorrowsIntention.trim().length > 0;
@@ -146,6 +174,7 @@ const FlamePage = () => {
     const { data, error } = await supabase.from("reflection_sessions").insert({
       user_id: user.id,
       day_number: Number(dayNumber),
+      course_id: COURSE_ID,
       flame_date: new Date().toISOString().split("T")[0],
       confidence_rating: confRating,
       spoke_about: spokeAbout.trim(),
@@ -185,30 +214,36 @@ const FlamePage = () => {
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
-            studentName: profile?.full_name ?? "Friend",
+            studentName: (profile?.full_name ?? "Friend").split(" ")[0],
             dayNumber: Number(dayNumber),
             lessonTitle: lesson?.title ?? "",
             masterName,
             confidenceRating: confRating,
-            streak_count: streakCount,
-            word_clarity_score: practiceSession?.word_clarity_score,
-            smoothness_score: practiceSession?.smoothness_score,
-            natural_sound_score: practiceSession?.natural_sound_score,
-            top_error_summary: practiceSession?.top_error_summary,
+            feltScore: confRating * 20,
+            streakCount: profile?.current_streak ?? 0,
+            wordClarityScore: practiceSession?.word_clarity_score,
+            smoothnessScore: practiceSession?.smoothness_score,
+            naturalSoundScore: practiceSession?.natural_sound_score,
+            compositeScore: practiceSession?.composite_score,
+            topErrorSummary: practiceSession?.top_error_summary,
+            motherTongue: profile?.mother_tongue ?? "Hindi",
+            mtiZone: profile?.mti_zone ?? "hindi_heartland",
+            progressSummary,
             spokeAbout,
             biggestChallenge,
             tomorrowsIntention,
-            written_sentences: sentencesList,
+            writtenSentences: sentencesList,
           }),
         }
       );
 
       const data = await response.json();
-      const responseText = data?.aiResponse ?? `${profile?.full_name ?? "Friend"}, you did amazing today. Keep going! ✦`;
+      const responseText = data?.aiResponse ?? `${(profile?.full_name ?? "Friend").split(" ")[0]}, you did amazing today. Keep going! ✦`;
       setAiResponse(responseText);
 
       await supabase.from("reflection_sessions").update({
         ai_response: responseText,
+        master_message_voice: data?.mastermessagevoice ?? null,
         ai_generated_at: new Date().toISOString(),
       }).eq("id", fId);
 
@@ -230,6 +265,7 @@ const FlamePage = () => {
       return;
     }
 
+    // If we have a saved URL, play directly without API call
     if (savedUrl) {
       try {
         const audio = new Audio(savedUrl);
