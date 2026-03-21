@@ -1,69 +1,130 @@
-# Bug Fix: "Max practice reached" showing incorrectly
 
-## Root Cause
 
-The current code in `DayScreen.tsx` (lines 121-131) queries `practice_sessions` for the highest `attempt_number` for **this specific day_number** with **no date filter**. So if a student practiced Day 1 three times **yesterday**, `attempt_number = 3` is returned today, and the UI shows "Max practice reached for today" even though they haven't practiced at all today.
+# Anubhav + Flame Critical Overhaul
 
-Two problems:
+Three files changed. No other files touched.
 
-1. **No date filter** — it reads lifetime attempts, not today's
-2. **Per-day instead of global** — the 3-attempt limit is shared across ALL lesson days per calendar day, but the query only checks one day_number
+---
 
-## Fix (single file: `src/pages/DayScreen.tsx`)
+## PART 1 — Edge Function: `supabase/functions/anubhav-evaluate/index.ts` (Full rewrite)
 
-### Replace the attempt-tracking state and query (lines 111-133)
+### 1A. Remove ANUBHAV_MASTER_PROMPT crash
+Lines 38, 47-53 check for a secret that doesn't exist → 500 on every call. Remove entirely. Also remove duplicate dangling code at lines 598-600 (syntax error from prior edit).
 
-**New state:**
+### 1B. Fetch personality from DB
+After auth, parse request body for: `masterName, firstName, userId, courseId, dayNumber, attemptNumber, selectedWorld, writingRecordings, worldRecordings, sessionHistory, progressSummary, lessonTitle, grammarPattern, mtiZone, motherTongue`.
 
-- `todaySessionsCount: number` (0 by default — never blocks on failure)
-- `thisDayHasSession: boolean` (whether this specific day has any completed session ever — for showing "Start" vs "Replay")
-- `practiceDataLoading: boolean`
+Fetch from `ai_personalities` table where `master_name = masterName` and `context = 'anubhav'`. Fallback to generic prompt.
 
-**New query logic:**
+### 1C. Restructure audio processing
+Current code downloads from `audio_sentences_path` / `audio_freespeech_path` — these columns don't exist in the schema. Replace with:
+- Iterate `writingRecordings[]` and `worldRecordings[]` arrays (each has an `audioPath`)
+- Download each audio file from storage
+- Send all audio parts + written text to Gemini as multimodal content
 
-1. Count ALL completed sessions today across all days using `getTodayISTCutoff()`:
-  ```
-   supabase.from('practice_sessions')
-     .select('*', { count: 'exact', head: true })
-     .eq('user_id', userId)
-     .eq('status', 'complete')
-     .gte('submitted_at', cutoff)
-  ```
-   On error → default to 0 (allow practice)
-2. Check if this specific day has ANY completed session (no date filter):
-  ```
-   supabase.from('practice_sessions')
-     .select('id')
-     .eq('user_id', userId)
-     .eq('day_number', dayNumber)
-     .eq('status', 'complete')
-     .limit(1)
-  ```
+### 1D. Two Gemini calls → structured response
+**Call 1 (Audio eval):** Keep existing Gemini audio eval structure but adapt to multiple audio files from the arrays. Returns scores + word errors.
 
-**Add helper function** `getTodayISTCutoff()`:
+**Call 2 (Feedback):** Use fetched personality prompt as system message. Build user prompt with full context (student info, scores, history, progress). Request JSON response with: `mastermessage`, `mastermessagevoice`, `topErrorSummary`, `wordErrors` (with word/heardAs/correction/example), `writingChecks` (sentence/issue/fix).
 
-- Gets current time in IST
-- If IST hour < 5 (or hour=5 and min<30), the "today" is actually yesterday's 5:30 AM
-- Returns the UTC ISO string for 5:30 AM IST of the current reset day
-- Formula: today's date in IST at 05:30 = `Date.UTC(year, month, date, 0, 0, 0)` (since 5:30 AM IST = 00:00 UTC)
+### 1E. ElevenLabs voice generation
+Strip voice cues from `mastermessagevoice` (replace `[PAUSE]` → `...`, remove `[SOFT]`, `[WARM]`, etc.). Send cleaned text to ElevenLabs. Upload resulting MP3 to `anubhav-audio` bucket at `{userId}/{dayNumber}/master_{attemptNumber}.mp3`. Get public URL.
 
-### Update the display logic (lines 331, 354-400)
+### 1F. Database saves
+- UPDATE `practice_sessions` with all scores, `master_message`, `master_message_voice`, `master_message_audio_url`, `top_error_summary`, `word_errors`, `writing_checks`, `status: 'complete'`
+- UPDATE `is_best_attempt` logic (reset all → set highest score)
+- UPSERT `progress` table: `anubhav_complete = true`
+- UPSERT `student_progress` (keep existing logic)
 
-Replace `practiceAttemptNum` logic with:
+### 1G. Error safety
+Wrap entire body in try/catch. On ANY error: still save `status: 'complete'` + `anubhav_complete: true`, return HTTP 200 with fallback scores (50/50/50/50).
 
-- `todaySessionsCount >= 3` → show "Max practice reached"
-- `todaySessionsCount < 3 && thisDayHasSession` → show "Replay Practice · {todaySessionsCount} of 3 used today"
-- `todaySessionsCount < 3 && !thisDayHasSession` → show "Start Your Practice" card
-- `todaySessionsCount === 0 && !thisDayHasSession` → also show "Back to Home" button below
+### 1H. Return schema
+```json
+{
+  "wordClarityScore", "smoothnessScore", "naturalSoundScore", "compositeScore",
+  "mastermessage", "mastermessagevoice", "mastermessageaudiourl",
+  "topErrorSummary", "wordErrors", "writingChecks"
+}
+```
 
-### Files changed
+---
 
-Only `src/pages/DayScreen.tsx`  
-  
-**Fix approved. One addition needed:**  
-**In the todaySessionsCount query, add:**  
-**.eq('course_id', courseId)**  
-**after .eq('user_id', userId)**  
-  
-**This future-proofs the limit when **  
-**multiple courses exist. No other changes.**
+## PART 2 — `src/pages/AnubhavPage.tsx`
+
+### 2A. Session retry count (IST cutoff)
+Add `getTodayISTCutoff()` helper (handles pre-5:30 AM rollback). Add state: `todaySessionsCount`, `thisSessionEverDone`. Query global session count today (all days) with `.gte('submitted_at', cutoff)`. On error → default 0, never block.
+
+Display logic:
+- `>= 3` → rest message screen with "Back to Home"
+- `< 3 && ever done` → "Replay Practice (X of 3 left)"
+- `< 3 && never done` → "Start Practice"
+
+### 2B. Audio architecture → individual uploads
+Replace blob-combining logic in `submitForEvaluation()`. Instead, upload each recorded blob individually during the speak phase (on "Next" tap):
+- Writing recordings: `{userId}/{dayNumber}/writing_{index}_attempt{N}.webm`
+- World recordings: `{userId}/{dayNumber}/world_{index}_attempt{N}.webm`
+
+Build `writingRecordings[]` and `worldRecordings[]` JSONB arrays with sentence text + audio path.
+
+### 2C. Payload to anubhav-evaluate
+Replace current fetch body with new schema including: `masterName, firstName, courseId, attemptNumber, selectedWorld, mtiZone, motherTongue, lessonTitle, grammarPattern, writingRecordings, worldRecordings, sessionHistory, progressSummary`.
+
+Add data fetches for `sessionHistory` (last 5 completed sessions) and `progressSummary` (from student_progress table).
+
+### 2D. Profile query
+Add `chosen_world` to the select (already has `mti_zone, mother_tongue`).
+
+### 2E. Results screen updates
+- Replace `results.ai_feedback` → `results.mastermessage`
+- Replace "Hear Master Say This" → "Hear it from {masterName}" using `results.mastermessageaudiourl` (fallback to generate-flame-voice)
+- Word errors: display `heardAs`, `correction` (UB Pronunciation Code), and `example` sentence
+- Writing checks: use `issue` and `fix` fields from new schema
+
+### 2F. Playback button
+Already exists (audio element at line 668). Keep as-is — it works.
+
+---
+
+## PART 3 — `src/pages/FlamePage.tsx`
+
+### 3A. Profile query
+Add `mother_tongue, mti_zone` to select (line 79).
+
+### 3B. Practice session query
+Add `composite_score, master_message_audio_url` to select (line 83).
+
+### 3C. Progress summary fetch
+Add query to `student_progress` table in fetchData. Store in state.
+
+### 3D. Payload to generate-flame-response
+Fix broken payload:
+- `studentName` → first name only (split on space)
+- Add `compositeScore` from practice session
+- Add `feltScore: confRating * 20` (0-100)
+- `streakCount` → from profile directly, not state
+- Add `motherTongue, mtiZone, progressSummary`
+
+### 3E. Store master_message_voice
+After AI response returns, save `master_message_voice` to `reflection_sessions` alongside `ai_response`.
+
+### 3F. Audio playback
+In read-only mode: if `elevenlabs_audio_url` exists → play directly. Only call generate-flame-voice if null. (Already works this way — verify and keep.)
+
+### 3G. Streak calculation
+Current `calculateStreak` uses `day_number` gaps (wrong). Replace with calendar-date streak from `practice_sessions.submitted_at` converted to IST dates, walking backwards from today.
+
+---
+
+## Technical Details
+
+**DB columns confirmed in schema:**
+- `practice_sessions`: `master_message`, `master_message_voice`, `master_message_audio_url`, `writing_recordings` (jsonb), `world_recordings` (jsonb), `word_errors` (jsonb), `writing_checks` (jsonb)
+- `reflection_sessions`: `master_message_voice`, `elevenlabs_audio_url`
+
+**Columns NOT in schema** (must stop referencing):
+- `audio_sentences_path`, `audio_freespeech_path`, `transcript_sentences`, `transcript_freespeech`, `azure_word_errors`, `ai_feedback`
+
+**Voice cue stripping regex:**
+`[PAUSE]` → `...`, `[LONG PAUSE]` → `...`, `[BEAT]` → `.`, remove: `[SIGH]`, `[SOFT]`, `[WARM]`, `[SLOW]`, `[DIRECT]`, `[DRY]`, `[MIC DROP]`
+
