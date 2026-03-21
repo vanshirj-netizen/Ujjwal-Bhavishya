@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,26 +29,32 @@ function normalizeScore(score: number): number {
   return Math.round(Math.min(100, Math.max(0, score)));
 }
 
+function stripVoiceCues(text: string): string {
+  return text
+    .replace(/\[PAUSE\]/gi, '...')
+    .replace(/\[LONG PAUSE\]/gi, '...')
+    .replace(/\[BEAT\]/gi, '.')
+    .replace(/\[SIGH\]/gi, '')
+    .replace(/\[SOFT\]/gi, '')
+    .replace(/\[WARM\]/gi, '')
+    .replace(/\[SLOW\]/gi, '')
+    .replace(/\[DIRECT\]/gi, '')
+    .replace(/\[DRY\]/gi, '')
+    .replace(/\[MIC DROP\]/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Startup secret validation
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  const ANUBHAV_MASTER_PROMPT = Deno.env.get("ANUBHAV_MASTER_PROMPT");
-
   if (!LOVABLE_API_KEY || !LOVABLE_API_KEY.trim()) {
-    console.error("[anubhav-evaluate] Missing required secret: LOVABLE_API_KEY");
+    console.error("[anubhav-evaluate] Missing LOVABLE_API_KEY");
     return new Response(
       JSON.stringify({ error: "Missing required secret: LOVABLE_API_KEY", step: "startup_validation" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-  if (!ANUBHAV_MASTER_PROMPT || !ANUBHAV_MASTER_PROMPT.trim()) {
-    console.error("[anubhav-evaluate] Missing required secret: ANUBHAV_MASTER_PROMPT");
-    return new Response(
-      JSON.stringify({ error: "Missing required secret: ANUBHAV_MASTER_PROMPT", step: "startup_validation" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -69,152 +76,162 @@ serve(async (req) => {
   if (claimsError || !claimsData?.claims) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
   }
-  const userId = claimsData.claims.sub as string;
-  console.log("[anubhav-evaluate] Step 1: Auth verified, userId:", userId);
+  const authUserId = claimsData.claims.sub as string;
+
+  const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseAdmin = createClient(supabaseUrl, SERVICE_ROLE_KEY);
+
+  // Parse request body
+  const {
+    userId: bodyUserId,
+    masterName,
+    firstName,
+    courseId,
+    dayNumber,
+    attemptNumber,
+    selectedWorld,
+    writingRecordings,
+    worldRecordings,
+    sessionHistory,
+    progressSummary,
+    lessonTitle,
+    grammarPattern,
+    mtiZone,
+    motherTongue,
+  } = await req.json();
+
+  const userId = bodyUserId || authUserId;
+  const effectiveCourseId = courseId || "6a860163-ea3c-4205-89b3-74a3e9be098f";
+  const effectiveMasterName = (masterName ?? "gyani").toLowerCase();
+  const effectiveAttempt = attemptNumber ?? 1;
+  const effectiveFirstName = firstName || "Friend";
+
+  // Fallback response used on any error
+  const fallbackResult = {
+    wordClarityScore: 50,
+    smoothnessScore: 50,
+    naturalSoundScore: 50,
+    compositeScore: 50,
+    mastermessage: "You showed up and practiced. That is the foundation.",
+    mastermessagevoice: "You showed up and practiced. PAUSE That is the foundation.",
+    mastermessageaudiourl: null as string | null,
+    topErrorSummary: "",
+    wordErrors: [] as any[],
+    writingChecks: [] as any[],
+  };
+
+  // Safety: always mark complete even on error
+  const safeMarkComplete = async () => {
+    try {
+      // Upsert practice_sessions - find existing in_progress or create
+      const { data: existingSession } = await supabaseAdmin
+        .from("practice_sessions")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("course_id", effectiveCourseId)
+        .eq("day_number", dayNumber)
+        .eq("attempt_number", effectiveAttempt)
+        .eq("status", "in_progress")
+        .maybeSingle();
+
+      if (existingSession) {
+        await supabaseAdmin.from("practice_sessions").update({
+          status: "complete",
+          submitted_at: new Date().toISOString(),
+        }).eq("id", existingSession.id);
+      }
+
+      // Upsert progress
+      const { data: progressRow } = await supabaseAdmin.from("progress")
+        .select("id").eq("user_id", userId).eq("day_number", dayNumber).maybeSingle();
+      if (progressRow) {
+        await supabaseAdmin.from("progress").update({ anubhav_complete: true }).eq("id", progressRow.id);
+      } else {
+        await supabaseAdmin.from("progress").insert({ user_id: userId, day_number: dayNumber, course_id: effectiveCourseId, anubhav_complete: true });
+      }
+    } catch (e) {
+      console.error("[anubhav-evaluate] safeMarkComplete error:", e);
+    }
+  };
 
   try {
-    const { session_id, writing_id, master_name, lesson_topic, mti_zone, attempt_number } = await req.json();
-    const attemptNumber = attempt_number ?? 1;
+    console.log("[anubhav-evaluate] Start: userId:", userId, "day:", dayNumber, "attempt:", effectiveAttempt);
 
-    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAdmin = createClient(supabaseUrl, SERVICE_ROLE_KEY);
+    // 1. Fetch personality from DB
+    const { data: personalityData } = await supabaseAdmin
+      .from("ai_personalities")
+      .select("personality_prompt")
+      .eq("master_name", effectiveMasterName)
+      .eq("context", "anubhav")
+      .limit(1)
+      .maybeSingle();
 
-    // Fetch writings and session
-    const { data: writing } = await supabaseAdmin
-      .from("writing_submissions")
-      .select("*")
-      .eq("id", writing_id)
-      .single();
+    const systemPrompt = personalityData?.personality_prompt
+      ?? "You are a helpful English coach. Evaluate the student with care and precision.";
 
-    const { data: session } = await supabaseAdmin
-      .from("practice_sessions")
-      .select("*")
-      .eq("id", session_id)
-      .single();
+    // 2. Download audio files from writingRecordings and worldRecordings
+    const audioBuffers: { base64: string; mime: string; label: string }[] = [];
+    const allRecordings = [
+      ...(writingRecordings ?? []).map((r: any, i: number) => ({ ...r, label: `writing_${i}` })),
+      ...(worldRecordings ?? []).map((r: any, i: number) => ({ ...r, label: `world_${i}` })),
+    ];
 
-    if (!session) {
-      throw new Error("Session not found");
-    }
+    // Build written text from writingRecordings
+    const writtenSentences = (writingRecordings ?? []).map((r: any) => r.sentence).filter(Boolean);
 
-    const writtenSentences: string[] = [];
-    if (writing) {
-      for (let i = 1; i <= 5; i++) {
-        const s = (writing as any)[`sentence_${i}`];
-        if (s) writtenSentences.push(s);
-      }
-    }
-    console.log("[anubhav-evaluate] Step 2: Fetched writing_id:", writing_id, "sentences:", writtenSentences.length);
-    console.log("[anubhav-evaluate] Step 3: Audio paths:", session.audio_sentences_path, session.audio_freespeech_path);
+    await Promise.all(
+      allRecordings.map(async (rec: any) => {
+        if (!rec.audioPath) return;
+        try {
+          const { data, error } = await supabaseAdmin.storage
+            .from("anubhav-audio")
+            .download(rec.audioPath);
+          if (data && !error) {
+            const buf = await data.arrayBuffer();
+            if (buf.byteLength >= 500) {
+              audioBuffers.push({
+                base64: bufferToBase64(buf),
+                mime: getAudioMimeType(rec.audioPath),
+                label: rec.label,
+              });
+            }
+          }
+        } catch (e) {
+          console.error("[anubhav-evaluate] Audio download error for", rec.audioPath, e);
+        }
+      })
+    );
 
-    // Download both audio files
-    let audioBuffer1: ArrayBuffer | null = null;
-    let audioBuffer2: ArrayBuffer | null = null;
-    const audioPath1 = session.audio_sentences_path;
-    const audioPath2 = session.audio_freespeech_path;
+    console.log("[anubhav-evaluate] Downloaded", audioBuffers.length, "audio files");
 
-    const downloadPromises: Promise<void>[] = [];
-
-    if (audioPath1) {
-      downloadPromises.push(
-        supabaseAdmin.storage.from("anubhav-audio").download(audioPath1).then(({ data, error }) => {
-          if (data && !error) return data.arrayBuffer().then(buf => { audioBuffer1 = buf; });
-          else console.error("[anubhav-evaluate] Audio download error (sentences):", error);
-        })
-      );
-    }
-    if (audioPath2) {
-      downloadPromises.push(
-        supabaseAdmin.storage.from("anubhav-audio").download(audioPath2).then(({ data, error }) => {
-          if (data && !error) return data.arrayBuffer().then(buf => { audioBuffer2 = buf; });
-          else console.error("[anubhav-evaluate] Audio download error (freespeech):", error);
-        })
-      );
-    }
-    await Promise.all(downloadPromises);
-
-    console.log("[anubhav-evaluate] Step 4: Audio download sizes (bytes):", audioBuffer1?.byteLength ?? 0, audioBuffer2?.byteLength ?? 0);
-
-    // Validate audio blob sizes
-    if (audioPath1 && (!audioBuffer1 || audioBuffer1.byteLength < 1000)) {
-      console.error("[anubhav-evaluate] Audio file 1 is empty or too small:", audioBuffer1?.byteLength);
-      return new Response(
-        JSON.stringify({ error: "Audio file missing or empty", step: "audio_download", path: audioPath1 }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    if (audioPath2 && (!audioBuffer2 || audioBuffer2.byteLength < 1000)) {
-      console.error("[anubhav-evaluate] Audio file 2 is empty or too small:", audioBuffer2?.byteLength);
-      return new Response(
-        JSON.stringify({ error: "Audio file missing or empty", step: "audio_download", path: audioPath2 }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Build reference text
-    const sentencesReferenceText = writtenSentences.filter(Boolean).join(' ');
-
-    // Step 5 — Gemini audio evaluation
-    console.log("[anubhav-evaluate] Step 5: Gemini audio evaluation starting, referenceText length:", sentencesReferenceText.length);
-
+    // 3. Gemini Call 1: Audio evaluation
     let avgWordClarity = 50;
     let avgSmoothness = 50;
     let avgNaturalSound = 50;
-    let transcriptSentences = "";
-    let transcriptFreespeech = "";
-    let allErrors: Array<{ word: string; issue: string }> = [];
+    let audioWordErrors: any[] = [];
     let audioEvalFailed = true;
-    let audioEvalFailReason = "";
 
-    const hasAudio1 = audioBuffer1 && audioBuffer1.byteLength >= 1000;
-    const hasAudio2 = audioBuffer2 && audioBuffer2.byteLength >= 1000;
-
-    if (hasAudio1 || hasAudio2) {
+    if (audioBuffers.length > 0) {
       try {
-        // Build content parts
         const contentParts: any[] = [];
-
-        let audioDescription = "";
-        if (hasAudio1 && hasAudio2) {
-          audioDescription = `Audio file 1 is the student reading these sentences aloud.
-Audio file 2 is the student speaking freely about the lesson topic.
-Evaluate BOTH audio files.`;
-        } else if (hasAudio1) {
-          audioDescription = `Audio file 1 is the student reading the sentences aloud. There is no free speech audio. Set freespeech scores to 50 and transcript to empty.`;
-        } else {
-          audioDescription = `Audio file 1 is the student speaking freely about the lesson topic. There is no sentences audio. Set sentences scores to 50 and transcript to empty.`;
-        }
-
         contentParts.push({
           type: "text",
-          text: `You are an English pronunciation and fluency evaluator for Indian students.
-
-Student MTI Zone: ${mti_zone || "urban_neutral"}
-Reference sentences the student was asked to read: "${sentencesReferenceText}"
-
-${audioDescription}
-
-Score using integers from 0 to 100 (not decimals, not 0-1 scale).
-Example: accuracyScore: 73, fluencyScore: 68, prosodyScore: 81
-Score strictly based on actual pronunciation quality. Real scores, not flattery. Max 3 word errors total across both.`
+          text: `You are an English pronunciation evaluator for Indian students.
+Student MTI Zone: ${mtiZone || "urban_neutral"}
+Mother Tongue: ${motherTongue || "Hindi"}
+Reference sentences: "${writtenSentences.join('. ')}"
+There are ${audioBuffers.length} audio recordings. Evaluate all of them together.
+Score using integers from 0 to 100 (not decimals). Max 3 word errors total.`,
         });
 
-        if (hasAudio1 && audioPath1) {
-          const mime1 = getAudioMimeType(audioPath1);
+        for (const ab of audioBuffers) {
           contentParts.push({
             type: "image_url",
-            image_url: { url: `data:${mime1};base64,${bufferToBase64(audioBuffer1!)}` }
+            image_url: { url: `data:${ab.mime};base64,${ab.base64}` },
           });
         }
 
-        if (hasAudio2 && audioPath2) {
-          const mime2 = getAudioMimeType(audioPath2);
-          contentParts.push({
-            type: "image_url",
-            image_url: { url: `data:${mime2};base64,${bufferToBase64(audioBuffer2!)}` }
-          });
-        }
-
-        const geminiAudioResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -223,68 +240,37 @@ Score strictly based on actual pronunciation quality. Real scores, not flattery.
           body: JSON.stringify({
             model: "google/gemini-2.5-flash",
             messages: [{ role: "user", content: contentParts }],
-            tools: [
-              {
-                type: "function",
-                function: {
-                  name: "evaluate_audio",
-                  description: "Return structured pronunciation evaluation of student audio.",
-                  parameters: {
-                    type: "object",
-                    properties: {
-                      sentences: {
+            tools: [{
+              type: "function",
+              function: {
+                name: "evaluate_audio",
+                description: "Return structured pronunciation evaluation.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    wordClarityScore: { type: "number" },
+                    smoothnessScore: { type: "number" },
+                    naturalSoundScore: { type: "number" },
+                    wordErrors: {
+                      type: "array",
+                      items: {
                         type: "object",
                         properties: {
-                          transcript: { type: "string" },
-                          accuracyScore: { type: "number" },
-                          fluencyScore: { type: "number" },
-                          prosodyScore: { type: "number" },
-                          wordErrors: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                word: { type: "string" },
-                                issue: { type: "string" },
-                              },
-                              required: ["word", "issue"],
-                              additionalProperties: false,
-                            },
-                          },
+                          word: { type: "string" },
+                          heardAs: { type: "string" },
+                          correction: { type: "string" },
+                          example: { type: "string" },
                         },
-                        required: ["transcript", "accuracyScore", "fluencyScore", "prosodyScore", "wordErrors"],
-                        additionalProperties: false,
-                      },
-                      freespeech: {
-                        type: "object",
-                        properties: {
-                          transcript: { type: "string" },
-                          accuracyScore: { type: "number" },
-                          fluencyScore: { type: "number" },
-                          prosodyScore: { type: "number" },
-                          wordErrors: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                word: { type: "string" },
-                                issue: { type: "string" },
-                              },
-                              required: ["word", "issue"],
-                              additionalProperties: false,
-                            },
-                          },
-                        },
-                        required: ["transcript", "accuracyScore", "fluencyScore", "prosodyScore", "wordErrors"],
+                        required: ["word", "heardAs", "correction", "example"],
                         additionalProperties: false,
                       },
                     },
-                    required: ["sentences", "freespeech"],
-                    additionalProperties: false,
                   },
+                  required: ["wordClarityScore", "smoothnessScore", "naturalSoundScore", "wordErrors"],
+                  additionalProperties: false,
                 },
               },
-            ],
+            }],
             tool_choice: { type: "function", function: { name: "evaluate_audio" } },
             temperature: 0.3,
             max_tokens: 1200,
@@ -292,77 +278,71 @@ Score strictly based on actual pronunciation quality. Real scores, not flattery.
           }),
         });
 
-        console.log("[anubhav-evaluate] Step 6: Gemini audio response status:", geminiAudioResponse.status);
-
-        if (geminiAudioResponse.ok) {
-          const geminiData = await geminiAudioResponse.json();
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json();
           const toolCall = geminiData.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
-            const audioEval = JSON.parse(toolCall.function.arguments);
-            avgWordClarity = Math.round((normalizeScore(audioEval.sentences.accuracyScore) + normalizeScore(audioEval.freespeech.accuracyScore)) / 2);
-            avgSmoothness = Math.round((normalizeScore(audioEval.sentences.fluencyScore) + normalizeScore(audioEval.freespeech.fluencyScore)) / 2);
-            avgNaturalSound = Math.round((normalizeScore(audioEval.sentences.prosodyScore) + normalizeScore(audioEval.freespeech.prosodyScore)) / 2);
-            transcriptSentences = audioEval.sentences.transcript || "";
-            transcriptFreespeech = audioEval.freespeech.transcript || "";
-            allErrors = [...(audioEval.sentences.wordErrors || []), ...(audioEval.freespeech.wordErrors || [])].slice(0, 5);
+            const parsed = JSON.parse(toolCall.function.arguments);
+            avgWordClarity = normalizeScore(parsed.wordClarityScore);
+            avgSmoothness = normalizeScore(parsed.smoothnessScore);
+            avgNaturalSound = normalizeScore(parsed.naturalSoundScore);
+            audioWordErrors = (parsed.wordErrors || []).slice(0, 3);
             audioEvalFailed = false;
-          } else {
-            audioEvalFailReason = "No tool call in Gemini audio response";
-            console.warn("[anubhav-evaluate] No tool call in Gemini audio response");
           }
         } else {
-          const errText = await geminiAudioResponse.text();
-          audioEvalFailReason = `${geminiAudioResponse.status}: ${errText.substring(0, 200)}`;
-          console.error("[anubhav-evaluate] Gemini audio eval error:", geminiAudioResponse.status, errText);
+          console.error("[anubhav-evaluate] Gemini audio eval error:", geminiResponse.status);
         }
       } catch (e) {
-        audioEvalFailReason = e instanceof Error ? e.message : "Unknown audio eval error";
         console.error("[anubhav-evaluate] Gemini audio eval exception:", e);
       }
-    } else {
-      audioEvalFailReason = "No audio files available";
     }
 
-    console.log("[anubhav-evaluate] Step 8: Transcripts received:", transcriptSentences, transcriptFreespeech);
-    if (audioEvalFailed) {
-      console.warn("[anubhav-evaluate] Audio evaluation failed:", audioEvalFailReason);
-    }
-    console.log('[anubhav-evaluate] Final scores:', avgWordClarity, avgSmoothness, avgNaturalSound, 'transcripts:', transcriptSentences?.substring(0, 50));
+    const compositeScore = Math.round(
+      (avgWordClarity * 0.4) + (avgSmoothness * 0.35) + (avgNaturalSound * 0.25)
+    );
 
-    // Gemini feedback call
-    console.log("[anubhav-evaluate] Step 9: Gemini feedback call starting");
+    // 4. Gemini Call 2: Feedback with personality
+    let mastermessage = fallbackResult.mastermessage;
+    let mastermessagevoice = fallbackResult.mastermessagevoice;
+    let topErrorSummary = "";
+    let wordErrors = audioWordErrors;
+    let writingChecks: any[] = [];
 
-    const userMessage = `Student name: Student
-Master: ${master_name}
-Day number of 60
-Lesson topic: ${lesson_topic || "general"}
-Student background (MTI zone): ${mti_zone || "urban_neutral"}
+    try {
+      const userPrompt = `
+STUDENT: ${effectiveFirstName}
+DAY: ${dayNumber} of 60
+ATTEMPT: ${effectiveAttempt} today
+MASTER: ${masterName}
+SELECTED WORLD: ${selectedWorld} (professional / casual / both)
+MTI ZONE: ${mtiZone}
+MOTHER TONGUE: ${motherTongue}
+LESSON: ${lessonTitle}
+GRAMMAR FOCUS: ${grammarPattern ?? 'not specified'}
 
-Written sentences:
-${writtenSentences.map((s, i) => `${i + 1}. "${s}"`).join("\n")}
+WRITING RECORDINGS (what they wrote + spoke per sentence):
+${JSON.stringify(writingRecordings ?? [])}
 
-Transcript from sentences recording: "${transcriptSentences}"
-Transcript from free speech recording: "${transcriptFreespeech}"
+WORLD RECORDINGS (target sentences + their recording):
+${JSON.stringify(worldRecordings ?? [])}
 
-Pronunciation scores (averaged):
+PRONUNCIATION SCORES:
 - Word Clarity: ${avgWordClarity}/100
 - Smoothness: ${avgSmoothness}/100
 - Natural Sound: ${avgNaturalSound}/100
+- Composite: ${compositeScore}/100
 
-Pronunciation errors (plain English):
-${allErrors.map(e => `- "${e.word}": ${e.issue}`).join("\n") || "No significant errors detected."}
+WORD ERRORS FROM AUDIO EVAL:
+${JSON.stringify(audioWordErrors)}
 
-Return ONLY a JSON object with these fields:
-- "feedback": string, max 100 words, in the master's voice, plain English B1 level max
-- "writing_checks": array of objects with "sentence" (string), "correct" (boolean), "correction" (string or null), "simple_reason" (string or null)
-- "top_error_summary": single plain English line summarizing the main issue`;
+SESSION HISTORY (last 5 sessions, newest first):
+${JSON.stringify(sessionHistory ?? [])}
 
-    let aiFeedback = "Good effort! Keep practicing every day.";
-    let writingChecks: any[] = [];
-    let topErrorSummary = "";
+PROGRESS SUMMARY:
+${JSON.stringify(progressSummary ?? {})}
+`;
 
-    try {
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const feedbackResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -371,104 +351,201 @@ Return ONLY a JSON object with these fields:
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: ANUBHAV_MASTER_PROMPT },
-            { role: "user", content: userMessage },
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
           ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "evaluate_practice",
-                description: "Return structured evaluation of the student's practice session.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    feedback: { type: "string", description: "Max 100 words feedback in the master's voice" },
-                    writing_checks: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          sentence: { type: "string" },
-                          correct: { type: "boolean" },
-                          correction: { type: "string", description: "Corrected version or null" },
-                          simple_reason: { type: "string", description: "Plain English reason or null" },
-                        },
-                        required: ["sentence", "correct"],
-                        additionalProperties: false,
+          tools: [{
+            type: "function",
+            function: {
+              name: "evaluate_practice",
+              description: "Return structured evaluation of the student's practice session.",
+              parameters: {
+                type: "object",
+                properties: {
+                  mastermessage: { type: "string", description: "Plain text feedback for display, max 100 words" },
+                  mastermessagevoice: { type: "string", description: "Same content with UB voice cues like [PAUSE] for ElevenLabs" },
+                  topErrorSummary: { type: "string", description: "1 line plain text summary of main issue" },
+                  wordErrors: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        word: { type: "string" },
+                        heardAs: { type: "string" },
+                        correction: { type: "string", description: "UB Pronunciation Code format e.g. VE-ry" },
+                        example: { type: "string", description: "Full sentence using this word" },
                       },
+                      required: ["word", "heardAs", "correction", "example"],
+                      additionalProperties: false,
                     },
-                    top_error_summary: { type: "string" },
                   },
-                  required: ["feedback", "writing_checks", "top_error_summary"],
-                  additionalProperties: false,
+                  writingChecks: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        sentence: { type: "string" },
+                        issue: { type: "string" },
+                        fix: { type: "string" },
+                      },
+                      required: ["sentence"],
+                      additionalProperties: false,
+                    },
+                  },
                 },
+                required: ["mastermessage", "mastermessagevoice", "topErrorSummary", "wordErrors", "writingChecks"],
+                additionalProperties: false,
               },
             },
-          ],
+          }],
           tool_choice: { type: "function", function: { name: "evaluate_practice" } },
           temperature: 0.7,
-          max_tokens: 800,
+          max_tokens: 1200,
           stream: false,
         }),
       });
 
-      if (aiResponse.ok) {
-        const aiData = await aiResponse.json();
-        const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+      if (feedbackResponse.ok) {
+        const fbData = await feedbackResponse.json();
+        const toolCall = fbData.choices?.[0]?.message?.tool_calls?.[0];
         if (toolCall?.function?.arguments) {
           const parsed = JSON.parse(toolCall.function.arguments);
-          aiFeedback = parsed.feedback || aiFeedback;
-          writingChecks = parsed.writing_checks || [];
-          topErrorSummary = parsed.top_error_summary || "";
+          mastermessage = parsed.mastermessage || mastermessage;
+          mastermessagevoice = parsed.mastermessagevoice || mastermessage;
+          topErrorSummary = parsed.topErrorSummary || "";
+          if (parsed.wordErrors?.length > 0) wordErrors = parsed.wordErrors;
+          writingChecks = parsed.writingChecks || [];
         }
       } else {
-        console.error("[anubhav-evaluate] AI gateway error:", aiResponse.status, await aiResponse.text());
+        console.error("[anubhav-evaluate] Feedback Gemini error:", feedbackResponse.status);
       }
     } catch (e) {
-      console.error("[anubhav-evaluate] Gemini feedback error:", e);
+      console.error("[anubhav-evaluate] Feedback error:", e);
     }
 
-    // Calculate composite score
-    const compositeScore = Math.round(
-      (avgWordClarity * 0.4) + (avgSmoothness * 0.35) + (avgNaturalSound * 0.25)
-    );
+    // 5. ElevenLabs voice generation
+    let masterAudioUrl: string | null = null;
+    try {
+      const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
+      const voiceId = effectiveMasterName === "gyanu"
+        ? Deno.env.get("GYANU_VOICE_ID")
+        : Deno.env.get("GYANI_VOICE_ID");
 
-    // Save results
-    console.log("[anubhav-evaluate] Step 10: Complete. Saving to DB. compositeScore:", compositeScore);
-    await supabaseAdmin.from("practice_sessions").update({
-      transcript_sentences: transcriptSentences,
-      transcript_freespeech: transcriptFreespeech,
+      if (ELEVENLABS_API_KEY && voiceId) {
+        const elevenLabsText = stripVoiceCues(mastermessagevoice);
+
+        const ttsResponse = await fetch(
+          `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+          {
+            method: "POST",
+            headers: {
+              "xi-api-key": ELEVENLABS_API_KEY,
+              "Content-Type": "application/json",
+              Accept: "audio/mpeg",
+            },
+            body: JSON.stringify({
+              text: elevenLabsText,
+              model_id: "eleven_turbo_v2_5",
+              voice_settings: {
+                stability: 0.6,
+                similarity_boost: 0.8,
+                style: 0.3,
+                use_speaker_boost: true,
+              },
+            }),
+          }
+        );
+
+        if (ttsResponse.ok) {
+          const audioBuffer = await ttsResponse.arrayBuffer();
+          const audioBytes = new Uint8Array(audioBuffer);
+          const storagePath = `${userId}/${dayNumber}/master_${effectiveAttempt}.mp3`;
+
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from("anubhav-audio")
+            .upload(storagePath, audioBytes, {
+              upsert: true,
+              contentType: "audio/mpeg",
+            });
+
+          if (!uploadError) {
+            const { data: urlData } = supabaseAdmin.storage
+              .from("anubhav-audio")
+              .getPublicUrl(storagePath);
+            masterAudioUrl = urlData?.publicUrl || null;
+          } else {
+            console.error("[anubhav-evaluate] Audio upload error:", uploadError);
+          }
+        } else {
+          console.error("[anubhav-evaluate] ElevenLabs error:", ttsResponse.status);
+        }
+      }
+    } catch (e) {
+      console.error("[anubhav-evaluate] ElevenLabs error:", e);
+    }
+
+    // 6. Save to practice_sessions
+    const { data: existingSession } = await supabaseAdmin
+      .from("practice_sessions")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("course_id", effectiveCourseId)
+      .eq("day_number", dayNumber)
+      .eq("attempt_number", effectiveAttempt)
+      .maybeSingle();
+
+    const sessionPayload = {
+      user_id: userId,
+      course_id: effectiveCourseId,
+      day_number: dayNumber,
+      status: "complete",
       word_clarity_score: avgWordClarity,
       smoothness_score: avgSmoothness,
       natural_sound_score: avgNaturalSound,
-      azure_word_errors: allErrors,
-      ai_feedback: aiFeedback,
-      top_error_summary: topErrorSummary,
       composite_score: compositeScore,
-      attempt_number: attemptNumber,
-      status: "complete",
+      master_message: mastermessage,
+      master_message_voice: mastermessagevoice,
+      master_message_audio_url: masterAudioUrl,
+      top_error_summary: topErrorSummary,
+      word_errors: wordErrors,
+      writing_checks: writingChecks,
+      writing_recordings: writingRecordings ?? [],
+      world_recordings: worldRecordings ?? [],
+      selected_world: selectedWorld,
+      attempt_number: effectiveAttempt,
+      is_best_attempt: false,
       submitted_at: new Date().toISOString(),
-    }).eq("id", session_id);
+    };
 
-    // Update is_best_attempt for this user+day
+    if (existingSession) {
+      await supabaseAdmin.from("practice_sessions")
+        .update(sessionPayload)
+        .eq("id", existingSession.id);
+    } else {
+      await supabaseAdmin.from("practice_sessions")
+        .insert(sessionPayload);
+    }
+
+    // Update is_best_attempt
     await supabaseAdmin.from("practice_sessions")
       .update({ is_best_attempt: false })
       .eq("user_id", userId)
-      .eq("day_number", session.day_number)
+      .eq("course_id", effectiveCourseId)
+      .eq("day_number", dayNumber)
       .eq("status", "complete");
 
     const { data: bestAttempt } = await supabaseAdmin
       .from("practice_sessions")
       .select("id")
       .eq("user_id", userId)
-      .eq("day_number", session.day_number)
+      .eq("course_id", effectiveCourseId)
+      .eq("day_number", dayNumber)
       .eq("status", "complete")
       .not("composite_score", "is", null)
       .order("composite_score", { ascending: false })
       .order("submitted_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (bestAttempt) {
       await supabaseAdmin.from("practice_sessions")
@@ -476,13 +553,25 @@ Return ONLY a JSON object with these fields:
         .eq("id", bestAttempt.id);
     }
 
-    // UPSERT student_progress
+    // 7. Upsert progress
+    const { data: progressRow } = await supabaseAdmin.from("progress")
+      .select("id").eq("user_id", userId).eq("day_number", dayNumber).maybeSingle();
+    if (progressRow) {
+      await supabaseAdmin.from("progress").update({ anubhav_complete: true }).eq("id", progressRow.id);
+    } else {
+      await supabaseAdmin.from("progress").insert({
+        user_id: userId, day_number: dayNumber,
+        course_id: effectiveCourseId, anubhav_complete: true,
+      });
+    }
+
+    // 8. Upsert student_progress
     try {
       const { data: allSessions } = await supabaseAdmin
         .from("practice_sessions")
         .select("day_number, composite_score, top_error_summary, submitted_at")
         .eq("user_id", userId)
-        .eq("course_id", session.course_id || "6a860163-ea3c-4205-89b3-74a3e9be098f")
+        .eq("course_id", effectiveCourseId)
         .eq("status", "complete")
         .eq("is_best_attempt", true)
         .order("submitted_at", { ascending: true });
@@ -510,7 +599,6 @@ Return ONLY a JSON object with these fields:
           else scoreTrend = "steady";
         }
 
-        // Top errors frequency
         const errorCounts: Record<string, number> = {};
         allSessions.forEach(s => {
           if (s.top_error_summary) {
@@ -519,7 +607,7 @@ Return ONLY a JSON object with these fields:
         });
         const sortedErrors = Object.entries(errorCounts).sort((a, b) => b[1] - a[1]);
 
-        // Calendar streak calculation
+        // Calendar streak
         const dateSet = new Set<string>();
         allSessions.forEach(s => {
           if (s.submitted_at) {
@@ -543,13 +631,11 @@ Return ONLY a JSON object with these fields:
           }
         }
 
-        const courseIdVal = session.course_id || "6a860163-ea3c-4205-89b3-74a3e9be098f";
-
         const { data: existing } = await supabaseAdmin
           .from("student_progress")
           .select("id, longest_streak_ever, first_session_score, first_session_date, first_5_avg_score")
           .eq("user_id", userId)
-          .eq("course_id", courseIdVal)
+          .eq("course_id", effectiveCourseId)
           .maybeSingle();
 
         const progressData: any = {
@@ -582,7 +668,7 @@ Return ONLY a JSON object with these fields:
           await supabaseAdmin.from("student_progress").update(progressData).eq("id", existing.id);
         } else {
           progressData.user_id = userId;
-          progressData.course_id = courseIdVal;
+          progressData.course_id = effectiveCourseId;
           progressData.first_session_score = firstScore;
           progressData.first_session_date = allSessions[0].submitted_at;
           progressData.longest_streak_ever = currentStreakVal;
@@ -595,41 +681,30 @@ Return ONLY a JSON object with these fields:
     } catch (e) {
       console.error("[anubhav-evaluate] student_progress upsert error:", e);
     }
-        .update({ is_best_attempt: true })
-        .eq("id", bestAttempt.id);
-    }
 
+    // 9. Return
     return new Response(
       JSON.stringify({
-        success: true,
-        word_clarity_score: avgWordClarity,
-        smoothness_score: avgSmoothness,
-        natural_sound_score: avgNaturalSound,
-        composite_score: compositeScore,
-        word_errors: allErrors,
-        writing_checks: writingChecks,
-        ai_feedback: aiFeedback,
-        top_error_summary: topErrorSummary,
-        azure_failed: audioEvalFailed,
-        azure_fail_reason: audioEvalFailed ? audioEvalFailReason : undefined,
+        wordClarityScore: avgWordClarity,
+        smoothnessScore: avgSmoothness,
+        naturalSoundScore: avgNaturalSound,
+        compositeScore: compositeScore,
+        mastermessage,
+        mastermessagevoice,
+        mastermessageaudiourl: masterAudioUrl,
+        topErrorSummary: topErrorSummary,
+        wordErrors: wordErrors,
+        writingChecks: writingChecks,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
     console.error("[anubhav-evaluate] Fatal error:", e);
+    await safeMarkComplete();
     return new Response(
       JSON.stringify({
-        success: false,
-        word_clarity_score: 50,
-        smoothness_score: 50,
-        natural_sound_score: 50,
-        composite_score: 50,
-        word_errors: [],
-        writing_checks: [],
-        ai_feedback: "Good effort! Keep practicing every day.",
-        top_error_summary: "",
-        azure_failed: true,
-        azure_fail_reason: e instanceof Error ? e.message : "Unknown error",
+        ...fallbackResult,
+        error: e instanceof Error ? e.message : "Unknown error",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

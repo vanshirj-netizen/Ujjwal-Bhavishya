@@ -38,6 +38,21 @@ const toStars = (score: number) => {
   return 1;
 };
 
+function getTodayISTCutoff(): string {
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(now.getTime() + istOffset);
+  const year = istNow.getUTCFullYear();
+  const month = istNow.getUTCMonth();
+  const date = istNow.getUTCDate();
+  const hour = istNow.getUTCHours();
+  const min = istNow.getUTCMinutes();
+  const cutoffDate = (hour < 5 || (hour === 5 && min < 30))
+    ? new Date(Date.UTC(year, month, date - 1, 0, 0, 0))
+    : new Date(Date.UTC(year, month, date, 0, 0, 0));
+  return cutoffDate.toISOString();
+}
+
 const AnubhavPage = () => {
   const { dayNumber } = useParams();
   const navigate = useNavigate();
@@ -59,7 +74,14 @@ const AnubhavPage = () => {
   // Session state
   const [writingId, setWritingId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [attemptNumber, setAttemptNumber] = useState(1);
+
+  // IST session limit
+  const [todaySessionsCount, setTodaySessionsCount] = useState(0);
+  const [thisSessionEverDone, setThisSessionEverDone] = useState(false);
+
+  // Session history + progress for eval payload
+  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [progressSummary, setProgressSummary] = useState<any>({});
 
   // Speak state
   const [speakSentences, setSpeakSentences] = useState<any[]>([]);
@@ -70,6 +92,10 @@ const AnubhavPage = () => {
   const [tipDismissed, setTipDismissed] = useState(false);
   const audioRecorder = useAudioRecorder();
   const recordedBlobsRef = useRef<(Blob | null)[]>([]);
+
+  // Individual upload paths
+  const writingRecordingPathsRef = useRef<(string | null)[]>([]);
+  const worldRecordingPathsRef = useRef<(string | null)[]>([]);
 
   // Results
   const [results, setResults] = useState<any>(null);
@@ -87,7 +113,7 @@ const AnubhavPage = () => {
 
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, selected_master, primary_goal, mti_zone, mother_tongue, childhood_state")
+        .select("full_name, selected_master, primary_goal, mti_zone, mother_tongue, childhood_state, chosen_world")
         .eq("id", user.id)
         .maybeSingle();
       setProfile(profileData);
@@ -108,6 +134,51 @@ const AnubhavPage = () => {
       if (saved === "professional" || saved === "casual" || saved === "both") {
         setSelectedWorld(saved);
       }
+
+      // IST session count (global across all days)
+      const { count: todayCount } = await supabase
+        .from("practice_sessions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("course_id", COURSE_ID)
+        .eq("status", "complete")
+        .gte("submitted_at", getTodayISTCutoff());
+
+      setTodaySessionsCount(
+        (todayCount === null || todayCount === undefined) ? 0 : todayCount
+      );
+
+      // Check if this specific day has EVER been practiced
+      const { data: thisDaySession } = await supabase
+        .from("practice_sessions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("course_id", COURSE_ID)
+        .eq("day_number", Number(dayNumber))
+        .eq("status", "complete")
+        .limit(1);
+
+      setThisSessionEverDone((thisDaySession?.length ?? 0) > 0);
+
+      // Session history: last 5 completed sessions
+      const { data: historyData } = await supabase
+        .from("practice_sessions")
+        .select("day_number, composite_score, top_error_summary, submitted_at")
+        .eq("user_id", user.id)
+        .eq("course_id", COURSE_ID)
+        .eq("status", "complete")
+        .order("submitted_at", { ascending: false })
+        .limit(5);
+      setSessionHistory(historyData ?? []);
+
+      // Progress summary
+      const { data: progressSummaryData } = await supabase
+        .from("student_progress")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("course_id", COURSE_ID)
+        .maybeSingle();
+      setProgressSummary(progressSummaryData ?? {});
 
       setLoading(false);
     };
@@ -156,6 +227,18 @@ const AnubhavPage = () => {
     setPhase("write");
   };
 
+  // AUDIO UPLOAD (individual sentence)
+  const uploadAudioFile = async (blob: Blob, pathSuffix: string): Promise<string | null> => {
+    if (!userId) return null;
+    const ext = isIOS() ? "mp4" : "webm";
+    const path = `${userId}/${dayNumber}/${pathSuffix}.${ext}`;
+    const { error } = await supabase.storage
+      .from("anubhav-audio")
+      .upload(path, blob, { upsert: true, contentType: isIOS() ? "audio/mp4" : "audio/webm;codecs=opus" });
+    if (error) { console.error("Upload error:", error); return null; }
+    return path;
+  };
+
   // WRITE SUBMIT
   const submitWriting = async () => {
     if (!userId) return;
@@ -177,17 +260,7 @@ const AnubhavPage = () => {
     if (wErr) { toast.error("Could not save writing"); return; }
     setWritingId(writingData.id);
 
-    // Get attempt count
-    const { data: prevAttempts } = await supabase
-      .from("practice_sessions")
-      .select("attempt_number")
-      .eq("user_id", userId)
-      .eq("day_number", Number(dayNumber))
-      .eq("status", "complete")
-      .order("attempt_number", { ascending: false })
-      .limit(1);
-    const nextAttempt = prevAttempts && prevAttempts.length > 0 ? (prevAttempts[0].attempt_number ?? 0) + 1 : 1;
-    setAttemptNumber(nextAttempt);
+    const nextAttempt = todaySessionsCount + 1;
 
     const { data: sessionData, error: sErr } = await supabase
       .from("practice_sessions")
@@ -198,11 +271,15 @@ const AnubhavPage = () => {
         writing_id: writingData.id,
         status: "in_progress",
         attempt_number: nextAttempt,
+        selected_world: selectedWorld,
       })
       .select("id")
       .single();
     if (sErr) { toast.error("Could not start session"); return; }
     setSessionId(sessionData.id);
+
+    // Initialize recording path arrays
+    writingRecordingPathsRef.current = Array(sentences.length).fill(null);
 
     // Fetch speak sentences
     const { data: sentenceData } = await supabase
@@ -230,21 +307,10 @@ const AnubhavPage = () => {
     setSpeakIndex(0);
     setRedoUsed(Array(filtered.length).fill(false));
     recordedBlobsRef.current = Array(filtered.length).fill(null);
+    worldRecordingPathsRef.current = Array(filtered.length).fill(null);
     setRecordingState("idle");
 
     setPhase("speak");
-  };
-
-  // AUDIO UPLOAD
-  const uploadAudio = async (blob: Blob, pathSuffix: string): Promise<string | null> => {
-    if (!userId) return null;
-    const ext = isIOS() ? "mp4" : "webm";
-    const path = `${userId}/${dayNumber}/${pathSuffix}.${ext}`;
-    const { error } = await supabase.storage
-      .from("anubhav-audio")
-      .upload(path, blob, { upsert: true, contentType: isIOS() ? "audio/mp4" : "audio/webm;codecs=opus" });
-    if (error) { console.error("Upload error:", error); return null; }
-    return path;
   };
 
   // SPEAK — record controls
@@ -265,7 +331,26 @@ const AnubhavPage = () => {
     setRecordingState("idle");
   };
 
-  const handleNextSentence = () => {
+  const handleNextSentence = async () => {
+    // Upload current recording before moving on
+    const blob = recordedBlobsRef.current[speakIndex];
+    if (blob && userId) {
+      const attemptNum = todaySessionsCount + 1;
+      // Determine if this is a writing sentence or world sentence
+      // First `sentences.length` speak items are writing reads, rest are world
+      const isWritingSentence = speakIndex < sentences.length;
+      const pathSuffix = isWritingSentence
+        ? `writing_${speakIndex}_attempt${attemptNum}`
+        : `world_${speakIndex - sentences.length}_attempt${attemptNum}`;
+      const path = await uploadAudioFile(blob, pathSuffix);
+
+      if (isWritingSentence) {
+        writingRecordingPathsRef.current[speakIndex] = path;
+      } else {
+        worldRecordingPathsRef.current[speakIndex - sentences.length] = path;
+      }
+    }
+
     if (speakIndex + 1 < speakSentences.length) {
       setSpeakIndex(i => i + 1);
       audioRecorder.reset();
@@ -281,16 +366,43 @@ const AnubhavPage = () => {
     setLoadingTextIdx(0);
 
     try {
-      // Combine all recorded blobs into single upload
-      const validBlobs = recordedBlobsRef.current.filter(Boolean) as Blob[];
-      if (validBlobs.length > 0) {
-        const combined = new Blob(validBlobs, { type: validBlobs[0].type });
-        const path = await uploadAudio(combined, "sentences");
-        if (path && sessionId) {
-          await supabase.from("practice_sessions")
-            .update({ audio_sentences_path: path })
-            .eq("id", sessionId);
-        }
+      // Upload any remaining blobs that weren't uploaded yet
+      const attemptNum = todaySessionsCount + 1;
+      for (let i = 0; i < recordedBlobsRef.current.length; i++) {
+        const blob = recordedBlobsRef.current[i];
+        if (!blob || !userId) continue;
+        const isWriting = i < sentences.length;
+        const idx = isWriting ? i : i - sentences.length;
+        const pathRef = isWriting ? writingRecordingPathsRef : worldRecordingPathsRef;
+        if (pathRef.current[idx]) continue; // already uploaded
+
+        const suffix = isWriting
+          ? `writing_${idx}_attempt${attemptNum}`
+          : `world_${idx}_attempt${attemptNum}`;
+        const path = await uploadAudioFile(blob, suffix);
+        pathRef.current[idx] = path;
+      }
+
+      // Build JSONB arrays
+      const writingRecordings = sentences.map((sentence, i) => ({
+        sentence,
+        audioPath: writingRecordingPathsRef.current[i] ?? null,
+      }));
+
+      const worldRecordings = speakSentences.map((s, i) => ({
+        expectedSentence: s.sentence,
+        audioPath: worldRecordingPathsRef.current[i] ?? null,
+        sequenceOrder: i + 1,
+      }));
+
+      // Save recordings to session
+      if (sessionId) {
+        await supabase.from("practice_sessions")
+          .update({
+            writing_recordings: writingRecordings,
+            world_recordings: worldRecordings,
+          })
+          .eq("id", sessionId);
       }
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -306,24 +418,27 @@ const AnubhavPage = () => {
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
-            user_id: session.user.id,
-            day_number: Number(dayNumber),
-            session_id: sessionId,
-            writing_id: writingId,
-            master_name: profile?.selected_master || "gyani",
-            lesson_topic: lesson?.title || "",
-            mti_zone: profile?.mti_zone || "urban_neutral",
-            attempt_number: attemptNumber,
-            selected_world: selectedWorld,
-            mother_tongue: profile?.mother_tongue ?? null,
-            childhood_state: profile?.childhood_state ?? null,
-            full_name: profile?.full_name,
+            userId: session.user.id,
+            courseId: COURSE_ID,
+            masterName: profile?.selected_master || "gyani",
+            firstName: (profile?.full_name ?? "Friend").split(" ")[0],
+            dayNumber: Number(dayNumber),
+            attemptNumber: attemptNum,
+            selectedWorld: selectedWorld || profile?.chosen_world || "both",
+            mtiZone: profile?.mti_zone || "urban_neutral",
+            motherTongue: profile?.mother_tongue ?? "Hindi",
+            lessonTitle: lesson?.title ?? "",
+            grammarPattern: lesson?.grammar_hint ?? "",
+            writingRecordings,
+            worldRecordings,
+            sessionHistory,
+            progressSummary,
           }),
         }
       );
 
       const data = await response.json();
-      if (data.error) toast.error(data.error);
+      if (data.error && !data.mastermessage) toast.error(data.error);
       setResults(data);
       setPhase("results");
 
@@ -336,16 +451,14 @@ const AnubhavPage = () => {
     } catch (err) {
       console.error("Evaluation error:", err);
       setResults({
-        success: false,
-        word_clarity_score: 50,
-        smoothness_score: 50,
-        natural_sound_score: 50,
-        composite_score: 50,
-        word_errors: [],
-        writing_checks: [],
-        top_errors: [],
-        ai_feedback: "Good effort! Keep practicing every day.",
-        top_error_summary: "",
+        wordClarityScore: 50,
+        smoothnessScore: 50,
+        naturalSoundScore: 50,
+        compositeScore: 50,
+        wordErrors: [],
+        writingChecks: [],
+        mastermessage: "Good effort! Keep practicing every day.",
+        topErrorSummary: "",
       });
       setPhase("results");
     }
@@ -365,7 +478,15 @@ const AnubhavPage = () => {
     navigate(`/day/${dayNumber}`);
   };
 
-  const playMasterVoice = async (text: string) => {
+  const playMasterVoice = async (text: string, audioUrl?: string | null) => {
+    // If we have a pre-generated audio URL, play it directly
+    if (audioUrl) {
+      try {
+        const audio = new Audio(audioUrl);
+        audio.play();
+        return;
+      } catch { /* fall through to TTS */ }
+    }
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -395,6 +516,37 @@ const AnubhavPage = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <span className="text-6xl">🎯</span>
         <p className="text-sm mt-4" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Loading practice...</p>
+      </div>
+    );
+  }
+
+  // MAX PRACTICE REACHED
+  if (todaySessionsCount >= 3) {
+    return (
+      <div className="min-h-screen flex flex-col pb-20 bg-background">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
+          <GlassButton onClick={() => navigate("/dashboard")} className="!px-3 !py-1.5 text-sm">← Back</GlassButton>
+          <span className="font-bold text-base" style={{ fontFamily: "var(--fd)", color: "hsl(var(--primary))" }}>🎯 Anubhav</span>
+          <span className="text-xs px-2 py-1 rounded-full" style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))", fontFamily: "var(--fa)" }}>Day {dayNumber}</span>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center px-5">
+          <GoldCard padding="32px" glow className="max-w-[320px] mx-auto text-center">
+            <span className="text-5xl">🧘</span>
+            <h2 className="text-lg font-bold mt-4" style={{ fontFamily: "var(--fd)", color: "hsl(var(--foreground))" }}>
+              Max Practice Reached for Today
+            </h2>
+            <p className="mt-3" style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "hsl(var(--foreground) / 0.5)", lineHeight: 1.7 }}>
+              {masterName} says: Take a breath. Rest is part of the practice. Let your brain absorb what you learned today.
+            </p>
+            <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.75rem", color: "hsl(var(--primary))" }}>
+              3 of 3 sessions used today
+            </p>
+          </GoldCard>
+          <GlassButton onClick={() => navigate("/dashboard")} className="mt-6 w-full max-w-[320px]">
+            ← Back to Home
+          </GlassButton>
+        </div>
+        <BottomNav />
       </div>
     );
   }
@@ -455,6 +607,12 @@ const AnubhavPage = () => {
                 Your practice sentences come from your chosen world
               </p>
 
+              {thisSessionEverDone && (
+                <p className="text-center mb-4" style={{ fontFamily: "var(--fa)", fontSize: "0.75rem", color: "hsl(var(--primary))" }}>
+                  Replay Practice · {todaySessionsCount} of 3 used today
+                </p>
+              )}
+
               <div className="flex flex-col gap-3">
                 {([
                   { value: "professional" as WorldType, emoji: "💼", label: "Professional", sub: "Office, interviews, networking" },
@@ -483,7 +641,7 @@ const AnubhavPage = () => {
               </div>
 
               <GoldButton onClick={confirmWorld} disabled={!selectedWorld} fullWidth className="mt-6">
-                Start Practice →
+                {thisSessionEverDone ? "Replay Practice →" : "Start Practice →"}
               </GoldButton>
             </motion.div>
           )}
@@ -491,7 +649,7 @@ const AnubhavPage = () => {
           {/* WRITE PHASE */}
           {phase === "write" && (
             <motion.div key="write" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-              {/* Grammar Reference — collapsible, open by default */}
+              {/* Grammar Reference */}
               {lesson?.grammar_hint && (
                 <GoldCard padding="16px" className="mb-4">
                   <div className="flex items-center justify-between">
@@ -510,12 +668,10 @@ const AnubhavPage = () => {
                 </GoldCard>
               )}
 
-              {/* Scenario Prompt */}
               <p style={{ fontFamily: "var(--fb)", fontSize: "0.9rem", color: "hsl(var(--foreground) / 0.8)", lineHeight: 1.7, margin: "20px 0" }}>
                 {writePrompt}
               </p>
 
-              {/* Sentence Input Boxes */}
               <div className="flex flex-col gap-3">
                 {sentences.map((s, i) => (
                   <div key={i} className="relative">
@@ -545,7 +701,6 @@ const AnubhavPage = () => {
                 ))}
               </div>
 
-              {/* Example hint — collapsible, closed by default */}
               {lesson?.write_example && (
                 <div className="mt-4">
                   <button
@@ -571,7 +726,6 @@ const AnubhavPage = () => {
           {/* SPEAK PHASE */}
           {phase === "speak" && (
             <motion.div key="speak" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-              {/* One-time tip */}
               {!tipSeen && !tipDismissed && speakIndex === 0 && (
                 <GoldCard padding="20px" className="mb-4">
                   <p style={{ fontFamily: "var(--fd)", fontSize: "0.9rem", color: "hsl(var(--primary))" }}>🎧 For Best Results</p>
@@ -588,7 +742,6 @@ const AnubhavPage = () => {
 
               {speakSentences.length > 0 && (
                 <>
-                  {/* Top row */}
                   <div className="flex items-center justify-between mb-4">
                     <span className="px-3 py-1 rounded-full" style={{
                       background: "hsl(var(--primary) / 0.1)",
@@ -603,14 +756,12 @@ const AnubhavPage = () => {
                     </span>
                   </div>
 
-                  {/* Sentence card */}
                   <GoldCard padding="24px" className="mb-5">
                     <p className="text-center" style={{ fontFamily: "var(--fd)", fontSize: "1.05rem", color: "hsl(var(--foreground))", lineHeight: 1.9 }}>
                       {speakSentences[speakIndex]?.sentence}
                     </p>
                   </GoldCard>
 
-                  {/* Record button */}
                   {recordingState === "idle" && (
                     <div className="flex flex-col items-center gap-3">
                       <motion.button
@@ -700,7 +851,6 @@ const AnubhavPage = () => {
           {phase === "evaluating" && (
             <motion.div key="evaluating" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center min-h-[60vh]">
               <GoldCard glow padding="40px 32px" className="max-w-[320px] mx-auto text-center">
-                {/* Master avatar */}
                 <motion.div
                   className="w-16 h-16 rounded-full mx-auto flex items-center justify-center overflow-hidden"
                   style={{ border: "2px solid hsl(var(--primary))" }}
@@ -746,9 +896,9 @@ const AnubhavPage = () => {
               {/* Section A — Score Cards */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Word Clarity", score: results.word_clarity_score ?? 50 },
-                  { label: "Smoothness", score: results.smoothness_score ?? 50 },
-                  { label: "Natural Sound", score: results.natural_sound_score ?? 50 },
+                  { label: "Word Clarity", score: results.wordClarityScore ?? results.word_clarity_score ?? 50 },
+                  { label: "Smoothness", score: results.smoothnessScore ?? results.smoothness_score ?? 50 },
+                  { label: "Natural Sound", score: results.naturalSoundScore ?? results.natural_sound_score ?? 50 },
                 ].map(card => (
                   <GoldCard key={card.label} padding="16px">
                     <div className="text-center">
@@ -769,8 +919,33 @@ const AnubhavPage = () => {
                 ))}
               </div>
 
-              {/* Section B — Writing Feedback */}
-              {results.writing_checks?.length > 0 && (
+              {/* Section B — Writing Checks */}
+              {results.writingChecks?.length > 0 && (
+                <div className="mt-6">
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">YOUR WRITING</p>
+                  <div className="flex flex-col gap-2">
+                    {results.writingChecks.map((wc: any, i: number) => (
+                      <GoldCard key={i} padding="16px">
+                        <div className="flex items-start gap-2">
+                          <span className="mt-0.5">{!wc.issue ? "✅" : "❌"}</span>
+                          <div className="flex-1">
+                            <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))" }}>{wc.sentence}</p>
+                            {wc.issue && (
+                              <p className="mt-1.5" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.5)" }}>Issue: {wc.issue}</p>
+                            )}
+                            {wc.fix && (
+                              <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--primary) / 0.8)" }}>→ {wc.fix}</p>
+                            )}
+                          </div>
+                        </div>
+                      </GoldCard>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Also support legacy writing_checks format */}
+              {!results.writingChecks?.length && results.writing_checks?.length > 0 && (
                 <div className="mt-6">
                   <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">YOUR WRITING</p>
                   <div className="flex flex-col gap-2">
@@ -794,8 +969,36 @@ const AnubhavPage = () => {
                 </div>
               )}
 
-              {/* Section C — Word Error Deep Drill */}
-              {results.word_errors?.length > 0 && (
+              {/* Section C — Word Errors (new schema) */}
+              {results.wordErrors?.length > 0 && (
+                <div className="mt-6">
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">PRONUNCIATION DRILL</p>
+                  <div className="flex flex-col gap-3">
+                    {results.wordErrors.slice(0, 3).map((err: any, i: number) => (
+                      <GoldCard key={i} padding="16px">
+                        <p style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--foreground) / 0.3)", textTransform: "uppercase", letterSpacing: "2px" }}>You said</p>
+                        <p style={{ fontFamily: "var(--fd)", fontSize: "0.95rem", color: "hsl(var(--foreground))", fontWeight: 700 }}>{err.word}</p>
+
+                        <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--primary) / 0.5)", textTransform: "uppercase", letterSpacing: "2px" }}>Sounds like</p>
+                        <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "hsl(var(--foreground) / 0.5)", fontStyle: "italic" }}>{err.heardAs}</p>
+
+                        <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--foreground) / 0.3)", textTransform: "uppercase", letterSpacing: "2px" }}>Say it as</p>
+                        <p style={{ fontFamily: "var(--fd)", fontSize: "1rem", color: "hsl(var(--primary))", fontWeight: 700 }}>{err.correction}</p>
+
+                        {err.example && (
+                          <>
+                            <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--foreground) / 0.3)", textTransform: "uppercase", letterSpacing: "2px" }}>Try this sentence</p>
+                            <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "hsl(var(--foreground) / 0.7)", fontStyle: "italic" }}>{err.example}</p>
+                          </>
+                        )}
+                      </GoldCard>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Legacy word_errors support */}
+              {!results.wordErrors?.length && results.word_errors?.length > 0 && (
                 <div className="mt-6">
                   <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">WHAT TO WORK ON</p>
                   <div className="flex flex-col gap-3">
@@ -804,34 +1007,9 @@ const AnubhavPage = () => {
                         <div className="flex items-center gap-2">
                           <span>🔴</span>
                           <span style={{ fontFamily: "var(--fd)", fontSize: "0.95rem", color: "hsl(var(--primary))", fontWeight: 700 }}>{err.word}</span>
-                          {err.likely_said && (
-                            <span style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.4)", fontStyle: "italic" }}>— {err.likely_said}</span>
-                          )}
                         </div>
-                        <div className="my-2.5" style={{ height: 1, background: "hsl(var(--foreground) / 0.08)" }} />
-                        {(err.whats_wrong || err.issue) && (
-                          <>
-                            <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "2px" }}>WHAT WENT WRONG</p>
-                            <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>{err.whats_wrong || err.issue}</p>
-                          </>
-                        )}
-                        {err.how_to_fix && (
-                          <>
-                            <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "2px" }}>HOW TO FIX IT</p>
-                            <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>{err.how_to_fix}</p>
-                          </>
-                        )}
-                        {err.practice_words?.length > 0 && (
-                          <>
-                            <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "2px" }}>PRACTICE THESE</p>
-                            <div className="flex flex-wrap gap-1.5 mt-1.5">
-                              {err.practice_words.map((pw: string, j: number) => (
-                                <span key={j} className="rounded-full px-2.5 py-1" style={{ background: "hsl(var(--primary) / 0.08)", border: "1px solid hsl(var(--primary) / 0.2)", fontFamily: "var(--fa)", fontSize: "0.78rem", color: "hsl(var(--primary))" }}>
-                                  {pw}
-                                </span>
-                              ))}
-                            </div>
-                          </>
+                        {(err.issue || err.heardAs) && (
+                          <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>{err.issue || err.heardAs}</p>
                         )}
                       </GoldCard>
                     ))}
@@ -839,65 +1017,33 @@ const AnubhavPage = () => {
                 </div>
               )}
 
-              {/* Section D — Top 3 Focus Areas */}
-              {results.top_errors?.length > 0 && (
-                <div className="mt-6">
-                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">YOUR TOP FOCUS AREAS TODAY</p>
-                  <div className="flex flex-col gap-3">
-                    {results.top_errors.slice(0, 3).map((te: any, i: number) => (
-                      <GoldCard key={i} padding="20px">
-                        <p style={{ fontFamily: "var(--fd)", fontSize: "0.95rem", color: "hsl(var(--primary))", fontWeight: 700 }}>{te.error_name}</p>
-                        <div className="my-2.5" style={{ height: 1, background: "hsl(var(--foreground) / 0.08)" }} />
-                        {te.what_went_wrong && (
-                          <>
-                            <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "2px" }}>WHAT WENT WRONG</p>
-                            <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>{te.what_went_wrong}</p>
-                          </>
-                        )}
-                        {te.how_to_fix && (
-                          <>
-                            <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "2px" }}>HOW TO FIX IT</p>
-                            <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>{te.how_to_fix}</p>
-                          </>
-                        )}
-                        {te.practice_examples?.length > 0 && (
-                          <>
-                            <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "2px" }}>PRACTICE THESE</p>
-                            {te.practice_examples.map((ex: string, j: number) => (
-                              <p key={j} className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.83rem", color: "hsl(var(--primary))" }}>→ {ex}</p>
-                            ))}
-                          </>
-                        )}
-                      </GoldCard>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Fallback: top_error_summary */}
-              {(!results.top_errors || results.top_errors.length === 0) && results.top_error_summary && (
+              {/* top_error_summary fallback */}
+              {(!results.wordErrors?.length && !results.word_errors?.length) && (results.topErrorSummary || results.top_error_summary) && (
                 <div className="mt-6">
                   <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">FOCUS AREAS</p>
                   <GoldCard padding="16px">
-                    <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "hsl(var(--foreground) / 0.7)", lineHeight: 1.7 }}>{results.top_error_summary}</p>
+                    <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "hsl(var(--foreground) / 0.7)", lineHeight: 1.7 }}>{results.topErrorSummary || results.top_error_summary}</p>
                   </GoldCard>
                 </div>
               )}
 
-              {/* Section E — Master's Message */}
-              {results.ai_feedback && (
+              {/* Section D — Master's Message */}
+              {(results.mastermessage || results.ai_feedback) && (
                 <div className="mt-6">
                   <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">{masterName.toUpperCase()} SAYS</p>
                   <GoldCard padding="16px" glow>
-                    <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))", lineHeight: 1.7 }}>{results.ai_feedback}</p>
+                    <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))", lineHeight: 1.7 }}>{results.mastermessage || results.ai_feedback}</p>
                   </GoldCard>
-                  <GlassButton onClick={() => playMasterVoice(results.ai_feedback)} className="mt-3 mx-auto flex items-center gap-2 text-xs">
-                    ▶ Hear {masterName} Say This
+                  <GlassButton
+                    onClick={() => playMasterVoice(results.mastermessage || results.ai_feedback, results.mastermessageaudiourl || results.master_message_audio_url)}
+                    className="mt-3 mx-auto flex items-center gap-2 text-xs"
+                  >
+                    ▶ Hear it from {masterName}
                   </GlassButton>
                 </div>
               )}
 
-              {/* Section F — Action Buttons */}
+              {/* Section E — Action Buttons */}
               <div className="mt-6 flex flex-col gap-3 pb-8">
                 <GoldButton onClick={markDone} fullWidth>
                   Complete Day {dayNumber} 🔥
