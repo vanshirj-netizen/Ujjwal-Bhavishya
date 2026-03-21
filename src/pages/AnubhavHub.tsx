@@ -93,7 +93,7 @@ const AnubhavHub = () => {
         // Best practice sessions per day
         const { data: sessions } = await supabase
           .from("practice_sessions")
-          .select("day_number, composite_score, top_error_summary, ai_feedback")
+          .select("day_number, composite_score, top_error_summary, master_message")
           .eq("user_id", user.id)
           .eq("course_id", courseId)
           .eq("status", "complete")
