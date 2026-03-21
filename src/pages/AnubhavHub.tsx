@@ -381,10 +381,10 @@ const AnubhavHub = () => {
                       <p className="text-sm text-foreground/60 mt-1">{drawerData.session.top_error_summary}</p>
                     </div>
                   )}
-                  {drawerData.session.ai_feedback && (
+                  {drawerData.session.master_message && (
                     <div>
                       <span className="text-[10px] uppercase tracking-widest text-foreground/30" style={{ fontFamily: "var(--fa)" }}>Master Feedback</span>
-                      <p className="text-sm text-foreground/70 mt-1 line-clamp-3">{drawerData.session.ai_feedback}</p>
+                      <p className="text-sm text-foreground/70 mt-1 line-clamp-3">{drawerData.session.master_message}</p>
                     </div>
                   )}
                 </div>
