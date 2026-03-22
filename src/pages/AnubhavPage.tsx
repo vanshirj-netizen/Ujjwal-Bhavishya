@@ -56,6 +56,8 @@ function getTodayISTCutoff(): string {
 const AnubhavPage = () => {
   const { dayNumber } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isReadOnly = searchParams.get("mode") === "readonly";
 
   const [profile, setProfile] = useState<any>(null);
   const [lesson, setLesson] = useState<any>(null);
