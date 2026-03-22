@@ -43,7 +43,6 @@ const Dashboard = () => {
   const [enrollmentData, setEnrollmentData] = useState<any>(null);
   const [displayDay, setDisplayDay] = useState(1);
   const [selectedMaster, setSelectedMaster] = useState("gyani");
-  const [avgConfidence, setAvgConfidence] = useState<string>("—");
   const [daysActive, setDaysActive] = useState(0);
   const [quoteText, setQuoteText] = useState("Every expert was once a beginner.");
   const [quoteAuthor, setQuoteAuthor] = useState("Helen Hayes");
