@@ -93,12 +93,8 @@ const Dashboard = () => {
       if (lessonData?.quote_author) setQuoteAuthor(lessonData.quote_author);
 
       // Flames lit from reflection_sessions
-      const { data: flameData } = await supabase.from("reflection_sessions").select("id, confidence_rating").eq("user_id", user.id).eq("course_id", courseId).not("ai_response", "is", null);
-      setFlamesSubmitted(flameData?.length ?? 0);
-
-      // Avg confidence (belief score)
-      const ratings = flameData?.map(f => f.confidence_rating).filter(Boolean) ?? [];
-      setAvgConfidence(ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : "—");
+      const { count: flameCount } = await supabase.from("reflection_sessions").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("course_id", courseId);
+      setFlamesSubmitted(flameCount ?? 0);
 
       if (sessionStorage.getItem("quotePlayedDay") === String(day)) {
         setQuoteAudioState("played");
