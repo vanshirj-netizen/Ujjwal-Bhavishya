@@ -98,7 +98,17 @@ const FlamePage = () => {
       const flameComplete = progressRes.data?.flame_complete === true;
       const anubhavComplete = progressRes.data?.anubhav_complete === true;
 
-      if (flameComplete && flameRes.data) {
+      if (isReadOnlyMode && flameRes.data) {
+        // Readonly mode: skip directly to readonly screen
+        setExistingFlame(flameRes.data);
+        setAiResponse(flameRes.data.ai_response || "");
+        setConfRating(flameRes.data.confidence_rating || 0);
+        setSpokeAbout(flameRes.data.spoke_about || "");
+        setBiggestChallenge(flameRes.data.biggest_challenge || "");
+        setTomorrowsIntention(flameRes.data.tomorrows_intention || "");
+        setStreakCount(profileRes.data?.current_streak || 0);
+        setScreen("readonly");
+      } else if (flameComplete && flameRes.data) {
         setExistingFlame(flameRes.data);
         setAiResponse(flameRes.data.ai_response || "");
         setConfRating(flameRes.data.confidence_rating || 0);
