@@ -37,6 +37,8 @@ const Dashboard = () => {
   const [firstName, setFirstName] = useState("");
   const [streak, setStreak] = useState(0);
   const [flamesSubmitted, setFlamesSubmitted] = useState(0);
+  const [daysComplete, setDaysComplete] = useState(0);
+  const [totalSessions, setTotalSessions] = useState(0);
   const [todayLesson, setTodayLesson] = useState<any>(null);
   const [enrollmentData, setEnrollmentData] = useState<any>(null);
   const [displayDay, setDisplayDay] = useState(1);
