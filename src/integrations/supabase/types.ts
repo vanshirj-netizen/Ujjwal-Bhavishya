@@ -661,7 +661,10 @@ export type Database = {
           master_message_audio_url: string | null
           master_message_voice: string | null
           natural_sound_score: number | null
+          personality_note_update: string | null
           selected_world: string | null
+          session_date: string | null
+          session_duration_seconds: number | null
           smoothness_score: number | null
           status: string | null
           submitted_at: string | null
@@ -687,7 +690,10 @@ export type Database = {
           master_message_audio_url?: string | null
           master_message_voice?: string | null
           natural_sound_score?: number | null
+          personality_note_update?: string | null
           selected_world?: string | null
+          session_date?: string | null
+          session_duration_seconds?: number | null
           smoothness_score?: number | null
           status?: string | null
           submitted_at?: string | null
@@ -713,7 +719,10 @@ export type Database = {
           master_message_audio_url?: string | null
           master_message_voice?: string | null
           natural_sound_score?: number | null
+          personality_note_update?: string | null
           selected_world?: string | null
+          session_date?: string | null
+          session_duration_seconds?: number | null
           smoothness_score?: number | null
           status?: string | null
           submitted_at?: string | null
@@ -931,6 +940,7 @@ export type Database = {
           flame_date: string | null
           id: string
           master_message_voice: string | null
+          session_date: string | null
           spoke_about: string | null
           submitted_at: string | null
           tomorrows_intention: string | null
@@ -950,6 +960,7 @@ export type Database = {
           flame_date?: string | null
           id?: string
           master_message_voice?: string | null
+          session_date?: string | null
           spoke_about?: string | null
           submitted_at?: string | null
           tomorrows_intention?: string | null
@@ -969,6 +980,7 @@ export type Database = {
           flame_date?: string | null
           id?: string
           master_message_voice?: string | null
+          session_date?: string | null
           spoke_about?: string | null
           submitted_at?: string | null
           tomorrows_intention?: string | null
@@ -1072,8 +1084,10 @@ export type Database = {
           best_score_ever: number | null
           biggest_single_jump_day: number | null
           biggest_single_jump_score: number | null
+          breakthrough_moments: Json | null
           confidence_trend: string | null
           course_id: string
+          current_focus_area: string | null
           current_streak: number | null
           errors_resolved: string[] | null
           first_5_avg_score: number | null
@@ -1084,7 +1098,13 @@ export type Database = {
           latest_session_date: string | null
           latest_session_score: number | null
           longest_streak_ever: number | null
+          mastermessage_log: Json | null
+          persistent_errors: Json | null
+          prompt_backup: string | null
+          prompt_version: number | null
+          resolved_errors: Json | null
           score_trend: string | null
+          student_personality_notes: string | null
           top_error_1: string | null
           top_error_2: string | null
           top_error_3: string | null
@@ -1102,8 +1122,10 @@ export type Database = {
           best_score_ever?: number | null
           biggest_single_jump_day?: number | null
           biggest_single_jump_score?: number | null
+          breakthrough_moments?: Json | null
           confidence_trend?: string | null
           course_id?: string
+          current_focus_area?: string | null
           current_streak?: number | null
           errors_resolved?: string[] | null
           first_5_avg_score?: number | null
@@ -1114,7 +1136,13 @@ export type Database = {
           latest_session_date?: string | null
           latest_session_score?: number | null
           longest_streak_ever?: number | null
+          mastermessage_log?: Json | null
+          persistent_errors?: Json | null
+          prompt_backup?: string | null
+          prompt_version?: number | null
+          resolved_errors?: Json | null
           score_trend?: string | null
+          student_personality_notes?: string | null
           top_error_1?: string | null
           top_error_2?: string | null
           top_error_3?: string | null
@@ -1132,8 +1160,10 @@ export type Database = {
           best_score_ever?: number | null
           biggest_single_jump_day?: number | null
           biggest_single_jump_score?: number | null
+          breakthrough_moments?: Json | null
           confidence_trend?: string | null
           course_id?: string
+          current_focus_area?: string | null
           current_streak?: number | null
           errors_resolved?: string[] | null
           first_5_avg_score?: number | null
@@ -1144,7 +1174,13 @@ export type Database = {
           latest_session_date?: string | null
           latest_session_score?: number | null
           longest_streak_ever?: number | null
+          mastermessage_log?: Json | null
+          persistent_errors?: Json | null
+          prompt_backup?: string | null
+          prompt_version?: number | null
+          resolved_errors?: Json | null
           score_trend?: string | null
+          student_personality_notes?: string | null
           top_error_1?: string | null
           top_error_2?: string | null
           top_error_3?: string | null
