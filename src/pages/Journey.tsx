@@ -149,7 +149,7 @@ const Journey = () => {
                       {state === "completed" ? "✓" : state === "locked_payment" || state === "locked_prev" ? "🔒" : state === "locked_time" ? "⏰" : day}
                     </span>
                     {state === "completed" && <span className="text-[8px] text-primary/60">{day}</span>}
-                    {state === "completed" && flameMap[day] && <span className="absolute bottom-0.5 left-0.5 text-[8px]">🔥</span>}
+                    {state === "completed" && flameMap[day] && <span className="absolute bottom-1 right-1 text-[10px]" style={{ color: "#FFC300" }}>🔥</span>}
                   </motion.button>
                 </React.Fragment>
               );
