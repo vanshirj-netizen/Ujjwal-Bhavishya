@@ -151,10 +151,9 @@ const Dashboard = () => {
   };
 
   const stats = [
-    { emoji: "🔥", value: animStreak, label: "DAY STREAK" },
-    { emoji: "✨", value: animFlames, label: "FLAMES LIT" },
-    { emoji: "📅", value: animDaysActive, label: "DAYS ACTIVE" },
-    { emoji: "💬", value: avgConfidence === "—" ? "—" : `${avgConfidence}/5`, label: "MY BELIEF" },
+    { emoji: "✅", value: animDaysComplete, label: "DAYS DONE" },
+    { emoji: "🎙️", value: animSessions, label: "SESSIONS" },
+    { emoji: "🔥", value: animFlames, label: "FLAMES LIT" },
   ];
 
   return (
