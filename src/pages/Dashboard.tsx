@@ -174,7 +174,7 @@ const Dashboard = () => {
         </motion.p>
 
         {/* STATS */}
-        <div className="grid grid-cols-4 gap-3 mt-8">
+        <div className="grid grid-cols-3 gap-3 mt-8">
           {stats.map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 44 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}>
               <GoldCard padding="18px 14px">
