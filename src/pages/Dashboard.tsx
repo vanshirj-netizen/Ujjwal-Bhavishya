@@ -60,10 +60,13 @@ const Dashboard = () => {
       setFirstName(fullName ? fullName.split(" ")[0] : "");
       setSelectedMaster((profile?.selected_master ?? "gyani").toLowerCase());
 
-      // Get stats from student_progress
-      const { data: sp } = await supabase.from("student_progress").select("current_streak, total_days_practiced").eq("user_id", user.id).eq("course_id", courseId).maybeSingle();
-      setStreak(sp?.current_streak ?? profile?.current_streak ?? 0);
-      setDaysActive(sp?.total_days_practiced ?? 0);
+      // Days complete from progress
+      const { count: daysCompleteCount } = await supabase.from("progress").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("course_id", courseId).eq("day_complete", true);
+      setDaysComplete(daysCompleteCount ?? 0);
+
+      // Total sessions
+      const { count: sessionsCount } = await supabase.from("practice_sessions").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete");
+      setTotalSessions(sessionsCount ?? 0);
 
       const { data: enrollData } = await supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).eq("course_id", courseId).maybeSingle();
       setEnrollmentData(enrollData);
