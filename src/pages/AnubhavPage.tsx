@@ -1093,23 +1093,31 @@ const AnubhavPage = () => {
 
               {/* Section E — Action Buttons */}
               <div className="mt-6 flex flex-col gap-3 pb-8">
-                <GoldButton onClick={markDone} fullWidth>
-                  Complete Day {dayNumber} 🔥
-                </GoldButton>
-
-                {flameExists ? (
-                  <GoldCard padding="14px">
-                    <div className="flex items-center justify-between">
-                      <p style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>🔥 Your Flame is already lit for today</p>
-                      <button onClick={() => navigate("/flame")} style={{ fontFamily: "var(--fa)", fontSize: "0.75rem", color: "hsl(var(--primary))", background: "none", border: "none", cursor: "pointer" }}>
-                        View Flame →
-                      </button>
-                    </div>
-                  </GoldCard>
-                ) : (
-                  <GlassButton onClick={() => navigate(`/flame/${dayNumber}`)} className="w-full">
-                    Go Light Your Flame 🔥
+                {isReadOnly ? (
+                  <GlassButton onClick={() => navigate("/anubhav")} className="w-full">
+                    ← Back to Anubhav
                   </GlassButton>
+                ) : (
+                  <>
+                    <GoldButton onClick={markDone} fullWidth>
+                      Complete Day {dayNumber} 🔥
+                    </GoldButton>
+
+                    {flameExists ? (
+                      <GoldCard padding="14px">
+                        <div className="flex items-center justify-between">
+                          <p style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>🔥 Your Flame is already lit for today</p>
+                          <button onClick={() => navigate("/flame")} style={{ fontFamily: "var(--fa)", fontSize: "0.75rem", color: "hsl(var(--primary))", background: "none", border: "none", cursor: "pointer" }}>
+                            View Flame →
+                          </button>
+                        </div>
+                      </GoldCard>
+                    ) : (
+                      <GlassButton onClick={() => navigate(`/flame/${dayNumber}`)} className="w-full">
+                        Go Light Your Flame 🔥
+                      </GlassButton>
+                    )}
+                  </>
                 )}
               </div>
             </motion.div>
