@@ -932,6 +932,15 @@ const AnubhavPage = () => {
           {phase === "results" && results && (
             <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
 
+              {/* Readonly badge */}
+              {isReadOnly && (
+                <div className="flex justify-center mb-4">
+                  <span className="px-3 py-1.5 rounded-full text-[11px] font-medium" style={{ background: "rgba(253,193,65,0.15)", color: "#ffc300", fontFamily: "var(--fa)" }}>
+                    Day {dayNumber} • Best Session{readonlyDate ? ` • ${readonlyDate}` : ""}
+                  </span>
+                </div>
+              )}
+
               {/* Section A — Score Cards */}
               <div className="grid grid-cols-3 gap-3">
                 {[
