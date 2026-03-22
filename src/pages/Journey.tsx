@@ -92,9 +92,9 @@ const Journey = () => {
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 mt-5">
           {[
-            { icon: "✅", value: String(daysCompleted), label: "Days Done" },
-            { icon: "🔥", value: String(streak), label: "Streak" },
-            { icon: "📅", value: `Day ${currentDay}`, label: "You Are Here" },
+            { icon: "✅", value: String(daysCompleted), label: "Completed" },
+            { icon: "📍", value: `Day ${currentDay}`, label: "You Are Here" },
+            { icon: "⏳", value: String(60 - daysCompleted), label: "Days Left" },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
               <GoldCard padding="14px 10px">
