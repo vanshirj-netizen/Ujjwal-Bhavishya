@@ -483,8 +483,8 @@ const FlamePage = () => {
                 </div>
               )}
 
-              <GlassButton onClick={() => navigate("/dashboard")} className="w-full mt-8">
-                ← Back to Home
+              <GlassButton onClick={() => navigate("/flame")} className="w-full mt-8">
+                ← Back to Flame
               </GlassButton>
             </motion.div>
           )}
