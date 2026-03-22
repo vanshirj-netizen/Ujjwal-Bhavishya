@@ -103,6 +103,7 @@ const AnubhavPage = () => {
   const [results, setResults] = useState<any>(null);
   const [loadingTextIdx, setLoadingTextIdx] = useState(0);
   const [flameExists, setFlameExists] = useState(false);
+  const [readonlyDate, setReadonlyDate] = useState<string | null>(null);
 
   const masterName = profile?.selected_master?.toLowerCase() === "gyanu" ? "Gyanu" : "Gyani";
 
