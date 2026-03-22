@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +45,8 @@ type FlameScreen = "loading" | "readonly" | "gate" | "reflection" | "master-load
 const FlamePage = () => {
   const { dayNumber } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isReadOnlyMode = searchParams.get("mode") === "readonly";
 
   const [screen, setScreen] = useState<FlameScreen>("loading");
   const [profile, setProfile] = useState<any>(null);
@@ -96,7 +98,17 @@ const FlamePage = () => {
       const flameComplete = progressRes.data?.flame_complete === true;
       const anubhavComplete = progressRes.data?.anubhav_complete === true;
 
-      if (flameComplete && flameRes.data) {
+      if (isReadOnlyMode && flameRes.data) {
+        // Readonly mode: skip directly to readonly screen
+        setExistingFlame(flameRes.data);
+        setAiResponse(flameRes.data.ai_response || "");
+        setConfRating(flameRes.data.confidence_rating || 0);
+        setSpokeAbout(flameRes.data.spoke_about || "");
+        setBiggestChallenge(flameRes.data.biggest_challenge || "");
+        setTomorrowsIntention(flameRes.data.tomorrows_intention || "");
+        setStreakCount(profileRes.data?.current_streak || 0);
+        setScreen("readonly");
+      } else if (flameComplete && flameRes.data) {
         setExistingFlame(flameRes.data);
         setAiResponse(flameRes.data.ai_response || "");
         setConfRating(flameRes.data.confidence_rating || 0);
@@ -471,8 +483,8 @@ const FlamePage = () => {
                 </div>
               )}
 
-              <GlassButton onClick={() => navigate("/dashboard")} className="w-full mt-8">
-                ← Back to Home
+              <GlassButton onClick={() => navigate("/flame")} className="w-full mt-8">
+                ← Back to Flame
               </GlassButton>
             </motion.div>
           )}

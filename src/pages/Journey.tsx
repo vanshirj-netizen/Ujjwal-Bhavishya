@@ -92,9 +92,9 @@ const Journey = () => {
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 mt-5">
           {[
-            { icon: "✅", value: String(daysCompleted), label: "Days Done" },
-            { icon: "🔥", value: String(streak), label: "Streak" },
-            { icon: "📅", value: `Day ${currentDay}`, label: "You Are Here" },
+            { icon: "✅", value: String(daysCompleted), label: "Completed" },
+            { icon: "📍", value: `Day ${currentDay}`, label: "You Are Here" },
+            { icon: "⏳", value: String(60 - daysCompleted), label: "Days Left" },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
               <GoldCard padding="14px 10px">
@@ -149,7 +149,7 @@ const Journey = () => {
                       {state === "completed" ? "✓" : state === "locked_payment" || state === "locked_prev" ? "🔒" : state === "locked_time" ? "⏰" : day}
                     </span>
                     {state === "completed" && <span className="text-[8px] text-primary/60">{day}</span>}
-                    {state === "completed" && flameMap[day] && <span className="absolute bottom-0.5 left-0.5 text-[8px]">🔥</span>}
+                    {state === "completed" && flameMap[day] && <span className="absolute bottom-1 right-1 text-[10px]" style={{ color: "#FFC300" }}>🔥</span>}
                   </motion.button>
                 </React.Fragment>
               );

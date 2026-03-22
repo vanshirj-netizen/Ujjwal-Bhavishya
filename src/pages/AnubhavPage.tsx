@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +56,8 @@ function getTodayISTCutoff(): string {
 const AnubhavPage = () => {
   const { dayNumber } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isReadOnly = searchParams.get("mode") === "readonly";
 
   const [profile, setProfile] = useState<any>(null);
   const [lesson, setLesson] = useState<any>(null);
@@ -101,6 +103,7 @@ const AnubhavPage = () => {
   const [results, setResults] = useState<any>(null);
   const [loadingTextIdx, setLoadingTextIdx] = useState(0);
   const [flameExists, setFlameExists] = useState(false);
+  const [readonlyDate, setReadonlyDate] = useState<string | null>(null);
 
   const masterName = profile?.selected_master?.toLowerCase() === "gyanu" ? "Gyanu" : "Gyani";
 
@@ -117,6 +120,42 @@ const AnubhavPage = () => {
         .eq("id", user.id)
         .maybeSingle();
       setProfile(profileData);
+
+      // READONLY MODE: fetch best attempt and skip to results
+      if (isReadOnly) {
+        const { data: bestAttempt } = await supabase
+          .from("practice_sessions")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("course_id", COURSE_ID)
+          .eq("day_number", Number(dayNumber))
+          .eq("is_best_attempt", true)
+          .eq("status", "complete")
+          .maybeSingle();
+
+        if (!bestAttempt) {
+          // No best attempt found, redirect to normal flow
+          navigate(`/anubhav/${dayNumber}`, { replace: true });
+          return;
+        }
+
+        setResults({
+          wordClarityScore: bestAttempt.word_clarity_score,
+          smoothnessScore: bestAttempt.smoothness_score,
+          naturalSoundScore: bestAttempt.natural_sound_score,
+          compositeScore: bestAttempt.composite_score,
+          mastermessage: bestAttempt.master_message,
+          mastermessagevoice: bestAttempt.master_message_voice,
+          mastermessageaudiourl: bestAttempt.master_message_audio_url,
+          topErrorSummary: bestAttempt.top_error_summary,
+          wordErrors: bestAttempt.word_errors,
+          writingChecks: bestAttempt.writing_checks,
+        });
+        setReadonlyDate(bestAttempt.submitted_at ? new Date(bestAttempt.submitted_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : null);
+        setPhase("results");
+        setLoading(false);
+        return;
+      }
 
       const { data: lessonData } = await supabase
         .from("lessons")
@@ -893,6 +932,15 @@ const AnubhavPage = () => {
           {phase === "results" && results && (
             <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
 
+              {/* Readonly badge */}
+              {isReadOnly && (
+                <div className="flex justify-center mb-4">
+                  <span className="px-3 py-1.5 rounded-full text-[11px] font-medium" style={{ background: "rgba(253,193,65,0.15)", color: "#ffc300", fontFamily: "var(--fa)" }}>
+                    Day {dayNumber} • Best Session{readonlyDate ? ` • ${readonlyDate}` : ""}
+                  </span>
+                </div>
+              )}
+
               {/* Section A — Score Cards */}
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -1045,23 +1093,31 @@ const AnubhavPage = () => {
 
               {/* Section E — Action Buttons */}
               <div className="mt-6 flex flex-col gap-3 pb-8">
-                <GoldButton onClick={markDone} fullWidth>
-                  Complete Day {dayNumber} 🔥
-                </GoldButton>
-
-                {flameExists ? (
-                  <GoldCard padding="14px">
-                    <div className="flex items-center justify-between">
-                      <p style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>🔥 Your Flame is already lit for today</p>
-                      <button onClick={() => navigate("/flame")} style={{ fontFamily: "var(--fa)", fontSize: "0.75rem", color: "hsl(var(--primary))", background: "none", border: "none", cursor: "pointer" }}>
-                        View Flame →
-                      </button>
-                    </div>
-                  </GoldCard>
-                ) : (
-                  <GlassButton onClick={() => navigate(`/flame/${dayNumber}`)} className="w-full">
-                    Go Light Your Flame 🔥
+                {isReadOnly ? (
+                  <GlassButton onClick={() => navigate("/anubhav")} className="w-full">
+                    ← Back to Anubhav
                   </GlassButton>
+                ) : (
+                  <>
+                    <GoldButton onClick={markDone} fullWidth>
+                      Complete Day {dayNumber} 🔥
+                    </GoldButton>
+
+                    {flameExists ? (
+                      <GoldCard padding="14px">
+                        <div className="flex items-center justify-between">
+                          <p style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>🔥 Your Flame is already lit for today</p>
+                          <button onClick={() => navigate("/flame")} style={{ fontFamily: "var(--fa)", fontSize: "0.75rem", color: "hsl(var(--primary))", background: "none", border: "none", cursor: "pointer" }}>
+                            View Flame →
+                          </button>
+                        </div>
+                      </GoldCard>
+                    ) : (
+                      <GlassButton onClick={() => navigate(`/flame/${dayNumber}`)} className="w-full">
+                        Go Light Your Flame 🔥
+                      </GlassButton>
+                    )}
+                  </>
                 )}
               </div>
             </motion.div>

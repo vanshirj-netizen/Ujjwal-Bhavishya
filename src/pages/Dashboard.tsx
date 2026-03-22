@@ -37,12 +37,12 @@ const Dashboard = () => {
   const [firstName, setFirstName] = useState("");
   const [streak, setStreak] = useState(0);
   const [flamesSubmitted, setFlamesSubmitted] = useState(0);
+  const [daysComplete, setDaysComplete] = useState(0);
+  const [totalSessions, setTotalSessions] = useState(0);
   const [todayLesson, setTodayLesson] = useState<any>(null);
   const [enrollmentData, setEnrollmentData] = useState<any>(null);
   const [displayDay, setDisplayDay] = useState(1);
   const [selectedMaster, setSelectedMaster] = useState("gyani");
-  const [avgConfidence, setAvgConfidence] = useState<string>("—");
-  const [daysActive, setDaysActive] = useState(0);
   const [quoteText, setQuoteText] = useState("Every expert was once a beginner.");
   const [quoteAuthor, setQuoteAuthor] = useState("Helen Hayes");
 
@@ -60,10 +60,13 @@ const Dashboard = () => {
       setFirstName(fullName ? fullName.split(" ")[0] : "");
       setSelectedMaster((profile?.selected_master ?? "gyani").toLowerCase());
 
-      // Get stats from student_progress
-      const { data: sp } = await supabase.from("student_progress").select("current_streak, total_days_practiced").eq("user_id", user.id).eq("course_id", courseId).maybeSingle();
-      setStreak(sp?.current_streak ?? profile?.current_streak ?? 0);
-      setDaysActive(sp?.total_days_practiced ?? 0);
+      // Days complete from progress
+      const { count: daysCompleteCount } = await supabase.from("progress").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("course_id", courseId).eq("day_complete", true);
+      setDaysComplete(daysCompleteCount ?? 0);
+
+      // Total sessions
+      const { count: sessionsCount } = await supabase.from("practice_sessions").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete");
+      setTotalSessions(sessionsCount ?? 0);
 
       const { data: enrollData } = await supabase.from("enrollments").select("current_day, payment_status, days_completed").eq("user_id", user.id).eq("is_active", true).eq("course_id", courseId).maybeSingle();
       setEnrollmentData(enrollData);
@@ -90,12 +93,8 @@ const Dashboard = () => {
       if (lessonData?.quote_author) setQuoteAuthor(lessonData.quote_author);
 
       // Flames lit from reflection_sessions
-      const { data: flameData } = await supabase.from("reflection_sessions").select("id, confidence_rating").eq("user_id", user.id).eq("course_id", courseId).not("ai_response", "is", null);
-      setFlamesSubmitted(flameData?.length ?? 0);
-
-      // Avg confidence (belief score)
-      const ratings = flameData?.map(f => f.confidence_rating).filter(Boolean) ?? [];
-      setAvgConfidence(ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : "—");
+      const { count: flameCount } = await supabase.from("reflection_sessions").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("course_id", courseId);
+      setFlamesSubmitted(flameCount ?? 0);
 
       if (sessionStorage.getItem("quotePlayedDay") === String(day)) {
         setQuoteAudioState("played");
@@ -107,9 +106,9 @@ const Dashboard = () => {
   const masterName = selectedMaster === "gyanu" ? "Gyanu" : "Gyani";
   const masterImg = selectedMaster === "gyanu" ? GYANU_IMG : GYANI_IMG;
 
-  const animStreak = useCountUp(streak);
+  const animDaysComplete = useCountUp(daysComplete);
+  const animSessions = useCountUp(totalSessions);
   const animFlames = useCountUp(flamesSubmitted);
-  const animDaysActive = useCountUp(daysActive);
 
   const navigateToDayScreen = () => {
     if (displayDay > 5 && enrollmentData?.payment_status === "free") {
@@ -152,10 +151,9 @@ const Dashboard = () => {
   };
 
   const stats = [
-    { emoji: "🔥", value: animStreak, label: "DAY STREAK" },
-    { emoji: "✨", value: animFlames, label: "FLAMES LIT" },
-    { emoji: "📅", value: animDaysActive, label: "DAYS ACTIVE" },
-    { emoji: "💬", value: avgConfidence === "—" ? "—" : `${avgConfidence}/5`, label: "MY BELIEF" },
+    { emoji: "✅", value: animDaysComplete, label: "DAYS DONE" },
+    { emoji: "🎙️", value: animSessions, label: "SESSIONS" },
+    { emoji: "🔥", value: animFlames, label: "FLAMES LIT" },
   ];
 
   return (
@@ -176,7 +174,7 @@ const Dashboard = () => {
         </motion.p>
 
         {/* STATS */}
-        <div className="grid grid-cols-4 gap-3 mt-8">
+        <div className="grid grid-cols-3 gap-3 mt-8">
           {stats.map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 44 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}>
               <GoldCard padding="18px 14px">
