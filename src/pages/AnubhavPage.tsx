@@ -121,6 +121,42 @@ const AnubhavPage = () => {
         .maybeSingle();
       setProfile(profileData);
 
+      // READONLY MODE: fetch best attempt and skip to results
+      if (isReadOnly) {
+        const { data: bestAttempt } = await supabase
+          .from("practice_sessions")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("course_id", COURSE_ID)
+          .eq("day_number", Number(dayNumber))
+          .eq("is_best_attempt", true)
+          .eq("status", "complete")
+          .maybeSingle();
+
+        if (!bestAttempt) {
+          // No best attempt found, redirect to normal flow
+          navigate(`/anubhav/${dayNumber}`, { replace: true });
+          return;
+        }
+
+        setResults({
+          wordClarityScore: bestAttempt.word_clarity_score,
+          smoothnessScore: bestAttempt.smoothness_score,
+          naturalSoundScore: bestAttempt.natural_sound_score,
+          compositeScore: bestAttempt.composite_score,
+          mastermessage: bestAttempt.master_message,
+          mastermessagevoice: bestAttempt.master_message_voice,
+          mastermessageaudiourl: bestAttempt.master_message_audio_url,
+          topErrorSummary: bestAttempt.top_error_summary,
+          wordErrors: bestAttempt.word_errors,
+          writingChecks: bestAttempt.writing_checks,
+        });
+        setReadonlyDate(bestAttempt.submitted_at ? new Date(bestAttempt.submitted_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : null);
+        setPhase("results");
+        setLoading(false);
+        return;
+      }
+
       const { data: lessonData } = await supabase
         .from("lessons")
         .select("*")
