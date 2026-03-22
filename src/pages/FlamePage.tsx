@@ -45,6 +45,8 @@ type FlameScreen = "loading" | "readonly" | "gate" | "reflection" | "master-load
 const FlamePage = () => {
   const { dayNumber } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isReadOnlyMode = searchParams.get("mode") === "readonly";
 
   const [screen, setScreen] = useState<FlameScreen>("loading");
   const [profile, setProfile] = useState<any>(null);
