@@ -106,9 +106,9 @@ const Dashboard = () => {
   const masterName = selectedMaster === "gyanu" ? "Gyanu" : "Gyani";
   const masterImg = selectedMaster === "gyanu" ? GYANU_IMG : GYANI_IMG;
 
-  const animStreak = useCountUp(streak);
+  const animDaysComplete = useCountUp(daysComplete);
+  const animSessions = useCountUp(totalSessions);
   const animFlames = useCountUp(flamesSubmitted);
-  const animDaysActive = useCountUp(daysActive);
 
   const navigateToDayScreen = () => {
     if (displayDay > 5 && enrollmentData?.payment_status === "free") {
