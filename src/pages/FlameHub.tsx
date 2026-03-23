@@ -181,7 +181,7 @@ const FlameHub = () => {
         {/* Memory Lane + 60-Day Grid */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6">
           <SectionLabel className="mb-1">{firstName}'s Memory Lane ✦</SectionLabel>
-          <p className="text-[11px] mb-4" style={{ color: "rgba(255,252,239,0.3)", fontFamily: "var(--fb)" }}>Your reflections. Your journey. Your story.</p>
+          <p className="text-[11px] mb-4" style={{ color: "rgba(255,252,239,0.55)", fontFamily: "var(--fb)" }}>Your reflections. Your journey. Your story.</p>
 
           <div className="grid grid-cols-6 gap-2">
             {Array.from({ length: 60 }, (_, i) => {
