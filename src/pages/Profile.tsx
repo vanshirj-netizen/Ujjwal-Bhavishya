@@ -182,7 +182,7 @@ const Profile = () => {
         {/* Your Master */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6">
           <SectionLabel>Your Master</SectionLabel>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,252,239,0.3)" }}>You can change your master anytime</p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,252,239,0.55)" }}>You can change your master anytime</p>
           <div className="flex flex-col gap-3 mt-3">
             <button onClick={() => setSelectedMasterLocal("gyani")}>
               <GoldCard padding="16px">
