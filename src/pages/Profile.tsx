@@ -27,7 +27,6 @@ interface ProfileData {
 interface Stats {
   daysDone: number;
   flames: number;
-  bestStreak: number;
   avgConfidence: string;
 }
 
