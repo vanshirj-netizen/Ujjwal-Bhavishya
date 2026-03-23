@@ -80,6 +80,16 @@ const AnubhavHub = () => {
         setDaysPracticed(daySet.size);
         setTotalSessions(sessions.length);
 
+        // Compute chart data from practiceMap
+        const cData = Object.entries(pMap)
+          .sort(([a], [b]) => Number(a) - Number(b))
+          .map(([day, data]) => ({
+            name: `Day ${day}`,
+            score: data.bestScore ?? 0,
+          }));
+        setScoreChartData(cData);
+        setTotalSessions(sessions.length);
+
         // Avg score from best attempts
         const bestAttempts = bestAttemptsRes.data ?? [];
         if (bestAttempts.length > 0) {
