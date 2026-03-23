@@ -155,7 +155,7 @@ const FlameHub = () => {
         {/* Confidence Journey Chart */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6">
           <GoldCard padding="20px">
-            <p className="text-[10px] uppercase tracking-wider mb-4" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.4)", letterSpacing: "3px" }}>Your Confidence Journey</p>
+            <p className="text-[10px] uppercase tracking-wider mb-4" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.60)", letterSpacing: "3px" }}>Your Confidence Journey</p>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
                 <LineChart data={chartData}>
