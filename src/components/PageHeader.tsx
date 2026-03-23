@@ -1,7 +1,8 @@
+import React from "react";
 import CourseSwitcher from "./CourseSwitcher";
 
 interface PageHeaderProps {
-  title: string;
+  title: React.ReactNode;
 }
 
 const PageHeader = ({ title }: PageHeaderProps) => (
