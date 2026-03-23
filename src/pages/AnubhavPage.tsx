@@ -1094,7 +1094,7 @@ const AnubhavPage = () => {
               {/* 5. Hero CTA — Go Light Your Flame */}
               <div className="mt-6 flex flex-col gap-3 pb-8">
                 {isReadOnly ? (
-                  <GlassButton onClick={() => navigate("/anubhav")} className="w-full" style={{ border: "1px solid rgba(255,252,239,0.15)" }}>
+                  <GlassButton onClick={() => navigate("/anubhav")} className="w-full border border-foreground/15">
                     ← Back to Anubhav
                   </GlassButton>
                 ) : (
