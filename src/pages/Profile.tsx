@@ -275,7 +275,7 @@ const Profile = () => {
               )}
               {childhoodStateDisplay && (
                 <div className="flex justify-between text-xs mt-1">
-                  <span style={{ color: "rgba(255,252,239,0.4)" }}>Grew Up In</span>
+                  <span style={{ color: "rgba(255,252,239,0.65)" }}>Grew Up In</span>
                   <span style={{ color: "rgba(255,252,239,0.6)" }}>{childhoodStateDisplay}</span>
                 </div>
               )}
