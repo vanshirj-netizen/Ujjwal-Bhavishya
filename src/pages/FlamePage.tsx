@@ -101,6 +101,12 @@ const FlamePage = () => {
       setWritings(writingsRes.data);
       setProgressSummary(progressSummaryRes.data ?? {});
 
+      // Set recap points and manthan question from lesson detail
+      const ld = lessonDetailRes.data;
+      if (ld) {
+        setRecapPoints([ld.recap_point_1, ld.recap_point_2, ld.recap_point_3].filter(Boolean) as string[]);
+        setManthanQuestion(ld.manthan_question ?? "");
+      }
       const flameComplete = progressRes.data?.flame_complete === true;
       const anubhavComplete = progressRes.data?.anubhav_complete === true;
 
