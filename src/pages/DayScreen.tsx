@@ -442,7 +442,7 @@ const DayScreen = () => {
 
         {!practiceAttemptLoading && !maxReached && !thisDayHasSession && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
-            <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm">← Back to Home</GlassButton>
+            <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm border border-foreground/15">← Back to Home</GlassButton>
           </motion.div>
         )}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}>
