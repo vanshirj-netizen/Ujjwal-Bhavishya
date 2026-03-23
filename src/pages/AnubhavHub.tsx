@@ -172,6 +172,32 @@ const AnubhavHub = () => {
           ))}
         </div>
 
+        {/* Score Journey Chart */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="mt-6">
+          <GoldCard padding="20px">
+            <p className="text-[10px] uppercase tracking-wider mb-4" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.60)", letterSpacing: "3px" }}>Your Score Journey</p>
+            {scoreChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={scoreChartData}>
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: "#fffcef" }}
+                    itemStyle={{ color: "#fed141" }}
+                    formatter={(value: number) => [`${value}/100`, "Score"]}
+                  />
+                  <Line type="monotone" dataKey="score" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-40 flex items-center justify-center text-sm" style={{ color: "rgba(255,252,239,0.55)" }}>
+                Complete your first Anubhav to see your score chart 📈
+              </div>
+            )}
+          </GoldCard>
+        </motion.div>
+
         {/* 60-Day Visual Map */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6">
           <SectionLabel className="mb-3">Your Anubhav Journey</SectionLabel>
