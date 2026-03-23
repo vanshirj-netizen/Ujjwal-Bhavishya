@@ -190,7 +190,7 @@ const Profile = () => {
                   <span className="text-2xl">🧙‍♂️</span>
                   <div className="flex-1">
                     <p className="font-display font-bold text-sm" style={{ color: "#FFFCEF" }}>Gyani</p>
-                    <p className="text-xs" style={{ color: "rgba(255,252,239,0.4)" }}>Warm · Patient · Foundation-first</p>
+                    <p className="text-xs" style={{ color: "rgba(255,252,239,0.65)" }}>Warm · Patient · Foundation-first</p>
                   </div>
                   <GoldOrb selected={selectedMasterLocal === "gyani"} />
                 </div>
