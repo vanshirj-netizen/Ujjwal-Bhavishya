@@ -63,13 +63,11 @@ const Profile = () => {
         setChildhoodStateDisplay(profileData?.childhood_state ?? "");
         const { data: progressData } = await supabase.from("progress").select("day_complete").eq("user_id", user.id).eq("course_id", courseId);
         const { data: flameData } = await supabase.from("reflection_sessions").select("confidence_rating").eq("user_id", user.id).eq("course_id", courseId);
-        const { data: userData } = await supabase.from("profiles").select("current_streak, longest_streak").eq("id", user.id).maybeSingle();
         const daysDone = progressData?.filter(p => p.day_complete).length ?? 0;
         const flames = flameData?.length ?? 0;
-        const bestStreak = userData?.longest_streak ?? 0;
         const ratings = flameData?.map(f => f.confidence_rating).filter(Boolean) ?? [];
         const avgConfidence = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : "–";
-        setStats({ daysDone, flames, bestStreak, avgConfidence });
+        setStats({ daysDone, flames, avgConfidence });
       } catch (err) {
         console.error("Profile fetch error:", err);
         toast.error("Could not load profile");
