@@ -205,7 +205,7 @@ const Profile = () => {
                   <span className="text-2xl">🔥</span>
                   <div className="flex-1">
                     <p className="font-display font-bold text-sm" style={{ color: "#FFFCEF" }}>Gyanu</p>
-                    <p className="text-xs" style={{ color: "rgba(255,252,239,0.4)" }}>Brutal truth · Hacks · Tough love</p>
+                    <p className="text-xs" style={{ color: "rgba(255,252,239,0.65)" }}>Brutal truth · Hacks · Tough love</p>
                   </div>
                   <GoldOrb selected={selectedMasterLocal === "gyanu"} />
                 </div>
