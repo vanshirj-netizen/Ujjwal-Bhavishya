@@ -402,7 +402,7 @@ const DayScreen = () => {
                   <span className="text-3xl">🎯</span>
                   <div className="text-left">
                     <p className="font-bold text-base" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Start Your Practice</p>
-                    <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Write → Speak → Get AI feedback from your Master</p>
+                    <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.65)" }}>Write → Speak → Get AI feedback from your Master</p>
                     <p className="text-xs font-semibold mt-2" style={{ fontFamily: "var(--fa)", color: "#ffc300" }}>Write · Record · Scored · AI Feedback</p>
                   </div>
                 </div>
