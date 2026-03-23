@@ -1126,7 +1126,7 @@ const AnubhavPage = () => {
                     )}
 
                     {/* 6. Back to Home */}
-                    <GlassButton onClick={() => navigate("/dashboard")} className="w-full" style={{ border: "1px solid rgba(255,252,239,0.15)" }}>
+                    <GlassButton onClick={() => navigate("/dashboard")} className="w-full border border-foreground/15">
                       ← Back to Home
                     </GlassButton>
                   </>
