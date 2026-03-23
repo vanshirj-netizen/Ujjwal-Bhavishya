@@ -34,7 +34,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const courseId = useActiveCourse();
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [stats, setStats] = useState<Stats>({ daysDone: 0, flames: 0, bestStreak: 0, avgConfidence: "–" });
+  const [stats, setStats] = useState<Stats>({ daysDone: 0, flames: 0, avgConfidence: "–" });
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState("Student");
   const [selectedMasterLocal, setSelectedMasterLocal] = useState("gyani");
