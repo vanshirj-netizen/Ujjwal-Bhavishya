@@ -84,7 +84,7 @@ const FlamePage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/"); return; }
 
-      const [profileRes, lessonRes, flameRes, progressRes, sessionRes, writingsRes, progressSummaryRes] = await Promise.all([
+      const [profileRes, lessonRes, flameRes, progressRes, sessionRes, writingsRes, progressSummaryRes, lessonDetailRes] = await Promise.all([
         supabase.from("profiles").select("full_name, selected_master, current_streak, longest_streak, mother_tongue, mti_zone").eq("id", user.id).maybeSingle(),
         supabase.from("lessons").select("title, week_number, manthan_question").eq("day_number", Number(dayNumber)).maybeSingle(),
         supabase.from("reflection_sessions").select("*").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle(),
@@ -92,6 +92,7 @@ const FlamePage = () => {
         supabase.from("practice_sessions").select("word_clarity_score, smoothness_score, natural_sound_score, composite_score, top_error_summary, master_message_audio_url").eq("user_id", user.id).eq("day_number", Number(dayNumber)).eq("status", "complete").order("submitted_at", { ascending: false }).maybeSingle(),
         supabase.from("writing_submissions").select("sentence_1, sentence_2, sentence_3, sentence_4, sentence_5").eq("user_id", user.id).eq("day_number", Number(dayNumber)).order("created_at", { ascending: false }).maybeSingle(),
         supabase.from("student_progress").select("*").eq("user_id", user.id).eq("course_id", COURSE_ID).maybeSingle(),
+        supabase.from("lessons").select("recap_point_1, recap_point_2, recap_point_3, manthan_question").eq("course_id", COURSE_ID).eq("day_number", Number(dayNumber)).maybeSingle(),
       ]);
 
       setProfile(profileRes.data);
