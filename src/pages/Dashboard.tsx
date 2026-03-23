@@ -160,15 +160,17 @@ const Dashboard = () => {
     <div className="min-h-screen pb-[100px] safe-top relative z-[2]">
       <div className="px-5 pt-8 max-w-lg mx-auto">
         {/* HEADER */}
-        <PageHeader title={<>Namaste <span className="text-gradient-gold">{firstName || "Friend"}</span>!</>} />
+        <h1 className="font-display text-4xl font-extrabold leading-tight" style={{ color: "hsl(var(--foreground))" }}>
+          Namaste <span className="text-gradient-gold">{firstName || "Friend"}</span>!
+        </h1>
 
         {/* SUBHEADER */}
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="font-display italic mt-2 text-4xl font-extrabold leading-tight"
-          style={{ color: "rgba(255,252,239,0.75)" }}
+          className="font-display italic mt-2"
+          style={{ fontSize: "clamp(0.85rem, 1.35vw, 1.1rem)", color: "rgba(255,252,239,0.75)" }}
         >
           Your journey continues. One day at a time.
         </motion.p>
