@@ -253,7 +253,7 @@ const AnubhavHub = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 text-center pb-4">
-          <p className="text-xs" style={{ color: "rgba(255,252,239,0.3)" }}>Complete each day's lesson to unlock Anubhav practice 🎯</p>
+          <p className="text-xs" style={{ color: "rgba(255,252,239,0.55)" }}>Complete each day's lesson to unlock Anubhav practice 🎯</p>
         </motion.div>
       </div>
       <BottomNav />

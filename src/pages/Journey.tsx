@@ -158,8 +158,8 @@ const Journey = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 text-center pb-4">
-          <p className="text-xs" style={{ color: "rgba(255,252,239,0.3)" }}>Complete each day to unlock the next 🔓</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,252,239,0.3)" }}>Next day unlocks at 05:30 AM after completion 🌅</p>
+          <p className="text-xs" style={{ color: "rgba(255,252,239,0.55)" }}>Complete each day to unlock the next 🔓</p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,252,239,0.55)" }}>Next day unlocks at 05:30 AM after completion 🌅</p>
         </motion.div>
       </div>
       <BottomNav />
