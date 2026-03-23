@@ -518,54 +518,50 @@ const FlamePage = () => {
           {screen === "reflection" && (
             <motion.div key="reflection" variants={slideVariants} initial="initial" animate="animate" exit="exit">
               <h2 className="text-xl font-bold text-center" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Your Daily Flame</h2>
-              <p className="text-xs text-center mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Day {dayNumber}</p>
+              <p className="text-xs text-center mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.55)" }}>Day {dayNumber}</p>
 
+              {/* Section A: Today You Learned */}
+              {recapPoints.length > 0 && (
+                <div className="mt-6">
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">TODAY YOU LEARNED</p>
+                  <div className="flex flex-col gap-2">
+                    {recapPoints.map((point, i) => (
+                      <div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ border: "1px solid rgba(253,193,65,0.2)", background: "rgba(253,193,65,0.05)" }}>
+                        <span className="text-sm mt-0.5" style={{ color: "hsl(var(--primary))" }}>✦</span>
+                        <p className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.85)" }}>{point}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Section B: Your Manthan */}
               <div className="mt-6">
-                <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>How confident did you feel today?</label>
+                <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">YOUR MANTHAN</p>
+                {manthanQuestion && (
+                  <p className="text-sm mb-3" style={{ fontFamily: "var(--fb)", color: "hsl(var(--primary))", opacity: 0.85 }}>{manthanQuestion}</p>
+                )}
+                <textarea
+                  value={manthanAnswer}
+                  onChange={e => setManthanAnswer(e.target.value.slice(0, 150))}
+                  className="w-full p-3 rounded-xl text-sm resize-none min-h-[100px] outline-none"
+                  style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.03)", border: "1px solid rgba(255,252,239,0.20)", color: "#fffcef" }}
+                  maxLength={150}
+                  rows={4}
+                  placeholder="Write your thoughts here..."
+                />
+                <p className="text-[10px] text-right mt-0.5" style={{ color: "rgba(255,252,239,0.55)" }}>{manthanAnswer.length}/150</p>
+              </div>
+
+              {/* Section C: How Confident */}
+              <div className="mt-6">
+                <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.85)" }}>How confident did you feel today?</label>
                 <div className="flex justify-center mt-3 gap-3">
                   {[1, 2, 3, 4, 5].map(i => (
                     <motion.button key={i} whileTap={{ scale: 0.85 }} onClick={() => setConfRating(i)} className="text-4xl cursor-pointer transition-transform hover:scale-110">
                       {i <= confRating ? <span style={{ color: "#ffc300" }}>★</span> : <span style={{ color: "rgba(255,252,239,0.2)" }}>☆</span>}
                     </motion.button>
                   ))}
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-5">
-                <div>
-                  <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>What did you speak about today?</label>
-                  <textarea
-                    value={spokeAbout}
-                    onChange={e => setSpokeAbout(e.target.value.slice(0, 150))}
-                    className="w-full mt-2 p-3 rounded-xl text-sm resize-none min-h-[80px] outline-none"
-                    style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.1)", color: "#fffcef" }}
-                    maxLength={150}
-                  />
-                  <p className="text-[10px] text-right mt-0.5" style={{ color: "rgba(255,252,239,0.2)" }}>{spokeAbout.length}/150</p>
-                </div>
-
-                <div>
-                  <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>What felt most difficult today?</label>
-                  <textarea
-                    value={biggestChallenge}
-                    onChange={e => setBiggestChallenge(e.target.value.slice(0, 150))}
-                    className="w-full mt-2 p-3 rounded-xl text-sm resize-none min-h-[80px] outline-none"
-                    style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.1)", color: "#fffcef" }}
-                    maxLength={150}
-                  />
-                  <p className="text-[10px] text-right mt-0.5" style={{ color: "rgba(255,252,239,0.2)" }}>{biggestChallenge.length}/150</p>
-                </div>
-
-                <div>
-                  <label className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.6)" }}>What will you say in English tomorrow?</label>
-                  <textarea
-                    value={tomorrowsIntention}
-                    onChange={e => setTomorrowsIntention(e.target.value.slice(0, 100))}
-                    className="w-full mt-2 p-3 rounded-xl text-sm resize-none min-h-[60px] outline-none"
-                    style={{ fontFamily: "var(--fb)", background: "rgba(255,252,239,0.04)", border: "1px solid rgba(255,252,239,0.1)", color: "#fffcef" }}
-                    maxLength={100}
-                  />
-                  <p className="text-[10px] text-right mt-0.5" style={{ color: "rgba(255,252,239,0.2)" }}>{tomorrowsIntention.length}/100</p>
                 </div>
               </div>
 

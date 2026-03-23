@@ -156,16 +156,16 @@ const Profile = () => {
         {/* Stats */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-4">
           <GoldCard padding="20px">
-            <div className="grid grid-cols-2 gap-4 text-center">
+            <div className="grid grid-cols-3 gap-4 text-center">
               {[
-                { label: "Days Done", value: stats.daysDone },
-                { label: "Flames", value: stats.flames },
-                { label: "Best Streak", value: stats.bestStreak },
-                { label: "Avg Confidence", value: stats.avgConfidence },
+                { label: "Days Done", value: stats.daysDone, icon: "✅" },
+                { label: "Flames Lit", value: stats.flames, icon: "🔥" },
+                { label: "Avg Belief", value: stats.avgConfidence === "–" ? "–" : `${stats.avgConfidence} / 5`, icon: "💬" },
               ].map((s) => (
                 <div key={s.label}>
+                  <span className="text-lg">{s.icon}</span>
                   <p className="font-display text-xl font-bold" style={{ background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.value}</p>
-                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.5)" }}>{s.label}</p>
+                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.68)" }}>{s.label}</p>
                 </div>
               ))}
             </div>

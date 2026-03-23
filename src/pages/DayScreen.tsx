@@ -452,7 +452,7 @@ const DayScreen = () => {
               setCurrentStep(1);
               setCompletedSteps([]);
             }}
-            className="mt-3 text-sm"
+            className="mt-3 text-sm border border-foreground/15"
           >
             ↺ Replay Day {dayNumber}
           </GlassButton>
