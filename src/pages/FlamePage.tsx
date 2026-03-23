@@ -188,7 +188,7 @@ const FlamePage = () => {
     return Math.max(streak, 1);
   };
 
-  const reflectionValid = confRating > 0 && spokeAbout.trim().length > 0 && biggestChallenge.trim().length > 0 && tomorrowsIntention.trim().length > 0;
+  const reflectionValid = confRating > 0 && manthanAnswer.trim().length > 0;
 
   const submitReflection = async () => {
     setSaving(true);
