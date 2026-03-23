@@ -362,7 +362,7 @@ const DayScreen = () => {
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-50 flex flex-col items-center justify-center px-6" style={{ background: "#000e09" }}>
           <motion.span className="text-7xl" animate={{ rotate: [0, 90, 90, 0, 0] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.8 }}>📱</motion.span>
           <p className="text-xl font-bold text-center mt-6" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>✦ Rotate for Full Experience</p>
-          <p className="text-sm text-center mt-2 max-w-[260px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Landscape mode gives you wider lessons, cinematic videos, and a better quiz experience.</p>
+          <p className="text-sm text-center mt-2 max-w-[260px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.68)" }}>Landscape mode gives you wider lessons, cinematic videos, and a better quiz experience.</p>
           <GoldButton className="mt-8">I'll Rotate My Phone →</GoldButton>
           <GlassButton onClick={() => { setShowRotatePrompt(false); setRotatePromptDismissed(true); }} className="mt-4 text-xs">Continue in portrait →</GlassButton>
         </motion.div>

@@ -279,7 +279,7 @@ const Profile = () => {
                   <span style={{ color: "rgba(255,252,239,0.6)" }}>{childhoodStateDisplay}</span>
                 </div>
               )}
-              <p className="text-[10px] mt-2" style={{ color: "rgba(255,252,239,0.3)" }}>This data shapes your AI coaching. Contact support to update it.</p>
+              <p className="text-[10px] mt-2" style={{ color: "rgba(255,252,239,0.55)" }}>This data shapes your AI coaching. Contact support to update it.</p>
             </GoldCard>
           )}
         </motion.div>
