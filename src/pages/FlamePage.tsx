@@ -201,9 +201,8 @@ const FlamePage = () => {
       course_id: COURSE_ID,
       flame_date: new Date().toISOString().split("T")[0],
       confidence_rating: confRating,
-      spoke_about: spokeAbout.trim(),
-      biggest_challenge: biggestChallenge.trim(),
-      tomorrows_intention: tomorrowsIntention.trim(),
+      spoke_about: manthanAnswer.trim(),
+      manthan_answer: manthanAnswer.trim(),
       submitted_at: new Date().toISOString(),
     }).select("id").single();
 
