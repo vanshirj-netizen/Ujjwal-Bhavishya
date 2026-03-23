@@ -27,7 +27,6 @@ interface ProfileData {
 interface Stats {
   daysDone: number;
   flames: number;
-  bestStreak: number;
   avgConfidence: string;
 }
 
@@ -35,7 +34,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const courseId = useActiveCourse();
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [stats, setStats] = useState<Stats>({ daysDone: 0, flames: 0, bestStreak: 0, avgConfidence: "–" });
+  const [stats, setStats] = useState<Stats>({ daysDone: 0, flames: 0, avgConfidence: "–" });
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState("Student");
   const [selectedMasterLocal, setSelectedMasterLocal] = useState("gyani");
@@ -64,13 +63,11 @@ const Profile = () => {
         setChildhoodStateDisplay(profileData?.childhood_state ?? "");
         const { data: progressData } = await supabase.from("progress").select("day_complete").eq("user_id", user.id).eq("course_id", courseId);
         const { data: flameData } = await supabase.from("reflection_sessions").select("confidence_rating").eq("user_id", user.id).eq("course_id", courseId);
-        const { data: userData } = await supabase.from("profiles").select("current_streak, longest_streak").eq("id", user.id).maybeSingle();
         const daysDone = progressData?.filter(p => p.day_complete).length ?? 0;
         const flames = flameData?.length ?? 0;
-        const bestStreak = userData?.longest_streak ?? 0;
         const ratings = flameData?.map(f => f.confidence_rating).filter(Boolean) ?? [];
         const avgConfidence = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : "–";
-        setStats({ daysDone, flames, bestStreak, avgConfidence });
+        setStats({ daysDone, flames, avgConfidence });
       } catch (err) {
         console.error("Profile fetch error:", err);
         toast.error("Could not load profile");
@@ -133,7 +130,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen pb-24 safe-top relative z-[2]">
       <div className="px-5 pt-6 max-w-lg mx-auto">
-        <PageHeader title={`${displayName.split(" ")[0]}'s Profile`} />
+        <PageHeader title={<><span className="text-gradient-gold">{displayName.split(" ")[0]}'s</span> Profile</>} />
 
         {/* Profile Card */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-4">
@@ -159,16 +156,16 @@ const Profile = () => {
         {/* Stats */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-4">
           <GoldCard padding="20px">
-            <div className="grid grid-cols-2 gap-4 text-center">
+            <div className="grid grid-cols-3 gap-4 text-center">
               {[
-                { label: "Days Done", value: stats.daysDone },
-                { label: "Flames", value: stats.flames },
-                { label: "Best Streak", value: stats.bestStreak },
-                { label: "Avg Confidence", value: stats.avgConfidence },
+                { label: "Days Done", value: stats.daysDone, icon: "✅" },
+                { label: "Flames Lit", value: stats.flames, icon: "🔥" },
+                { label: "Avg Belief", value: stats.avgConfidence === "–" ? "–" : `${stats.avgConfidence} / 5`, icon: "💬" },
               ].map((s) => (
                 <div key={s.label}>
+                  <span className="text-lg">{s.icon}</span>
                   <p className="font-display text-xl font-bold" style={{ background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.value}</p>
-                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.5)" }}>{s.label}</p>
+                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.68)" }}>{s.label}</p>
                 </div>
               ))}
             </div>
@@ -185,7 +182,7 @@ const Profile = () => {
         {/* Your Master */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6">
           <SectionLabel>Your Master</SectionLabel>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,252,239,0.3)" }}>You can change your master anytime</p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,252,239,0.55)" }}>You can change your master anytime</p>
           <div className="flex flex-col gap-3 mt-3">
             <button onClick={() => setSelectedMasterLocal("gyani")}>
               <GoldCard padding="16px">
@@ -193,7 +190,7 @@ const Profile = () => {
                   <span className="text-2xl">🧙‍♂️</span>
                   <div className="flex-1">
                     <p className="font-display font-bold text-sm" style={{ color: "#FFFCEF" }}>Gyani</p>
-                    <p className="text-xs" style={{ color: "rgba(255,252,239,0.4)" }}>Warm · Patient · Foundation-first</p>
+                    <p className="text-xs" style={{ color: "rgba(255,252,239,0.65)" }}>Warm · Patient · Foundation-first</p>
                   </div>
                   <GoldOrb selected={selectedMasterLocal === "gyani"} />
                 </div>
@@ -208,7 +205,7 @@ const Profile = () => {
                   <span className="text-2xl">🔥</span>
                   <div className="flex-1">
                     <p className="font-display font-bold text-sm" style={{ color: "#FFFCEF" }}>Gyanu</p>
-                    <p className="text-xs" style={{ color: "rgba(255,252,239,0.4)" }}>Brutal truth · Hacks · Tough love</p>
+                    <p className="text-xs" style={{ color: "rgba(255,252,239,0.65)" }}>Brutal truth · Hacks · Tough love</p>
                   </div>
                   <GoldOrb selected={selectedMasterLocal === "gyanu"} />
                 </div>
@@ -259,7 +256,7 @@ const Profile = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm" style={{ color: "rgba(255,252,239,0.7)" }}>WhatsApp Updates</p>
-                <p className="text-xs" style={{ color: "rgba(255,252,239,0.4)" }}>Progress nudges and encouragement</p>
+                <p className="text-xs" style={{ color: "rgba(255,252,239,0.65)" }}>Progress nudges and encouragement</p>
               </div>
               <button onClick={() => saveWhatsapp(!whatsappOn)} className={`relative w-11 h-6 rounded-full transition-all duration-300 ${whatsappOn ? "bg-primary" : ""}`} style={!whatsappOn ? { background: "rgba(255,252,239,0.15)" } : {}}>
                 <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-transform duration-300 ${whatsappOn ? "translate-x-5" : "translate-x-0.5"}`} style={{ background: "#000e09" }} />
@@ -272,17 +269,17 @@ const Profile = () => {
               <p className="text-sm" style={{ color: "rgba(255,252,239,0.7)" }}>My Background</p>
               {motherTongueDisplay && (
                 <div className="flex justify-between text-xs mt-2">
-                  <span style={{ color: "rgba(255,252,239,0.4)" }}>Mother Tongue</span>
+                  <span style={{ color: "rgba(255,252,239,0.65)" }}>Mother Tongue</span>
                   <span style={{ color: "rgba(255,252,239,0.6)" }}>{motherTongueDisplay}</span>
                 </div>
               )}
               {childhoodStateDisplay && (
                 <div className="flex justify-between text-xs mt-1">
-                  <span style={{ color: "rgba(255,252,239,0.4)" }}>Grew Up In</span>
+                  <span style={{ color: "rgba(255,252,239,0.65)" }}>Grew Up In</span>
                   <span style={{ color: "rgba(255,252,239,0.6)" }}>{childhoodStateDisplay}</span>
                 </div>
               )}
-              <p className="text-[10px] mt-2" style={{ color: "rgba(255,252,239,0.3)" }}>This data shapes your AI coaching. Contact support to update it.</p>
+              <p className="text-[10px] mt-2" style={{ color: "rgba(255,252,239,0.55)" }}>This data shapes your AI coaching. Contact support to update it.</p>
             </GoldCard>
           )}
         </motion.div>

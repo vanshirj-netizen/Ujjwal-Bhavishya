@@ -131,7 +131,7 @@ const FlameHub = () => {
   return (
     <div className="min-h-screen pb-24 safe-top relative z-[2]">
       <div className="px-5 pt-6 max-w-lg mx-auto">
-        <PageHeader title={`${firstName}'s Flame`} />
+        <PageHeader title={<><span className="text-gradient-gold">{firstName}'s</span> Flame</>} />
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mt-5">
@@ -145,7 +145,7 @@ const FlameHub = () => {
                 <div className="text-center">
                   <span className="text-lg">{s.icon}</span>
                   <p className="font-display text-base font-bold mt-1" style={{ background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.value}</p>
-                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.5)" }}>{s.label}</p>
+                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.68)" }}>{s.label}</p>
                 </div>
               </GoldCard>
             </motion.div>
@@ -155,7 +155,7 @@ const FlameHub = () => {
         {/* Confidence Journey Chart */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6">
           <GoldCard padding="20px">
-            <p className="text-[10px] uppercase tracking-wider mb-4" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.4)", letterSpacing: "3px" }}>Your Confidence Journey</p>
+            <p className="text-[10px] uppercase tracking-wider mb-4" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.60)", letterSpacing: "3px" }}>Your Confidence Journey</p>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
                 <LineChart data={chartData}>
@@ -171,7 +171,7 @@ const FlameHub = () => {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-40 flex items-center justify-center text-sm" style={{ color: "rgba(255,252,239,0.3)" }}>
+              <div className="h-40 flex items-center justify-center text-sm" style={{ color: "rgba(255,252,239,0.55)" }}>
                 Submit your first Flame to see your confidence chart 📈
               </div>
             )}
@@ -181,7 +181,7 @@ const FlameHub = () => {
         {/* Memory Lane + 60-Day Grid */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6">
           <SectionLabel className="mb-1">{firstName}'s Memory Lane ✦</SectionLabel>
-          <p className="text-[11px] mb-4" style={{ color: "rgba(255,252,239,0.3)", fontFamily: "var(--fb)" }}>Your reflections. Your journey. Your story.</p>
+          <p className="text-[11px] mb-4" style={{ color: "rgba(255,252,239,0.55)", fontFamily: "var(--fb)" }}>Your reflections. Your journey. Your story.</p>
 
           <div className="grid grid-cols-6 gap-2">
             {Array.from({ length: 60 }, (_, i) => {
@@ -194,7 +194,7 @@ const FlameHub = () => {
                 <React.Fragment key={day}>
                   {showWeekLabel && day <= 60 && (
                     <div className="col-span-6 mt-2 mb-1 first:mt-0">
-                      <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,252,239,0.3)", fontFamily: "var(--fa)" }}>
+                      <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,252,239,0.55)", fontFamily: "var(--fa)" }}>
                         Week {weekNum} {weekData[weekNum] ? `· ${weekData[weekNum]}` : ""}
                       </p>
                     </div>
@@ -237,7 +237,7 @@ const FlameHub = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 text-center pb-4">
-          <p className="text-xs" style={{ color: "rgba(255,252,239,0.3)" }}>Complete Anubhav practice to unlock your Flame 🔥</p>
+          <p className="text-xs" style={{ color: "rgba(255,252,239,0.55)" }}>Complete Anubhav practice to unlock your Flame 🔥</p>
         </motion.div>
       </div>
       <BottomNav />

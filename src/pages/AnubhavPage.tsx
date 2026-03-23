@@ -941,7 +941,7 @@ const AnubhavPage = () => {
                 </div>
               )}
 
-              {/* Section A — Score Cards */}
+              {/* 1. Score Cards */}
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: "Word Clarity", score: results.wordClarityScore ?? results.word_clarity_score ?? 50 },
@@ -959,7 +959,7 @@ const AnubhavPage = () => {
                           {card.score}/100
                         </p>
                       )}
-                      <p className="mt-1" style={{ fontFamily: "var(--fa)", fontSize: "0.58rem", color: "hsl(var(--foreground) / 0.4)", textTransform: "uppercase", letterSpacing: "2px" }}>
+                      <p className="mt-1" style={{ fontFamily: "var(--fa)", fontSize: "0.58rem", color: "rgba(255,252,239,0.65)", textTransform: "uppercase", letterSpacing: "2px" }}>
                         {card.label}
                       </p>
                     </div>
@@ -967,7 +967,81 @@ const AnubhavPage = () => {
                 ))}
               </div>
 
-              {/* Section B — Writing Checks */}
+              {/* 2. GYANU SAYS — Master's Message */}
+              {(results.mastermessage || results.ai_feedback) && (
+                <div className="mt-6">
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">{masterName.toUpperCase()} SAYS</p>
+                  <GoldCard padding="16px" glow>
+                    <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))", lineHeight: 1.7 }}>{results.mastermessage || results.ai_feedback}</p>
+                  </GoldCard>
+                  <GlassButton
+                    onClick={() => playMasterVoice(results.mastermessage || results.ai_feedback, results.mastermessageaudiourl || results.master_message_audio_url)}
+                    className="mt-3 mx-auto flex items-center gap-2 text-xs"
+                  >
+                    ▶ Hear it from {masterName}
+                  </GlassButton>
+                </div>
+              )}
+
+              {/* 3. PRONUNCIATION DRILL — Word Errors (new schema) */}
+              {results.wordErrors?.length > 0 && (
+                <div className="mt-6">
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">PRONUNCIATION DRILL</p>
+                  <div className="flex flex-col gap-3">
+                    {results.wordErrors.slice(0, 3).map((err: any, i: number) => (
+                      <GoldCard key={i} padding="16px">
+                        <p style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "rgba(255,252,239,0.55)", textTransform: "uppercase", letterSpacing: "2px" }}>You said</p>
+                        <p style={{ fontFamily: "var(--fd)", fontSize: "0.95rem", color: "hsl(var(--foreground))", fontWeight: 700 }}>{err.word}</p>
+
+                        <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--primary) / 0.5)", textTransform: "uppercase", letterSpacing: "2px" }}>Sounds like</p>
+                        <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "rgba(255,252,239,0.68)", fontStyle: "italic" }}>{err.heardAs}</p>
+
+                        <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "rgba(255,252,239,0.55)", textTransform: "uppercase", letterSpacing: "2px" }}>Say it as</p>
+                        <p style={{ fontFamily: "var(--fd)", fontSize: "1rem", color: "hsl(var(--primary))", fontWeight: 700 }}>{err.correction}</p>
+
+                        {err.example && (
+                          <>
+                            <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "rgba(255,252,239,0.55)", textTransform: "uppercase", letterSpacing: "2px" }}>Try this sentence</p>
+                            <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "rgba(255,252,239,0.72)", fontStyle: "italic" }}>{err.example}</p>
+                          </>
+                        )}
+                      </GoldCard>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Legacy word_errors support */}
+              {!results.wordErrors?.length && results.word_errors?.length > 0 && (
+                <div className="mt-6">
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">WHAT TO WORK ON</p>
+                  <div className="flex flex-col gap-3">
+                    {results.word_errors.slice(0, 5).map((err: any, i: number) => (
+                      <GoldCard key={i} padding="16px">
+                        <div className="flex items-center gap-2">
+                          <span>🔴</span>
+                          <span style={{ fontFamily: "var(--fd)", fontSize: "0.95rem", color: "hsl(var(--primary))", fontWeight: 700 }}>{err.word}</span>
+                        </div>
+                        {(err.issue || err.heardAs) && (
+                          <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "rgba(255,252,239,0.72)" }}>{err.issue || err.heardAs}</p>
+                        )}
+                      </GoldCard>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* top_error_summary fallback */}
+              {(!results.wordErrors?.length && !results.word_errors?.length) && (results.topErrorSummary || results.top_error_summary) && (
+                <div className="mt-6">
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">FOCUS AREAS</p>
+                  <GoldCard padding="16px">
+                    <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "rgba(255,252,239,0.72)", lineHeight: 1.7 }}>{results.topErrorSummary || results.top_error_summary}</p>
+                  </GoldCard>
+                </div>
+              )}
+
+              {/* 4. WRITING CHECKS */}
               {results.writingChecks?.length > 0 && (
                 <div className="mt-6">
                   <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">YOUR WRITING</p>
@@ -979,7 +1053,7 @@ const AnubhavPage = () => {
                           <div className="flex-1">
                             <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))" }}>{wc.sentence}</p>
                             {wc.issue && (
-                              <p className="mt-1.5" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.5)" }}>Issue: {wc.issue}</p>
+                              <p className="mt-1.5" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "rgba(255,252,239,0.68)" }}>Issue: {wc.issue}</p>
                             )}
                             {wc.fix && (
                               <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--primary) / 0.8)" }}>→ {wc.fix}</p>
@@ -1007,7 +1081,7 @@ const AnubhavPage = () => {
                               <p className="mt-1.5" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--primary) / 0.8)" }}>→ {wc.correction}</p>
                             )}
                             {!wc.correct && (wc.simple_reason || wc.reason) && (
-                              <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.78rem", color: "hsl(var(--foreground) / 0.4)" }}>Why: {wc.simple_reason || wc.reason}</p>
+                              <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.78rem", color: "rgba(255,252,239,0.65)" }}>Why: {wc.simple_reason || wc.reason}</p>
                             )}
                           </div>
                         </div>
@@ -1017,106 +1091,44 @@ const AnubhavPage = () => {
                 </div>
               )}
 
-              {/* Section C — Word Errors (new schema) */}
-              {results.wordErrors?.length > 0 && (
-                <div className="mt-6">
-                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">PRONUNCIATION DRILL</p>
-                  <div className="flex flex-col gap-3">
-                    {results.wordErrors.slice(0, 3).map((err: any, i: number) => (
-                      <GoldCard key={i} padding="16px">
-                        <p style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--foreground) / 0.3)", textTransform: "uppercase", letterSpacing: "2px" }}>You said</p>
-                        <p style={{ fontFamily: "var(--fd)", fontSize: "0.95rem", color: "hsl(var(--foreground))", fontWeight: 700 }}>{err.word}</p>
-
-                        <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--primary) / 0.5)", textTransform: "uppercase", letterSpacing: "2px" }}>Sounds like</p>
-                        <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "hsl(var(--foreground) / 0.5)", fontStyle: "italic" }}>{err.heardAs}</p>
-
-                        <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--foreground) / 0.3)", textTransform: "uppercase", letterSpacing: "2px" }}>Say it as</p>
-                        <p style={{ fontFamily: "var(--fd)", fontSize: "1rem", color: "hsl(var(--primary))", fontWeight: 700 }}>{err.correction}</p>
-
-                        {err.example && (
-                          <>
-                            <p className="mt-2" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "hsl(var(--foreground) / 0.3)", textTransform: "uppercase", letterSpacing: "2px" }}>Try this sentence</p>
-                            <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "hsl(var(--foreground) / 0.7)", fontStyle: "italic" }}>{err.example}</p>
-                          </>
-                        )}
-                      </GoldCard>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Legacy word_errors support */}
-              {!results.wordErrors?.length && results.word_errors?.length > 0 && (
-                <div className="mt-6">
-                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">WHAT TO WORK ON</p>
-                  <div className="flex flex-col gap-3">
-                    {results.word_errors.slice(0, 5).map((err: any, i: number) => (
-                      <GoldCard key={i} padding="16px">
-                        <div className="flex items-center gap-2">
-                          <span>🔴</span>
-                          <span style={{ fontFamily: "var(--fd)", fontSize: "0.95rem", color: "hsl(var(--primary))", fontWeight: 700 }}>{err.word}</span>
-                        </div>
-                        {(err.issue || err.heardAs) && (
-                          <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>{err.issue || err.heardAs}</p>
-                        )}
-                      </GoldCard>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* top_error_summary fallback */}
-              {(!results.wordErrors?.length && !results.word_errors?.length) && (results.topErrorSummary || results.top_error_summary) && (
-                <div className="mt-6">
-                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">FOCUS AREAS</p>
-                  <GoldCard padding="16px">
-                    <p style={{ fontFamily: "var(--fb)", fontSize: "0.85rem", color: "hsl(var(--foreground) / 0.7)", lineHeight: 1.7 }}>{results.topErrorSummary || results.top_error_summary}</p>
-                  </GoldCard>
-                </div>
-              )}
-
-              {/* Section D — Master's Message */}
-              {(results.mastermessage || results.ai_feedback) && (
-                <div className="mt-6">
-                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">{masterName.toUpperCase()} SAYS</p>
-                  <GoldCard padding="16px" glow>
-                    <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))", lineHeight: 1.7 }}>{results.mastermessage || results.ai_feedback}</p>
-                  </GoldCard>
-                  <GlassButton
-                    onClick={() => playMasterVoice(results.mastermessage || results.ai_feedback, results.mastermessageaudiourl || results.master_message_audio_url)}
-                    className="mt-3 mx-auto flex items-center gap-2 text-xs"
-                  >
-                    ▶ Hear it from {masterName}
-                  </GlassButton>
-                </div>
-              )}
-
-              {/* Section E — Action Buttons */}
+              {/* 5. Hero CTA — Go Light Your Flame */}
               <div className="mt-6 flex flex-col gap-3 pb-8">
                 {isReadOnly ? (
-                  <GlassButton onClick={() => navigate("/anubhav")} className="w-full">
+                  <GlassButton onClick={() => navigate("/anubhav")} className="w-full border border-foreground/15">
                     ← Back to Anubhav
                   </GlassButton>
                 ) : (
                   <>
-                    <GoldButton onClick={markDone} fullWidth>
-                      Complete Day {dayNumber} 🔥
-                    </GoldButton>
-
                     {flameExists ? (
                       <GoldCard padding="14px">
                         <div className="flex items-center justify-between">
-                          <p style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--foreground) / 0.6)" }}>🔥 Your Flame is already lit for today</p>
+                          <p style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "rgba(255,252,239,0.72)" }}>🔥 Your Flame is already lit for today</p>
                           <button onClick={() => navigate("/flame")} style={{ fontFamily: "var(--fa)", fontSize: "0.75rem", color: "hsl(var(--primary))", background: "none", border: "none", cursor: "pointer" }}>
                             View Flame →
                           </button>
                         </div>
                       </GoldCard>
                     ) : (
-                      <GlassButton onClick={() => navigate(`/flame/${dayNumber}`)} className="w-full">
-                        Go Light Your Flame 🔥
-                      </GlassButton>
+                      <motion.div whileTap={{ scale: 0.98 }}>
+                        <div
+                          onClick={() => navigate(`/flame/${dayNumber}`)}
+                          className="flex items-center gap-4 rounded-2xl p-4 cursor-pointer"
+                          style={{ border: "1.5px solid rgba(253,193,65,0.6)", background: "rgba(253,193,65,0.08)" }}
+                        >
+                          <span className="text-3xl">🔥</span>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-bold text-base" style={{ color: "hsl(var(--primary))" }}>Go Light Your Flame</span>
+                            <span className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.70)" }}>Your reflection is waiting</span>
+                            <span className="text-xs" style={{ color: "hsl(var(--primary))", opacity: 0.55 }}>Reflect · Rate · Earn your Flame</span>
+                          </div>
+                        </div>
+                      </motion.div>
                     )}
+
+                    {/* 6. Back to Home */}
+                    <GlassButton onClick={() => navigate("/dashboard")} className="w-full border border-foreground/15">
+                      ← Back to Home
+                    </GlassButton>
                   </>
                 )}
               </div>

@@ -939,6 +939,7 @@ export type Database = {
           elevenlabs_audio_url: string | null
           flame_date: string | null
           id: string
+          manthan_answer: string | null
           master_message_voice: string | null
           session_date: string | null
           spoke_about: string | null
@@ -959,6 +960,7 @@ export type Database = {
           elevenlabs_audio_url?: string | null
           flame_date?: string | null
           id?: string
+          manthan_answer?: string | null
           master_message_voice?: string | null
           session_date?: string | null
           spoke_about?: string | null
@@ -979,6 +981,7 @@ export type Database = {
           elevenlabs_audio_url?: string | null
           flame_date?: string | null
           id?: string
+          manthan_answer?: string | null
           master_message_voice?: string | null
           session_date?: string | null
           spoke_about?: string | null

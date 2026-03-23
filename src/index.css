@@ -98,6 +98,13 @@
     font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
   }
 
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #FFC300, #FFD700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   .glass-card {
     background: hsl(var(--glass-bg));
     backdrop-filter: blur(16px);
@@ -129,6 +136,17 @@
 
   .safe-top {
     padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  /* Raise minimum readable text opacity */
+  .text-foreground\/40 {
+    color: hsl(var(--foreground) / 0.60) !important;
+  }
+  .text-foreground\/50 {
+    color: hsl(var(--foreground) / 0.65) !important;
+  }
+  .text-foreground\/60 {
+    color: hsl(var(--foreground) / 0.72) !important;
   }
 }
 

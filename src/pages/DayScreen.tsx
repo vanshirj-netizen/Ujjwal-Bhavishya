@@ -333,7 +333,7 @@ const DayScreen = () => {
   if (loading) return (
     <div className="w-screen h-screen flex flex-col items-center justify-center" style={{ background: "#000e09" }}>
       <motion.span className="text-4xl text-primary" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.2, repeat: Infinity }}>✦</motion.span>
-      <p className="text-sm mt-4" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Loading your lesson...</p>
+      <p className="text-sm mt-4" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.65)" }}>Loading your lesson...</p>
     </div>
   );
 
@@ -345,7 +345,7 @@ const DayScreen = () => {
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="flex flex-col items-center text-center">
         <motion.span className="text-6xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>🔒</motion.span>
         <h1 className="text-2xl font-bold text-center mt-6" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>Day {dayNumber} is Locked</h1>
-        <p className="text-sm text-center mt-3 max-w-[280px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>
+        <p className="text-sm text-center mt-3 max-w-[280px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.68)" }}>
           You've completed your free preview. Upgrade to unlock all 60 days and continue your transformation.
         </p>
         <GoldButton onClick={() => window.open(PAYMENT_URL, "_blank")} fullWidth className="mt-8">
@@ -362,7 +362,7 @@ const DayScreen = () => {
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-50 flex flex-col items-center justify-center px-6" style={{ background: "#000e09" }}>
           <motion.span className="text-7xl" animate={{ rotate: [0, 90, 90, 0, 0] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.8 }}>📱</motion.span>
           <p className="text-xl font-bold text-center mt-6" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>✦ Rotate for Full Experience</p>
-          <p className="text-sm text-center mt-2 max-w-[260px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>Landscape mode gives you wider lessons, cinematic videos, and a better quiz experience.</p>
+          <p className="text-sm text-center mt-2 max-w-[260px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.68)" }}>Landscape mode gives you wider lessons, cinematic videos, and a better quiz experience.</p>
           <GoldButton className="mt-8">I'll Rotate My Phone →</GoldButton>
           <GlassButton onClick={() => { setShowRotatePrompt(false); setRotatePromptDismissed(true); }} className="mt-4 text-xs">Continue in portrait →</GlassButton>
         </motion.div>
@@ -388,10 +388,8 @@ const DayScreen = () => {
       <motion.div initial={{ opacity: 0, scale: 0.8, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, type: "spring" }} className="relative z-10 flex flex-col items-center text-center">
         <motion.span className="text-8xl font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300", filter: "drop-shadow(0 0 40px hsl(var(--primary)))" }} initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ type: "spring", delay: 0.4 }}>✦</motion.span>
         <h1 className="text-3xl font-bold mt-4" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Day {dayNumber} Complete!</h1>
-        <div className="mt-4 flex items-center gap-2 justify-center">
-          <span className="text-2xl">🔥</span>
-          <span ref={streakRef} className="text-2xl font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>{currentStreak}</span>
-          <span className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>day streak</span>
+        <div className="mt-4 text-center">
+          <span className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.72)" }}>Day {dayNumber} of 60 ✓</span>
         </div>
         <div className="w-16 h-px mx-auto mt-6 mb-6" style={{ background: "rgba(253,193,65,0.3)" }} />
 
@@ -404,7 +402,7 @@ const DayScreen = () => {
                   <span className="text-3xl">🎯</span>
                   <div className="text-left">
                     <p className="font-bold text-base" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Start Your Practice</p>
-                    <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>Write → Speak → Get AI feedback from your Master</p>
+                    <p className="text-xs mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.65)" }}>Write → Speak → Get AI feedback from your Master</p>
                     <p className="text-xs font-semibold mt-2" style={{ fontFamily: "var(--fa)", color: "#ffc300" }}>Write · Record · Scored · AI Feedback</p>
                   </div>
                 </div>
@@ -444,7 +442,7 @@ const DayScreen = () => {
 
         {!practiceAttemptLoading && !maxReached && !thisDayHasSession && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
-            <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm">← Back to Home</GlassButton>
+            <GlassButton onClick={() => navigate("/dashboard")} className="mt-4 text-sm border border-foreground/15">← Back to Home</GlassButton>
           </motion.div>
         )}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}>
@@ -454,7 +452,7 @@ const DayScreen = () => {
               setCurrentStep(1);
               setCompletedSteps([]);
             }}
-            className="mt-3 text-sm"
+            className="mt-3 text-sm border border-foreground/15"
           >
             ↺ Replay Day {dayNumber}
           </GlassButton>

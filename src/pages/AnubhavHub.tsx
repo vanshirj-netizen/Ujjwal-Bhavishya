@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PAYMENT_URL } from "@/lib/constants";
 import { useActiveCourse } from "@/components/CourseSwitcher";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import BottomNav from "@/components/BottomNav";
 import PageHeader from "@/components/PageHeader";
 import GoldCard from "@/components/ui/GoldCard";
@@ -27,6 +28,7 @@ const AnubhavHub = () => {
   const [practiceMap, setPracticeMap] = useState<Record<number, PracticeInfo>>({});
   const [flameMap, setFlameMap] = useState<Record<number, boolean>>({});
   const [weekData, setWeekData] = useState<Record<number, string>>({});
+  const [scoreChartData, setScoreChartData] = useState<{ name: string; score: number }[]>([]);
 
   // Stats
   const [daysPracticed, setDaysPracticed] = useState(0);
@@ -76,6 +78,16 @@ const AnubhavHub = () => {
         });
         setPracticeMap(pMap);
         setDaysPracticed(daySet.size);
+        setTotalSessions(sessions.length);
+
+        // Compute chart data from practiceMap
+        const cData = Object.entries(pMap)
+          .sort(([a], [b]) => Number(a) - Number(b))
+          .map(([day, data]) => ({
+            name: `Day ${day}`,
+            score: data.bestScore ?? 0,
+          }));
+        setScoreChartData(cData);
         setTotalSessions(sessions.length);
 
         // Avg score from best attempts
@@ -139,7 +151,7 @@ const AnubhavHub = () => {
   return (
     <div className="min-h-screen pb-24 safe-top relative z-[2]">
       <div className="px-5 pt-6 max-w-lg mx-auto">
-        <PageHeader title={`${firstName} Anubhav`} />
+        <PageHeader title={<><span className="text-gradient-gold">{firstName}</span> Anubhav</>} />
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mt-5">
@@ -153,12 +165,38 @@ const AnubhavHub = () => {
                 <div className="text-center">
                   <span className="text-lg">{s.icon}</span>
                   <p className="font-display text-base font-bold mt-1" style={{ background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.value}</p>
-                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.5)" }}>{s.label}</p>
+                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.68)" }}>{s.label}</p>
                 </div>
               </GoldCard>
             </motion.div>
           ))}
         </div>
+
+        {/* Score Journey Chart */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="mt-6">
+          <GoldCard padding="20px">
+            <p className="text-[10px] uppercase tracking-wider mb-4" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.60)", letterSpacing: "3px" }}>Your Score Journey</p>
+            {scoreChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={scoreChartData}>
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: "#fffcef" }}
+                    itemStyle={{ color: "#fed141" }}
+                    formatter={(value: number) => [`${value}/100`, "Score"]}
+                  />
+                  <Line type="monotone" dataKey="score" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-40 flex items-center justify-center text-sm" style={{ color: "rgba(255,252,239,0.55)" }}>
+                Complete your first Anubhav to see your score chart 📈
+              </div>
+            )}
+          </GoldCard>
+        </motion.div>
 
         {/* 60-Day Visual Map */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6">
@@ -174,7 +212,7 @@ const AnubhavHub = () => {
                 <React.Fragment key={day}>
                   {showWeekLabel && day <= 60 && (
                     <div className="col-span-6 mt-2 mb-1 first:mt-0">
-                      <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,252,239,0.3)", fontFamily: "var(--fa)" }}>
+                      <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,252,239,0.55)", fontFamily: "var(--fa)" }}>
                         Week {weekNum} {weekData[weekNum] ? `· ${weekData[weekNum]}` : ""}
                       </p>
                     </div>
@@ -215,7 +253,7 @@ const AnubhavHub = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 text-center pb-4">
-          <p className="text-xs" style={{ color: "rgba(255,252,239,0.3)" }}>Complete each day's lesson to unlock Anubhav practice 🎯</p>
+          <p className="text-xs" style={{ color: "rgba(255,252,239,0.55)" }}>Complete each day's lesson to unlock Anubhav practice 🎯</p>
         </motion.div>
       </div>
       <BottomNav />

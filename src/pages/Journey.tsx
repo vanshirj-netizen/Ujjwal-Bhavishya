@@ -86,8 +86,8 @@ const Journey = () => {
   return (
     <div className="min-h-screen pb-24 safe-top relative z-[2]">
       <div className="px-5 pt-6 max-w-lg mx-auto">
-        <PageHeader title={`${firstName} Journey`} />
-        <p className="text-sm mt-2" style={{ color: "rgba(255,252,239,0.4)", fontFamily: "var(--fb)" }}>Day {currentDay} of 60</p>
+        <PageHeader title={<><span className="text-gradient-gold">{firstName}</span> Journey</>} />
+        <p className="text-sm mt-2" style={{ color: "rgba(255,252,239,0.55)", fontFamily: "var(--fb)" }}>Day {currentDay} of 60</p>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 mt-5">
@@ -101,7 +101,7 @@ const Journey = () => {
                 <div className="text-center">
                   <span className="text-lg">{s.icon}</span>
                   <p className="font-display text-base font-bold mt-1" style={{ background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.value}</p>
-                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.5)" }}>{s.label}</p>
+                  <p className="text-[10px]" style={{ color: "rgba(255,252,239,0.68)" }}>{s.label}</p>
                 </div>
               </GoldCard>
             </motion.div>
@@ -121,7 +121,7 @@ const Journey = () => {
                 <React.Fragment key={day}>
                   {showWeekLabel && day <= 60 && (
                     <div className="col-span-6 mt-2 mb-1 first:mt-0">
-                      <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,252,239,0.3)", fontFamily: "var(--fa)" }}>
+                      <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,252,239,0.55)", fontFamily: "var(--fa)" }}>
                         Week {weekNum} {weekData[weekNum] ? `· ${weekData[weekNum]}` : ""}
                       </p>
                     </div>
@@ -158,8 +158,8 @@ const Journey = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 text-center pb-4">
-          <p className="text-xs" style={{ color: "rgba(255,252,239,0.3)" }}>Complete each day to unlock the next 🔓</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,252,239,0.3)" }}>Next day unlocks at 05:30 AM after completion 🌅</p>
+          <p className="text-xs" style={{ color: "rgba(255,252,239,0.55)" }}>Complete each day to unlock the next 🔓</p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,252,239,0.55)" }}>Next day unlocks at 05:30 AM after completion 🌅</p>
         </motion.div>
       </div>
       <BottomNav />
