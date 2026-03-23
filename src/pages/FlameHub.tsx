@@ -171,7 +171,7 @@ const FlameHub = () => {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-40 flex items-center justify-center text-sm" style={{ color: "rgba(255,252,239,0.3)" }}>
+              <div className="h-40 flex items-center justify-center text-sm" style={{ color: "rgba(255,252,239,0.55)" }}>
                 Submit your first Flame to see your confidence chart 📈
               </div>
             )}
