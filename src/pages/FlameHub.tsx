@@ -194,7 +194,7 @@ const FlameHub = () => {
                 <React.Fragment key={day}>
                   {showWeekLabel && day <= 60 && (
                     <div className="col-span-6 mt-2 mb-1 first:mt-0">
-                      <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,252,239,0.3)", fontFamily: "var(--fa)" }}>
+                      <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,252,239,0.55)", fontFamily: "var(--fa)" }}>
                         Week {weekNum} {weekData[weekNum] ? `· ${weekData[weekNum]}` : ""}
                       </p>
                     </div>
