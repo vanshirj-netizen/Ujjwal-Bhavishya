@@ -269,7 +269,7 @@ const Profile = () => {
               <p className="text-sm" style={{ color: "rgba(255,252,239,0.7)" }}>My Background</p>
               {motherTongueDisplay && (
                 <div className="flex justify-between text-xs mt-2">
-                  <span style={{ color: "rgba(255,252,239,0.4)" }}>Mother Tongue</span>
+                  <span style={{ color: "rgba(255,252,239,0.65)" }}>Mother Tongue</span>
                   <span style={{ color: "rgba(255,252,239,0.6)" }}>{motherTongueDisplay}</span>
                 </div>
               )}
