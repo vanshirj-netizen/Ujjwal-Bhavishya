@@ -61,6 +61,11 @@ const FlamePage = () => {
   const [biggestChallenge, setBiggestChallenge] = useState("");
   const [tomorrowsIntention, setTomorrowsIntention] = useState("");
 
+  // Manthan flow states
+  const [recapPoints, setRecapPoints] = useState<string[]>([]);
+  const [manthanQuestion, setManthanQuestion] = useState("");
+  const [manthanAnswer, setManthanAnswer] = useState("");
+
   const [aiResponse, setAiResponse] = useState("");
   const [flameId, setFlameId] = useState<string | null>(null);
   const [streakCount, setStreakCount] = useState(0);

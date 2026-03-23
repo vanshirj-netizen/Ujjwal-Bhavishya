@@ -131,7 +131,7 @@ const FlameHub = () => {
   return (
     <div className="min-h-screen pb-24 safe-top relative z-[2]">
       <div className="px-5 pt-6 max-w-lg mx-auto">
-        <PageHeader title={`${firstName}'s Flame`} />
+        <PageHeader title={<><span className="text-gradient-gold">{firstName}'s</span> Flame</>} />
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mt-5">

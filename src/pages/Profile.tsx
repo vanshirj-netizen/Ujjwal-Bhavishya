@@ -133,7 +133,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen pb-24 safe-top relative z-[2]">
       <div className="px-5 pt-6 max-w-lg mx-auto">
-        <PageHeader title={`${displayName.split(" ")[0]}'s Profile`} />
+        <PageHeader title={<><span className="text-gradient-gold">{displayName.split(" ")[0]}'s</span> Profile</>} />
 
         {/* Profile Card */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-4">
