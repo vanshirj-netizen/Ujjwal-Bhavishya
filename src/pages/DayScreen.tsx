@@ -388,10 +388,8 @@ const DayScreen = () => {
       <motion.div initial={{ opacity: 0, scale: 0.8, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, type: "spring" }} className="relative z-10 flex flex-col items-center text-center">
         <motion.span className="text-8xl font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300", filter: "drop-shadow(0 0 40px hsl(var(--primary)))" }} initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ type: "spring", delay: 0.4 }}>✦</motion.span>
         <h1 className="text-3xl font-bold mt-4" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>Day {dayNumber} Complete!</h1>
-        <div className="mt-4 flex items-center gap-2 justify-center">
-          <span className="text-2xl">🔥</span>
-          <span ref={streakRef} className="text-2xl font-bold" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>{currentStreak}</span>
-          <span className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>day streak</span>
+        <div className="mt-4 text-center">
+          <span className="text-sm" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.72)" }}>Day {dayNumber} of 60 ✓</span>
         </div>
         <div className="w-16 h-px mx-auto mt-6 mb-6" style={{ background: "rgba(253,193,65,0.3)" }} />
 
