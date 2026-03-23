@@ -345,7 +345,7 @@ const DayScreen = () => {
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="flex flex-col items-center text-center">
         <motion.span className="text-6xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>🔒</motion.span>
         <h1 className="text-2xl font-bold text-center mt-6" style={{ fontFamily: "var(--fd)", color: "#ffc300" }}>Day {dayNumber} is Locked</h1>
-        <p className="text-sm text-center mt-3 max-w-[280px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.5)" }}>
+        <p className="text-sm text-center mt-3 max-w-[280px] leading-relaxed" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.68)" }}>
           You've completed your free preview. Upgrade to unlock all 60 days and continue your transformation.
         </p>
         <GoldButton onClick={() => window.open(PAYMENT_URL, "_blank")} fullWidth className="mt-8">
