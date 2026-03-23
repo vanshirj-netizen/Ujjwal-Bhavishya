@@ -256,7 +256,7 @@ const Profile = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm" style={{ color: "rgba(255,252,239,0.7)" }}>WhatsApp Updates</p>
-                <p className="text-xs" style={{ color: "rgba(255,252,239,0.4)" }}>Progress nudges and encouragement</p>
+                <p className="text-xs" style={{ color: "rgba(255,252,239,0.65)" }}>Progress nudges and encouragement</p>
               </div>
               <button onClick={() => saveWhatsapp(!whatsappOn)} className={`relative w-11 h-6 rounded-full transition-all duration-300 ${whatsappOn ? "bg-primary" : ""}`} style={!whatsappOn ? { background: "rgba(255,252,239,0.15)" } : {}}>
                 <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-transform duration-300 ${whatsappOn ? "translate-x-5" : "translate-x-0.5"}`} style={{ background: "#000e09" }} />
