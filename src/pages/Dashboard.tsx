@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PAYMENT_URL } from "@/lib/constants";
-import { useActiveCourse } from "@/components/CourseSwitcher";
+import CourseSwitcher, { useActiveCourse } from "@/components/CourseSwitcher";
 import BottomNav from "@/components/BottomNav";
 import PageHeader from "@/components/PageHeader";
 import GoldCard from "@/components/ui/GoldCard";
