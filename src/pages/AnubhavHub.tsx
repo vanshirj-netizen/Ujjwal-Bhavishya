@@ -29,6 +29,7 @@ const AnubhavHub = () => {
   const [flameMap, setFlameMap] = useState<Record<number, boolean>>({});
   const [weekData, setWeekData] = useState<Record<number, string>>({});
   const [scoreChartData, setScoreChartData] = useState<{ name: string; score: number }[]>([]);
+  const [lessonMap, setLessonMap] = useState<Record<number, boolean>>({});
 
   // Stats
   const [daysPracticed, setDaysPracticed] = useState(0);
