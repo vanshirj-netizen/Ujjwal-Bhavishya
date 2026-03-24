@@ -236,21 +236,29 @@ const AnubhavHub = () => {
                       state === "completed" ? "border border-primary/40"
                         : state === "current" ? "border-2 border-primary pulse-gold"
                         : state === "unlocked" ? "border border-primary/20"
+                        : state === "lesson_pending" ? "border border-foreground/12 opacity-60"
                         : state === "locked_payment" ? "border border-primary/10 opacity-50"
                         : "opacity-25"
                     }`}
-                    style={{ background: state === "completed" ? "rgba(253,193,65,0.08)" : state === "unlocked" ? "rgba(253,193,65,0.03)" : "rgba(255,252,239,0.03)" }}
+                    style={{ background: state === "completed" ? "rgba(253,193,65,0.08)" : state === "lesson_pending" ? "rgba(255,252,239,0.02)" : state === "unlocked" ? "rgba(253,193,65,0.03)" : "rgba(255,252,239,0.03)" }}
                   >
                     {state === "current" && (
                       <span className="absolute -top-2 text-[8px] font-bold" style={{ color: "#ffc300", fontFamily: "var(--fa)" }}>TODAY</span>
                     )}
-                    <span className={`font-bold ${
-                      state === "completed" || state === "current" ? "text-primary"
-                        : state === "unlocked" ? "text-foreground/60"
-                        : "text-foreground/20"
-                    }`}>
-                      {state === "completed" ? day : state === "locked_payment" ? "🔒" : state === "locked" ? day : day}
-                    </span>
+                    {state === "lesson_pending" ? (
+                      <>
+                        <span className="text-[10px]">📖</span>
+                        <span className="font-bold text-foreground/40">{day}</span>
+                      </>
+                    ) : (
+                      <span className={`font-bold ${
+                        state === "completed" || state === "current" ? "text-primary"
+                          : state === "unlocked" ? "text-foreground/60"
+                          : "text-foreground/20"
+                      }`}>
+                        {state === "completed" ? day : state === "locked_payment" ? "🔒" : day}
+                      </span>
+                    )}
                     {state === "completed" && practice?.bestScore != null && (
                       <span className="text-[7px] text-primary/60">{practice.bestScore}</span>
                     )}
