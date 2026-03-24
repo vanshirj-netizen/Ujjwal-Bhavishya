@@ -100,7 +100,7 @@ serve(async (req) => {
     motherTongue,
   } = await req.json();
 
-  const userId = bodyUserId || authUserId;
+  const userId = authUserId; // Always use JWT-verified identity, never trust body
   const effectiveCourseId = courseId || "6a860163-ea3c-4205-89b3-74a3e9be098f";
   const effectiveMasterName = (masterName ?? "gyani").toLowerCase();
   const effectiveAttempt = attemptNumber ?? 1;

@@ -66,7 +66,7 @@ serve(async (req) => {
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, SERVICE_ROLE_KEY);
 
-    const effectiveUserId = bodyUserId || userId;
+    const effectiveUserId = userId; // Always use JWT-verified identity, never trust body
     const effectiveCourseId = courseId || "6a860163-ea3c-4205-89b3-74a3e9be098f";
     const effectiveMasterName = masterName || "Gyani";
 
