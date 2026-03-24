@@ -114,6 +114,22 @@ const AnubhavPage = () => {
       if (!user) { navigate("/"); return; }
       setUserId(user.id);
 
+      // Lesson gate check
+      if (!isReadOnly) {
+        const { data: progressCheck } = await supabase
+          .from("progress")
+          .select("lesson_complete")
+          .eq("user_id", user.id)
+          .eq("day_number", Number(dayNumber))
+          .maybeSingle();
+
+        if (!progressCheck?.lesson_complete) {
+          toast(`Complete Day ${dayNumber}'s lesson first 📖`);
+          navigate(`/day/${dayNumber}`);
+          return;
+        }
+      }
+
       const { data: profileData } = await supabase
         .from("profiles")
         .select("full_name, selected_master, primary_goal, mti_zone, mother_tongue, childhood_state, chosen_world")
