@@ -139,6 +139,10 @@ const AnubhavHub = () => {
       case "unlocked":
         navigate(`/anubhav/${day}`);
         break;
+      case "lesson_pending":
+        toast(`Complete Day ${day}'s lesson first 📖`);
+        navigate(`/day/${day}`);
+        break;
       case "locked_payment":
         window.open(PAYMENT_URL, "_blank");
         break;
