@@ -111,6 +111,11 @@ const AnubhavHub = () => {
         const wMap: Record<number, string> = {};
         weeksRes.data?.forEach(w => { wMap[w.week_number] = w.theme_name; });
         setWeekData(wMap);
+
+        // Lesson progress map
+        const lMap: Record<number, boolean> = {};
+        lessonProgressRes.data?.forEach(row => { lMap[row.day_number] = row.lesson_complete === true; });
+        setLessonMap(lMap);
       } catch { /* silent */ } finally { setLoading(false); }
     };
     load();
