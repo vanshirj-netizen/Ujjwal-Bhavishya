@@ -121,11 +121,12 @@ const AnubhavHub = () => {
     load();
   }, [location.key, courseId]);
 
-  const getDayState = (day: number): "completed" | "current" | "unlocked" | "locked_payment" | "locked" => {
+  const getDayState = (day: number): "completed" | "current" | "unlocked" | "locked_payment" | "locked" | "lesson_pending" => {
     if (practiceMap[day]) return "completed";
     if (paymentStatus === "free" && day > 5) return "locked_payment";
-    if (day === currentDay) return "current";
-    if (day < currentDay) return "unlocked";
+    if (day <= currentDay && !lessonMap[day] && !practiceMap[day]) return "lesson_pending";
+    if (day === currentDay && lessonMap[day]) return "current";
+    if (day < currentDay && lessonMap[day]) return "unlocked";
     return "locked";
   };
 
