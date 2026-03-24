@@ -41,6 +41,9 @@ serve(async (req) => {
       manthanQuestion,
       manthanAnswer,
       compositeScore,
+      recapPoint1,
+      recapPoint2,
+      recapPoint3,
       // Legacy fields (kept for backward compat)
       studentName,
       lessonTitle,
