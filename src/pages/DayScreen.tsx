@@ -258,7 +258,7 @@ const DayScreen = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const updateMap: Record<number, any> = {
-        1: { gamma_complete: true },
+        1: { gamma_complete: true, lesson_complete: true },
         2: { gyani_complete: true, master_watched: true },
         3: { gyanu_complete: true },
         4: { quiz_complete: true },

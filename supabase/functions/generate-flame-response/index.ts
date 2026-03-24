@@ -41,6 +41,9 @@ serve(async (req) => {
       manthanQuestion,
       manthanAnswer,
       compositeScore,
+      recapPoint1,
+      recapPoint2,
+      recapPoint3,
       // Legacy fields (kept for backward compat)
       studentName,
       lessonTitle,
@@ -155,6 +158,14 @@ TODAY'S SCORE: ${effectiveComposite}/100
 CONFIDENCE: ${effectiveConfidence}/5
 FELT SCORE: ${Math.round(feltScore)}/100
 GAP: ${gap > 0 ? "+" : ""}${Math.round(gap)} — ${gapContext}
+
+STUDENT'S MANTHAN (REFLECTION):
+What they reflected on: ${manthanAnswer || "not provided"}
+Their 3 key takeaways from today:
+  1. ${recapPoint1 || "not provided"}
+  2. ${recapPoint2 || "not provided"}
+  3. ${recapPoint3 || "not provided"}
+Confidence rating (1-5 stars): ${effectiveConfidence}
 
 MANTHAN QUESTION: ${manthanQuestion || "N/A"}
 STUDENT ANSWER: ${manthanAnswer || "N/A"}

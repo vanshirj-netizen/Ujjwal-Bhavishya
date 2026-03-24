@@ -114,6 +114,22 @@ const AnubhavPage = () => {
       if (!user) { navigate("/"); return; }
       setUserId(user.id);
 
+      // Lesson gate check
+      if (!isReadOnly) {
+        const { data: progressCheck } = await supabase
+          .from("progress")
+          .select("lesson_complete")
+          .eq("user_id", user.id)
+          .eq("day_number", Number(dayNumber))
+          .maybeSingle();
+
+        if (!progressCheck?.lesson_complete) {
+          toast(`Complete Day ${dayNumber}'s lesson first 📖`);
+          navigate(`/day/${dayNumber}`);
+          return;
+        }
+      }
+
       const { data: profileData } = await supabase
         .from("profiles")
         .select("full_name, selected_master, primary_goal, mti_zone, mother_tongue, childhood_state, chosen_world")
@@ -1091,7 +1107,7 @@ const AnubhavPage = () => {
                 </div>
               )}
 
-              {/* 5. Hero CTA — Go Light Your Flame */}
+              {/* 5. Retake + Hero CTA */}
               <div className="mt-6 flex flex-col gap-3 pb-8">
                 {isReadOnly ? (
                   <GlassButton onClick={() => navigate("/anubhav")} className="w-full border border-foreground/15">
@@ -1099,6 +1115,20 @@ const AnubhavPage = () => {
                   </GlassButton>
                 ) : (
                   <>
+                    {/* Retake button */}
+                    {todaySessionsCount < 3 ? (
+                      <GoldButton onClick={() => navigate(`/anubhav/${dayNumber}`)} className="w-full">
+                        🔄 Retake Session ({todaySessionsCount}/3)
+                      </GoldButton>
+                    ) : (
+                      <div className="text-center">
+                        <GoldButton disabled className="w-full opacity-40 cursor-not-allowed">
+                          Max sessions reached today (3/3)
+                        </GoldButton>
+                        <p className="text-xs mt-1.5" style={{ color: "rgba(255,252,239,0.60)" }}>Come back tomorrow 💪</p>
+                      </div>
+                    )}
+
                     {flameExists ? (
                       <GoldCard padding="14px">
                         <div className="flex items-center justify-between">

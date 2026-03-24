@@ -29,6 +29,7 @@ const AnubhavHub = () => {
   const [flameMap, setFlameMap] = useState<Record<number, boolean>>({});
   const [weekData, setWeekData] = useState<Record<number, string>>({});
   const [scoreChartData, setScoreChartData] = useState<{ name: string; score: number }[]>([]);
+  const [lessonMap, setLessonMap] = useState<Record<number, boolean>>({});
 
   // Stats
   const [daysPracticed, setDaysPracticed] = useState(0);
@@ -41,13 +42,14 @@ const AnubhavHub = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const [profileRes, enrollRes, sessionsRes, flameRes, weeksRes, bestAttemptsRes] = await Promise.all([
+        const [profileRes, enrollRes, sessionsRes, flameRes, weeksRes, bestAttemptsRes, lessonProgressRes] = await Promise.all([
           supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
           supabase.from("enrollments").select("current_day, payment_status").eq("user_id", user.id).eq("is_active", true).eq("course_id", courseId).maybeSingle(),
           supabase.from("practice_sessions").select("day_number, composite_score, is_best_attempt, master_message").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete"),
           supabase.from("reflection_sessions").select("day_number").eq("user_id", user.id).eq("course_id", courseId),
           supabase.from("course_weeks").select("week_number, theme_name").eq("course_id", courseId).order("week_number", { ascending: true }),
           supabase.from("practice_sessions").select("composite_score").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete").eq("is_best_attempt", true),
+          supabase.from("progress").select("day_number, lesson_complete").eq("user_id", user.id),
         ]);
 
         // Profile
@@ -109,16 +111,22 @@ const AnubhavHub = () => {
         const wMap: Record<number, string> = {};
         weeksRes.data?.forEach(w => { wMap[w.week_number] = w.theme_name; });
         setWeekData(wMap);
+
+        // Lesson progress map
+        const lMap: Record<number, boolean> = {};
+        lessonProgressRes.data?.forEach(row => { lMap[row.day_number] = row.lesson_complete === true; });
+        setLessonMap(lMap);
       } catch { /* silent */ } finally { setLoading(false); }
     };
     load();
   }, [location.key, courseId]);
 
-  const getDayState = (day: number): "completed" | "current" | "unlocked" | "locked_payment" | "locked" => {
+  const getDayState = (day: number): "completed" | "current" | "unlocked" | "locked_payment" | "locked" | "lesson_pending" => {
     if (practiceMap[day]) return "completed";
     if (paymentStatus === "free" && day > 5) return "locked_payment";
-    if (day === currentDay) return "current";
-    if (day < currentDay) return "unlocked";
+    if (day <= currentDay && !lessonMap[day] && !practiceMap[day]) return "lesson_pending";
+    if (day === currentDay && lessonMap[day]) return "current";
+    if (day < currentDay && lessonMap[day]) return "unlocked";
     return "locked";
   };
 
@@ -130,6 +138,10 @@ const AnubhavHub = () => {
       case "current":
       case "unlocked":
         navigate(`/anubhav/${day}`);
+        break;
+      case "lesson_pending":
+        toast(`Complete Day ${day}'s lesson first 📖`);
+        navigate(`/day/${day}`);
         break;
       case "locked_payment":
         window.open(PAYMENT_URL, "_blank");
@@ -180,7 +192,7 @@ const AnubhavHub = () => {
               <ResponsiveContainer width="100%" height={160}>
                 <LineChart data={scoreChartData}>
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[(() => { const scores = scoreChartData.map(d => d.score); return Math.max(0, Math.min(...scores) - 10); })(), (() => { const scores = scoreChartData.map(d => d.score); return Math.min(100, Math.max(...scores) + 10); })()]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: "#fffcef" }}
@@ -224,21 +236,29 @@ const AnubhavHub = () => {
                       state === "completed" ? "border border-primary/40"
                         : state === "current" ? "border-2 border-primary pulse-gold"
                         : state === "unlocked" ? "border border-primary/20"
+                        : state === "lesson_pending" ? "border border-foreground/12 opacity-60"
                         : state === "locked_payment" ? "border border-primary/10 opacity-50"
                         : "opacity-25"
                     }`}
-                    style={{ background: state === "completed" ? "rgba(253,193,65,0.08)" : state === "unlocked" ? "rgba(253,193,65,0.03)" : "rgba(255,252,239,0.03)" }}
+                    style={{ background: state === "completed" ? "rgba(253,193,65,0.08)" : state === "lesson_pending" ? "rgba(255,252,239,0.02)" : state === "unlocked" ? "rgba(253,193,65,0.03)" : "rgba(255,252,239,0.03)" }}
                   >
                     {state === "current" && (
                       <span className="absolute -top-2 text-[8px] font-bold" style={{ color: "#ffc300", fontFamily: "var(--fa)" }}>TODAY</span>
                     )}
-                    <span className={`font-bold ${
-                      state === "completed" || state === "current" ? "text-primary"
-                        : state === "unlocked" ? "text-foreground/60"
-                        : "text-foreground/20"
-                    }`}>
-                      {state === "completed" ? day : state === "locked_payment" ? "🔒" : state === "locked" ? day : day}
-                    </span>
+                    {state === "lesson_pending" ? (
+                      <>
+                        <span className="text-[10px]">📖</span>
+                        <span className="font-bold text-foreground/40">{day}</span>
+                      </>
+                    ) : (
+                      <span className={`font-bold ${
+                        state === "completed" || state === "current" ? "text-primary"
+                          : state === "unlocked" ? "text-foreground/60"
+                          : "text-foreground/20"
+                      }`}>
+                        {state === "completed" ? day : state === "locked_payment" ? "🔒" : day}
+                      </span>
+                    )}
                     {state === "completed" && practice?.bestScore != null && (
                       <span className="text-[7px] text-primary/60">{practice.bestScore}</span>
                     )}

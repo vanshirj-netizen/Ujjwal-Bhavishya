@@ -255,6 +255,11 @@ const FlamePage = () => {
             spokeAbout,
             biggestChallenge,
             tomorrowsIntention,
+            manthanAnswer,
+            manthanQuestion,
+            recapPoint1: recapPoints?.[0] ?? "",
+            recapPoint2: recapPoints?.[1] ?? "",
+            recapPoint3: recapPoints?.[2] ?? "",
             writtenSentences: sentencesList,
           }),
         }
@@ -353,7 +358,9 @@ const FlamePage = () => {
 
     try {
       const { data: existing } = await supabase.from("progress")
-        .select("id").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle();
+        .select("id, day_complete").eq("user_id", user.id).eq("day_number", Number(dayNumber)).maybeSingle();
+
+      const wasAlreadyComplete = existing?.day_complete === true;
 
       if (existing) {
         await supabase.from("progress").update({
@@ -383,15 +390,17 @@ const FlamePage = () => {
 
       setStreakCount(streak);
 
-      const nextDay = Number(dayNumber) + 1;
-      const { data: enroll } = await supabase.from("enrollments")
-        .select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
-      if (enroll) {
-        await supabase.rpc('update_own_enrollment_safe', {
-          p_enrollment_id: enroll.id,
-          p_current_day: nextDay,
-          p_days_completed: Number(dayNumber),
-        });
+      if (!wasAlreadyComplete) {
+        const nextDay = Number(dayNumber) + 1;
+        const { data: enroll } = await supabase.from("enrollments")
+          .select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+        if (enroll) {
+          await supabase.rpc('update_own_enrollment_safe', {
+            p_enrollment_id: enroll.id,
+            p_current_day: nextDay,
+            p_days_completed: Number(dayNumber),
+          });
+        }
       }
 
       toast.success(`🔥 Day ${dayNumber} complete! Streak: ${streak}`);
