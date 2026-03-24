@@ -255,6 +255,11 @@ const FlamePage = () => {
             spokeAbout,
             biggestChallenge,
             tomorrowsIntention,
+            manthanAnswer,
+            manthanQuestion,
+            recapPoint1: recapPoints?.[0] ?? "",
+            recapPoint2: recapPoints?.[1] ?? "",
+            recapPoint3: recapPoints?.[2] ?? "",
             writtenSentences: sentencesList,
           }),
         }

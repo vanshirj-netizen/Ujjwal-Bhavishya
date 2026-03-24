@@ -160,9 +160,12 @@ const Dashboard = () => {
     <div className="min-h-screen pb-[100px] safe-top relative z-[2]">
       <div className="px-5 pt-8 max-w-lg mx-auto">
         {/* HEADER */}
-        <h1 className="font-display text-4xl font-extrabold leading-tight" style={{ color: "hsl(var(--foreground))" }}>
-          Namaste <span className="text-gradient-gold">{firstName || "Friend"}</span>!
-        </h1>
+        <div className="flex justify-between items-start">
+          <h1 className="font-display text-4xl font-extrabold leading-tight" style={{ color: "hsl(var(--foreground))" }}>
+            Namaste <span className="text-gradient-gold">{firstName || "Friend"}</span>!
+          </h1>
+          <CourseSwitcher />
+        </div>
 
         {/* SUBHEADER */}
         <motion.p

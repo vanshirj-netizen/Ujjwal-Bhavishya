@@ -192,7 +192,7 @@ const AnubhavHub = () => {
               <ResponsiveContainer width="100%" height={160}>
                 <LineChart data={scoreChartData}>
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[(() => { const scores = scoreChartData.map(d => d.score); return Math.max(0, Math.min(...scores) - 10); })(), (() => { const scores = scoreChartData.map(d => d.score); return Math.min(100, Math.max(...scores) + 10); })()]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: "#fffcef" }}
