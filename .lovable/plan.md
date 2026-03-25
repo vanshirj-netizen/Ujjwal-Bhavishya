@@ -1,119 +1,97 @@
 
 
-# 8 Precise Fixes — Implementation Plan
+# Anubhav Evaluate Edge Function — 3-Phase Overhaul
 
-## Files being changed (6 files)
-
-1. `src/pages/DayScreen.tsx`
-2. `src/pages/FlamePage.tsx`
-3. `src/pages/AnubhavHub.tsx`
-4. `src/pages/AnubhavPage.tsx`
-5. `src/pages/Dashboard.tsx`
-6. `supabase/functions/generate-flame-response/index.ts`
+## Single file changed: `supabase/functions/anubhav-evaluate/index.ts`
+## Database migrations needed for Phase 2 (3 new columns on `practice_sessions`, 3 on `lessons`)
 
 ---
 
-## FIX 1 — DayScreen.tsx: Set lesson_complete on lesson completion
+## PHASE 1 — Critical Fixes (Changes 1–6)
 
-**Where**: `completeStep()` function (line 255), specifically when step 1 is completed (the Gamma lesson iframe step).
+### Change 1: World recordings only in Call 1 (lines 174-177)
+Replace `allRecordings` to include ONLY `worldRecordings`. Remove `writingRecordings` from audio download array. Update Call 1 reference sentences (line 222) to use world recording sentences instead of `writtenSentences`.
 
-**Problem**: `lesson_complete` is never set, so Anubhav stays locked.
+### Change 2: Clean written sentences in Call 2 (lines 323-324)
+Replace `"WRITING RECORDINGS"` JSON dump with a numbered plain-text list of sentences only (no audioPath). Label: `"WRITTEN SENTENCES"`. If empty → `"WRITTEN SENTENCES: None submitted this session."`
 
-**Change**: After `completeStep(1)` succeeds (the "I've Completed the Lesson ✦" button), upsert `lesson_complete: true` into the progress table. This is step 1 specifically — the Gamma lesson. The existing `completeStep` already does upsert logic for `gamma_complete`, so we add `lesson_complete: true` to the same update payload for step 1.
+### Change 3: Remove max_tokens from Call 2 (line 403)
+Delete `max_tokens: 1200` from the Call 2 fetch body. Keep it on Call 1 (line 276).
 
-In `updateMap` (line 260-265), change step 1 from `{ gamma_complete: true }` to `{ gamma_complete: true, lesson_complete: true }`.
+### Change 4: Update evaluate_practice tool schema (lines 382-397)
+- Add `isCorrect` (boolean) and `correctedVersion` (string) to writingChecks item, all 5 fields required
+- Add 5 new top-level properties: `grammar_score`, `completeness_score`, `writing_composite_score`, `ai_summary`, `coaching_focus`
+- Update required array to include all 10 fields
+
+### Change 5: Call 1 failure defaults → null (lines 208-212, 110-114)
+- Change default scores from 50 to `null`
+- Rename `audioEvalFailed` → `audioEvalSkipped`
+- When `audioEvalSkipped`, replace scores block in Call 2 with `"SPEAKING EVALUATION: Audio unavailable this session."`
+- Compute `compositeScore` only when scores are non-null; otherwise null
+- Update `normalizeScore` fallback from 50 → null (but only used on Call 1 success path)
+- Update fallback response scores from 50 → null
+
+### Change 6: Handle missing activities gracefully
+- If `worldRecordings` empty → skip Call 1, set `audioEvalSkipped = true`, all scores null, wordErrors = []
+- If `writtenSentences` empty → include "None submitted" in Call 2, expect null writing scores back
+- Neither activity → still run Call 2 for master message, never throw
 
 ---
 
-## FIX 2 — FlamePage.tsx: Guard enrollment increment
+## PHASE 2 — Schema Additions (Changes 7–10)
 
-**Where**: `completeDay()` function (lines 349-404).
+### Change 7: Lesson writing columns → Call 2
+- **DB migration**: Add `gyani_transcript TEXT`, `gyanu_transcript TEXT`, `grammar_topics_summary TEXT` to `lessons` (Change 8 columns combined)
+- Fetch `write_prompt, writing_prompt_type, write_sentence_count` from lessons query (these columns already exist in schema)
+- Add to Call 2 user message if non-null
 
-**Problem**: The enrollment increment already exists (lines 386-395), but there's no guard — revisiting a completed day will increment `current_day` again.
+### Change 8: Transcript columns → Call 2
+- **DB migration**: `gyani_transcript`, `gyanu_transcript` added to `lessons`
+- Fetch and include in Call 2 if non-null
 
-**Change**: Before the progress update, read `day_complete` from progress. If it was already true, skip the enrollment increment at the end. Add this check at line 354:
+### Change 9: Writing score columns on practice_sessions
+- **DB migration**: Add `grammar_score NUMERIC(5,2)`, `completeness_score NUMERIC(5,2)`, `writing_composite_score NUMERIC(5,2)` to `practice_sessions`
+- Map from Gemini Call 2 output directly (no normalizeScore), store null if Gemini returns null
 
+### Change 10: Activate anubhav_ai_log write-back
+- After successful Call 2, insert into `anubhav_ai_log`: user_id, course_id, day_number, attempt_number, composite_score, ai_summary, coaching_focus
+
+---
+
+## PHASE 3 — Memory Loop (Changes 11–12)
+
+### Change 11: Last 3 AI log entries → Call 2
+- Query `anubhav_ai_log` (user, last 3 by created_at desc)
+- Add formatted block to Call 2 user message after progress summary
+
+### Change 12: Expand progressSummary in Call 2
+- Query `student_progress` for full row
+- Replace `JSON.stringify(progressSummary)` with formatted human-readable block including all non-null fields
+
+---
+
+## DB Migrations Required
+
+**Migration 1** — Add columns to `lessons`:
+```sql
+ALTER TABLE public.lessons ADD COLUMN IF NOT EXISTS gyani_transcript TEXT;
+ALTER TABLE public.lessons ADD COLUMN IF NOT EXISTS gyanu_transcript TEXT;
+ALTER TABLE public.lessons ADD COLUMN IF NOT EXISTS grammar_topics_summary TEXT;
 ```
-const wasAlreadyComplete = existing 
-  ? (await supabase.from("progress").select("day_complete").eq("id", existing.id).single()).data?.day_complete 
-  : false;
+
+**Migration 2** — Add columns to `practice_sessions`:
+```sql
+ALTER TABLE public.practice_sessions ADD COLUMN IF NOT EXISTS grammar_score NUMERIC(5,2);
+ALTER TABLE public.practice_sessions ADD COLUMN IF NOT EXISTS completeness_score NUMERIC(5,2);
+ALTER TABLE public.practice_sessions ADD COLUMN IF NOT EXISTS writing_composite_score NUMERIC(5,2);
 ```
 
-Then wrap the enrollment increment (lines 386-395) in `if (!wasAlreadyComplete) { ... }`.
+Note: `write_prompt`, `writing_prompt_type`, `write_sentence_count` already exist on `lessons`.
 
 ---
 
-## FIX 3 — AnubhavHub.tsx: Lesson gate on tiles
-
-**Part A — Data fetch** (add to Promise.all at line 44):
-Add fetch for `progress` table: `select('day_number, lesson_complete').eq('user_id', user.id)`. Store as `lessonMap` lookup.
-
-**Part B — getDayState()** (lines 117-123):
-Add new `"lesson_pending"` state. New priority order:
-1. `completed` — practiceMap has day
-2. `locked_payment` — free user, day > 5
-3. `lesson_pending` — day ≤ currentDay AND lessonMap[day] !== true AND not completed
-4. `current` — day === currentDay AND lessonMap[day] === true
-5. `unlocked` — day < currentDay AND lessonMap[day] === true
-6. `locked` — day > currentDay
-
-**Part C — Tile rendering**: Add visual for `lesson_pending` (opacity 0.6, 📖 icon, "Complete lesson first"). Tap → toast + navigate to `/day/{day}`.
-
-**Part D — handleDayTap**: Add `lesson_pending` case.
-
----
-
-## FIX 4 — AnubhavPage.tsx: Server-side lesson gate
-
-**Where**: `fetchData()` (line 112), right after `setUserId(user.id)` (line 115) and before the readonly check.
-
-**Change**: Fetch `lesson_complete` from progress for this day. If not complete AND not readonly mode → toast + navigate to `/day/{dayNumber}` + return.
-
----
-
-## FIX 5 — AnubhavPage.tsx: Retake button in results
-
-**Where**: Results JSX (lines 1094-1134), above the existing "Back to Home" / "Back to Anubhav" buttons.
-
-**Change**: 
-- The `todaySessionsCount` state already exists and is fetched on mount. However, after completing a session, it needs to be re-counted. Add a re-fetch in the results phase or increment the count after submission.
-- In results JSX (non-readonly), add above the flame CTA:
-  - If `todaySessionsCount < 3`: GoldButton "🔄 Retake Session (X/3)" → `navigate('/anubhav/' + dayNumber)`
-  - If `todaySessionsCount >= 3`: Disabled button "Max sessions reached today (3/3)" + "Come back tomorrow 💪" subtext
-
----
-
-## FIX 6 — Dashboard.tsx: Add CourseSwitcher pill
-
-**Where**: Header section (lines 162-176).
-
-**Change**: Import `CourseSwitcher` component. Add it in a flex row alongside the "Namaste" heading. Wrap the heading in a `flex justify-between items-start` container, place `<CourseSwitcher />` on the right.
-
----
-
-## FIX 7 — AnubhavHub.tsx: Dynamic Y-axis on chart
-
-**Where**: YAxis component (line 183).
-
-**Change**: Compute `minY` and `maxY` from `scoreChartData` scores with ±10 padding (clamped 0-100). Replace `domain={[0, 100]}` with `domain={[minY, maxY]}`.
-
----
-
-## FIX 8 — Edge Function + FlamePage: Send recap/manthan data
-
-**Part A — `generate-flame-response/index.ts`**: Add `recapPoint1`, `recapPoint2`, `recapPoint3` to the destructured request body (line 35). Add a "STUDENT'S MANTHAN" section to the Gemini prompt (before existing spokeAbout section) containing these 3 recap points + manthanAnswer + confidenceRating.
-
-**Part B — `FlamePage.tsx`**: In `generateMasterResponse()` (line 239 body), add `manthanAnswer`, `recapPoint1: recapPoints[0]`, `recapPoint2: recapPoints[1]`, `recapPoint3: recapPoints[2]` to the JSON body. The state variables already exist.
-
-Also add `manthanQuestion` and `manthanAnswer` to the payload (manthanAnswer already goes as `spokeAbout` but should also go explicitly). `recapPoints` state already exists from the lesson fetch.
-
----
-
-## Build sequence
-1. DayScreen.tsx (FIX 1 + FIX 6 prep)
-2. FlamePage.tsx (FIX 2 + FIX 8B)
-3. AnubhavHub.tsx (FIX 3 + FIX 7)
-4. AnubhavPage.tsx (FIX 4 + FIX 5)
-5. Dashboard.tsx (FIX 6)
-6. generate-flame-response/index.ts (FIX 8A)
+## Build Sequence
+1. Run both DB migrations
+2. Rewrite edge function with all 12 changes in one pass (single file)
+3. Confirm each phase's changes
 
