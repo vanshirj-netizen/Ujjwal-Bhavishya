@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      anubhav_ai_log: {
+        Row: {
+          ai_summary: string | null
+          attempt_number: number | null
+          coaching_focus: string | null
+          composite_score: number | null
+          course_id: string | null
+          created_at: string | null
+          day_number: number | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          attempt_number?: number | null
+          coaching_focus?: string | null
+          composite_score?: number | null
+          course_id?: string | null
+          created_at?: string | null
+          day_number?: number | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          ai_summary?: string | null
+          attempt_number?: number | null
+          coaching_focus?: string | null
+          composite_score?: number | null
+          course_id?: string | null
+          created_at?: string | null
+          day_number?: number | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           badges_earned: string[] | null
