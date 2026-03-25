@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,8 +22,8 @@ function getAudioMimeType(path: string): string {
   return "audio/webm";
 }
 
-function normalizeScore(score: number): number {
-  if (score === null || score === undefined) return 50;
+function normalizeScore(score: number | null | undefined): number | null {
+  if (score === null || score === undefined) return null;
   if (score <= 1.0 && score >= 0) return Math.round(score * 100);
   return Math.round(Math.min(100, Math.max(0, score)));
 }
@@ -83,7 +82,6 @@ serve(async (req) => {
 
   // Parse request body
   const {
-    userId: bodyUserId,
     masterName,
     firstName,
     courseId,
@@ -100,30 +98,34 @@ serve(async (req) => {
     motherTongue,
   } = await req.json();
 
-  const userId = authUserId; // Always use JWT-verified identity, never trust body
+  const userId = authUserId;
   const effectiveCourseId = courseId || "6a860163-ea3c-4205-89b3-74a3e9be098f";
   const effectiveMasterName = (masterName ?? "gyani").toLowerCase();
   const effectiveAttempt = attemptNumber ?? 1;
   const effectiveFirstName = firstName || "Friend";
 
-  // Fallback response used on any error
+  // Fallback response — null scores, never fake numbers
   const fallbackResult = {
-    wordClarityScore: 50,
-    smoothnessScore: 50,
-    naturalSoundScore: 50,
-    compositeScore: 50,
+    wordClarityScore: null as number | null,
+    smoothnessScore: null as number | null,
+    naturalSoundScore: null as number | null,
+    compositeScore: null as number | null,
     mastermessage: "You showed up and practiced. That is the foundation.",
     mastermessagevoice: "You showed up and practiced. PAUSE That is the foundation.",
     mastermessageaudiourl: null as string | null,
     topErrorSummary: "",
     wordErrors: [] as any[],
     writingChecks: [] as any[],
+    grammar_score: null as number | null,
+    completeness_score: null as number | null,
+    writing_composite_score: null as number | null,
+    ai_summary: null as string | null,
+    coaching_focus: null as string | null,
   };
 
   // Safety: always mark complete even on error
   const safeMarkComplete = async () => {
     try {
-      // Upsert practice_sessions - find existing in_progress or create
       const { data: existingSession } = await supabaseAdmin
         .from("practice_sessions")
         .select("id")
@@ -141,7 +143,6 @@ serve(async (req) => {
         }).eq("id", existingSession.id);
       }
 
-      // Upsert progress
       const { data: progressRow } = await supabaseAdmin.from("progress")
         .select("id").eq("user_id", userId).eq("day_number", dayNumber).maybeSingle();
       if (progressRow) {
@@ -169,48 +170,99 @@ serve(async (req) => {
     const systemPrompt = personalityData?.personality_prompt
       ?? "You are a helpful English coach. Evaluate the student with care and precision.";
 
-    // 2. Download audio files from writingRecordings and worldRecordings
+    // 2. Fetch lesson data for enriched context (Phase 2 — Changes 7, 8)
+    let lessonData: any = null;
+    try {
+      const { data } = await supabaseAdmin
+        .from("lessons")
+        .select("title, write_prompt, writing_prompt_type, write_sentence_count, grammar_hint, gyani_transcript, gyanu_transcript, grammar_topics_summary")
+        .eq("day_number", dayNumber)
+        .eq("course_id", effectiveCourseId)
+        .limit(1)
+        .maybeSingle();
+      lessonData = data;
+    } catch (e) {
+      console.error("[anubhav-evaluate] Lesson fetch error:", e);
+    }
+
+    // 3. Fetch student_progress for full context (Phase 3 — Change 12)
+    let studentProgressData: any = null;
+    try {
+      const { data } = await supabaseAdmin
+        .from("student_progress")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("course_id", effectiveCourseId)
+        .maybeSingle();
+      studentProgressData = data;
+    } catch (e) {
+      console.error("[anubhav-evaluate] student_progress fetch error:", e);
+    }
+
+    // 4. Fetch last 3 AI log entries (Phase 3 — Change 11)
+    let aiLogEntries: any[] = [];
+    try {
+      const { data } = await supabaseAdmin
+        .from("anubhav_ai_log")
+        .select("day_number, attempt_number, composite_score, ai_summary, coaching_focus, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      aiLogEntries = data ?? [];
+    } catch (e) {
+      console.error("[anubhav-evaluate] AI log fetch error:", e);
+    }
+
+    // 5. Download audio files — ONLY worldRecordings (Change 1)
     const audioBuffers: { base64: string; mime: string; label: string }[] = [];
     const allRecordings = [
-      ...(writingRecordings ?? []).map((r: any, i: number) => ({ ...r, label: `writing_${i}` })),
       ...(worldRecordings ?? []).map((r: any, i: number) => ({ ...r, label: `world_${i}` })),
     ];
 
-    // Build written text from writingRecordings
+    // Build written text from writingRecordings (text only, no audio)
     const writtenSentences = (writingRecordings ?? []).map((r: any) => r.sentence).filter(Boolean);
 
-    await Promise.all(
-      allRecordings.map(async (rec: any) => {
-        if (!rec.audioPath) return;
-        try {
-          const { data, error } = await supabaseAdmin.storage
-            .from("anubhav-audio")
-            .download(rec.audioPath);
-          if (data && !error) {
-            const buf = await data.arrayBuffer();
-            if (buf.byteLength >= 500) {
-              audioBuffers.push({
-                base64: bufferToBase64(buf),
-                mime: getAudioMimeType(rec.audioPath),
-                label: rec.label,
-              });
+    // Build world reference sentences for Call 1
+    const worldReferenceSentences = (worldRecordings ?? []).map((r: any) => r.sentence || r.expectedSentence).filter(Boolean);
+
+    // Change 6: Skip audio download entirely if no world recordings
+    const hasWorldRecordings = allRecordings.length > 0;
+
+    if (hasWorldRecordings) {
+      await Promise.all(
+        allRecordings.map(async (rec: any) => {
+          if (!rec.audioPath) return;
+          try {
+            const { data, error } = await supabaseAdmin.storage
+              .from("anubhav-audio")
+              .download(rec.audioPath);
+            if (data && !error) {
+              const buf = await data.arrayBuffer();
+              if (buf.byteLength >= 500) {
+                audioBuffers.push({
+                  base64: bufferToBase64(buf),
+                  mime: getAudioMimeType(rec.audioPath),
+                  label: rec.label,
+                });
+              }
             }
+          } catch (e) {
+            console.error("[anubhav-evaluate] Audio download error for", rec.audioPath, e);
           }
-        } catch (e) {
-          console.error("[anubhav-evaluate] Audio download error for", rec.audioPath, e);
-        }
-      })
-    );
+        })
+      );
+    }
 
     console.log("[anubhav-evaluate] Downloaded", audioBuffers.length, "audio files");
 
-    // 3. Gemini Call 1: Audio evaluation
-    let avgWordClarity = 50;
-    let avgSmoothness = 50;
-    let avgNaturalSound = 50;
+    // 6. Gemini Call 1: Audio evaluation — ONLY world recordings
+    let avgWordClarity: number | null = null;
+    let avgSmoothness: number | null = null;
+    let avgNaturalSound: number | null = null;
     let audioWordErrors: any[] = [];
-    let audioEvalFailed = true;
+    let audioEvalSkipped = true;
 
+    // Change 6: Only run Call 1 if we have actual audio buffers
     if (audioBuffers.length > 0) {
       try {
         const contentParts: any[] = [];
@@ -219,7 +271,7 @@ serve(async (req) => {
           text: `You are an English pronunciation evaluator for Indian students.
 Student MTI Zone: ${mtiZone || "urban_neutral"}
 Mother Tongue: ${motherTongue || "Hindi"}
-Reference sentences: "${writtenSentences.join('. ')}"
+Reference sentences: "${worldReferenceSentences.join('. ')}"
 There are ${audioBuffers.length} audio recordings. Evaluate all of them together.
 Score using integers from 0 to 100 (not decimals). Max 3 word errors total.`,
         });
@@ -287,7 +339,7 @@ Score using integers from 0 to 100 (not decimals). Max 3 word errors total.`,
             avgSmoothness = normalizeScore(parsed.smoothnessScore);
             avgNaturalSound = normalizeScore(parsed.naturalSoundScore);
             audioWordErrors = (parsed.wordErrors || []).slice(0, 3);
-            audioEvalFailed = false;
+            audioEvalSkipped = false;
           }
         } else {
           console.error("[anubhav-evaluate] Gemini audio eval error:", geminiResponse.status);
@@ -297,51 +349,129 @@ Score using integers from 0 to 100 (not decimals). Max 3 word errors total.`,
       }
     }
 
-    const compositeScore = Math.round(
-      (avgWordClarity * 0.4) + (avgSmoothness * 0.35) + (avgNaturalSound * 0.25)
-    );
+    // Compute composite only when scores are non-null
+    const compositeScore = (avgWordClarity !== null && avgSmoothness !== null && avgNaturalSound !== null)
+      ? Math.round((avgWordClarity * 0.4) + (avgSmoothness * 0.35) + (avgNaturalSound * 0.25))
+      : null;
 
-    // 4. Gemini Call 2: Feedback with personality
-    let mastermessage = fallbackResult.mastermessage;
-    let mastermessagevoice = fallbackResult.mastermessagevoice;
-    let topErrorSummary = "";
-    let wordErrors = audioWordErrors;
-    let writingChecks: any[] = [];
+    // 7. Build Call 2 user message with full context
 
-    try {
-      const userPrompt = `
-STUDENT: ${effectiveFirstName}
-DAY: ${dayNumber} of 60
-ATTEMPT: ${effectiveAttempt} today
-MASTER: ${masterName}
-SELECTED WORLD: ${selectedWorld} (professional / casual / both)
-MTI ZONE: ${mtiZone}
-MOTHER TONGUE: ${motherTongue}
-LESSON: ${lessonTitle}
-GRAMMAR FOCUS: ${grammarPattern ?? 'not specified'}
+    // Change 2: Clean written sentences — text only, no audioPath
+    let writtenSentencesBlock: string;
+    if (writtenSentences.length > 0) {
+      const numberedList = writtenSentences.map((s: string, i: number) => `${i + 1}. ${s}`).join("\n");
+      writtenSentencesBlock = `WRITTEN SENTENCES (student's writing — evaluate grammar, completeness, and scenario fit — no audio for these):\n${numberedList}`;
+    } else {
+      writtenSentencesBlock = "WRITTEN SENTENCES: None submitted this session.";
+    }
 
-WRITING RECORDINGS (what they wrote + spoke per sentence):
-${JSON.stringify(writingRecordings ?? [])}
-
-WORLD RECORDINGS (target sentences + their recording):
-${JSON.stringify(worldRecordings ?? [])}
-
-PRONUNCIATION SCORES:
+    // Change 5: Scores block depends on audioEvalSkipped
+    let scoresBlock: string;
+    if (audioEvalSkipped) {
+      scoresBlock = "SPEAKING EVALUATION: Audio unavailable this session. Evaluate writing only.";
+    } else {
+      scoresBlock = `PRONUNCIATION SCORES:
 - Word Clarity: ${avgWordClarity}/100
 - Smoothness: ${avgSmoothness}/100
 - Natural Sound: ${avgNaturalSound}/100
 - Composite: ${compositeScore}/100
 
 WORD ERRORS FROM AUDIO EVAL:
-${JSON.stringify(audioWordErrors)}
+${JSON.stringify(audioWordErrors)}`;
+    }
+
+    // Change 7: Lesson writing context
+    let lessonWritingBlock = "";
+    if (lessonData) {
+      const parts: string[] = [];
+      if (lessonData.write_prompt) parts.push(`WRITING PROMPT: ${lessonData.write_prompt}`);
+      if (lessonData.writing_prompt_type) parts.push(`PROMPT TYPE: ${lessonData.writing_prompt_type}`);
+      if (lessonData.write_sentence_count) parts.push(`EXPECTED SENTENCE COUNT: ${lessonData.write_sentence_count}`);
+      if (parts.length > 0) lessonWritingBlock = "\n" + parts.join("\n");
+    }
+
+    // Change 8: Transcript context
+    let transcriptBlock = "";
+    if (lessonData?.gyani_transcript) {
+      transcriptBlock += `\nGYANI LESSON TRANSCRIPT (your own words from today's lesson — use this to understand what the student was taught today):\n${lessonData.gyani_transcript}`;
+    }
+    if (lessonData?.gyanu_transcript) {
+      transcriptBlock += `\nGYANU LESSON TRANSCRIPT (today's Gyanu grammar video):\n${lessonData.gyanu_transcript}`;
+    }
+
+    // Change 12: Full progress summary
+    let progressBlock: string;
+    if (studentProgressData) {
+      const sp = studentProgressData;
+      const parts: string[] = [];
+      if (sp.total_sessions_completed != null) parts.push(`Total sessions: ${sp.total_sessions_completed}`);
+      if (sp.score_trend) parts.push(`Trend: ${sp.score_trend}`);
+      if (sp.first_session_score != null) parts.push(`First score: ${sp.first_session_score}`);
+      if (sp.latest_session_score != null) parts.push(`Latest score: ${sp.latest_session_score}`);
+      if (sp.best_score_ever != null) parts.push(`Best score: ${sp.best_score_ever} (Day ${sp.best_score_day ?? '?'})`);
+      if (sp.worst_score_ever != null) parts.push(`Worst score: ${sp.worst_score_ever} (Day ${sp.worst_score_day ?? '?'})`);
+      if (sp.first_5_avg_score != null) parts.push(`First 5 avg: ${sp.first_5_avg_score}`);
+      if (sp.last_5_avg_score != null) parts.push(`Last 5 avg: ${sp.last_5_avg_score}`);
+      const errors = [sp.top_error_1, sp.top_error_2, sp.top_error_3].filter(Boolean);
+      if (errors.length > 0) parts.push(`Top errors: ${errors.join(", ")}`);
+      if (sp.current_streak != null) parts.push(`Current streak: ${sp.current_streak} days`);
+      if (sp.longest_streak_ever != null) parts.push(`Longest streak: ${sp.longest_streak_ever} days`);
+      if (sp.total_days_practiced != null) parts.push(`Days practiced: ${sp.total_days_practiced}`);
+      if (sp.current_focus_area) parts.push(`Current focus: ${sp.current_focus_area}`);
+      if (sp.student_personality_notes) parts.push(`Personality notes: ${sp.student_personality_notes}`);
+      progressBlock = `PROGRESS SUMMARY:\n${parts.join("\n")}`;
+    } else {
+      progressBlock = "PROGRESS SUMMARY: First session — no previous data.";
+    }
+
+    // Change 11: AI log entries
+    let aiLogBlock = "";
+    if (aiLogEntries.length > 0) {
+      const entries = aiLogEntries.map(e =>
+        `Day ${e.day_number} | Attempt ${e.attempt_number} | Speaking Score: ${e.composite_score ?? "N/A"}\nSummary: ${e.ai_summary || "none"}\nNext focus: ${e.coaching_focus || "none"}`
+      ).join("\n---\n");
+      aiLogBlock = `\nAI LOG (your last ${aiLogEntries.length} clinical notes — newest first):\n${entries}`;
+    }
+
+    const userPrompt = `STUDENT: ${effectiveFirstName}
+DAY: ${dayNumber} of 60
+ATTEMPT: ${effectiveAttempt} today
+MASTER: ${effectiveMasterName}
+SELECTED WORLD: ${selectedWorld} (professional / casual / both)
+MTI ZONE: ${mtiZone}
+MOTHER TONGUE: ${motherTongue}
+LESSON: ${lessonTitle || lessonData?.title || 'not specified'}
+GRAMMAR FOCUS: ${grammarPattern || lessonData?.grammar_hint || 'not specified'}
+${lessonData?.grammar_topics_summary ? `GRAMMAR TOPICS SUMMARY: ${lessonData.grammar_topics_summary}` : ''}
+${lessonWritingBlock}
+${transcriptBlock}
+
+${writtenSentencesBlock}
+
+WORLD RECORDINGS (target sentences the student practiced speaking):
+${JSON.stringify((worldRecordings ?? []).map((r: any) => ({ sentence: r.sentence || r.expectedSentence })))}
+
+${scoresBlock}
 
 SESSION HISTORY (last 5 sessions, newest first):
 ${JSON.stringify(sessionHistory ?? [])}
 
-PROGRESS SUMMARY:
-${JSON.stringify(progressSummary ?? {})}
-`;
+${progressBlock}
+${aiLogBlock}`;
 
+    // 8. Gemini Call 2: Feedback with personality — Change 4 updated schema
+    let mastermessage = fallbackResult.mastermessage;
+    let mastermessagevoice = fallbackResult.mastermessagevoice;
+    let topErrorSummary = "";
+    let wordErrors = audioWordErrors;
+    let writingChecks: any[] = [];
+    let grammarScore: number | null = null;
+    let completenessScore: number | null = null;
+    let writingCompositeScore: number | null = null;
+    let aiSummary: string | null = null;
+    let coachingFocus: string | null = null;
+
+    try {
       const feedbackResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -385,22 +515,28 @@ ${JSON.stringify(progressSummary ?? {})}
                       type: "object",
                       properties: {
                         sentence: { type: "string" },
-                        issue: { type: "string" },
-                        fix: { type: "string" },
+                        isCorrect: { type: "boolean", description: "true if sentence is grammatically correct, false if it has issues" },
+                        issue: { type: "string", description: "Empty string if isCorrect is true" },
+                        fix: { type: "string", description: "Empty string if isCorrect is true" },
+                        correctedVersion: { type: "string", description: "Corrected sentence if isCorrect is false, empty string if correct" },
                       },
-                      required: ["sentence"],
+                      required: ["sentence", "isCorrect", "issue", "fix", "correctedVersion"],
                       additionalProperties: false,
                     },
                   },
+                  grammar_score: { type: "number", description: "0-100 integer. How grammatically correct are the written sentences as a group." },
+                  completeness_score: { type: "number", description: "0-100 integer. Did the student write the required number of sentences and address the writing prompt adequately." },
+                  writing_composite_score: { type: "number", description: "0-100 integer. Overall writing quality. Weighted: grammar_score 60% + completeness_score 40%." },
+                  ai_summary: { type: "string", description: "2-3 sentence clinical session note. Format: Day X | Attempt Y | Writing: [score] | Speaking: [score]. Primary pattern: [description] — STATUS: new / persistent / improving / resolved. Fix given: [what was told to the student]. Student applied it: yes / partially / not yet." },
+                  coaching_focus: { type: "string", description: "ONE sentence only. What to focus on in the next session." },
                 },
-                required: ["mastermessage", "mastermessagevoice", "topErrorSummary", "wordErrors", "writingChecks"],
+                required: ["mastermessage", "mastermessagevoice", "topErrorSummary", "wordErrors", "writingChecks", "grammar_score", "completeness_score", "writing_composite_score", "ai_summary", "coaching_focus"],
                 additionalProperties: false,
               },
             },
           }],
           tool_choice: { type: "function", function: { name: "evaluate_practice" } },
           temperature: 0.7,
-          max_tokens: 1200,
           stream: false,
         }),
       });
@@ -415,6 +551,12 @@ ${JSON.stringify(progressSummary ?? {})}
           topErrorSummary = parsed.topErrorSummary || "";
           if (parsed.wordErrors?.length > 0) wordErrors = parsed.wordErrors;
           writingChecks = parsed.writingChecks || [];
+          // Writing scores — store exactly what Gemini returns, no normalizeScore
+          grammarScore = parsed.grammar_score ?? null;
+          completenessScore = parsed.completeness_score ?? null;
+          writingCompositeScore = parsed.writing_composite_score ?? null;
+          aiSummary = parsed.ai_summary || null;
+          coachingFocus = parsed.coaching_focus || null;
         }
       } else {
         console.error("[anubhav-evaluate] Feedback Gemini error:", feedbackResponse.status);
@@ -423,7 +565,7 @@ ${JSON.stringify(progressSummary ?? {})}
       console.error("[anubhav-evaluate] Feedback error:", e);
     }
 
-    // 5. ElevenLabs voice generation
+    // 9. ElevenLabs voice generation
     let masterAudioUrl: string | null = null;
     try {
       const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
@@ -484,7 +626,7 @@ ${JSON.stringify(progressSummary ?? {})}
       console.error("[anubhav-evaluate] ElevenLabs error:", e);
     }
 
-    // 6. Save to practice_sessions
+    // 10. Save to practice_sessions (Change 9: include writing scores)
     const { data: existingSession } = await supabaseAdmin
       .from("practice_sessions")
       .select("id")
@@ -494,7 +636,7 @@ ${JSON.stringify(progressSummary ?? {})}
       .eq("attempt_number", effectiveAttempt)
       .maybeSingle();
 
-    const sessionPayload = {
+    const sessionPayload: any = {
       user_id: userId,
       course_id: effectiveCourseId,
       day_number: dayNumber,
@@ -515,6 +657,9 @@ ${JSON.stringify(progressSummary ?? {})}
       attempt_number: effectiveAttempt,
       is_best_attempt: false,
       submitted_at: new Date().toISOString(),
+      grammar_score: grammarScore,
+      completeness_score: completenessScore,
+      writing_composite_score: writingCompositeScore,
     };
 
     if (existingSession) {
@@ -553,7 +698,7 @@ ${JSON.stringify(progressSummary ?? {})}
         .eq("id", bestAttempt.id);
     }
 
-    // 7. Upsert progress
+    // 11. Upsert progress
     const { data: progressRow } = await supabaseAdmin.from("progress")
       .select("id").eq("user_id", userId).eq("day_number", dayNumber).maybeSingle();
     if (progressRow) {
@@ -565,7 +710,22 @@ ${JSON.stringify(progressSummary ?? {})}
       });
     }
 
-    // 8. Upsert student_progress
+    // 12. Change 10: Insert into anubhav_ai_log
+    try {
+      await supabaseAdmin.from("anubhav_ai_log").insert({
+        user_id: userId,
+        course_id: effectiveCourseId,
+        day_number: dayNumber,
+        attempt_number: effectiveAttempt,
+        composite_score: compositeScore,
+        ai_summary: aiSummary,
+        coaching_focus: coachingFocus,
+      });
+    } catch (e) {
+      console.error("[anubhav-evaluate] anubhav_ai_log insert error:", e);
+    }
+
+    // 13. Upsert student_progress
     try {
       const { data: allSessions } = await supabaseAdmin
         .from("practice_sessions")
@@ -580,20 +740,21 @@ ${JSON.stringify(progressSummary ?? {})}
         const totalSessionsCompleted = allSessions.length;
         const distinctDays = new Set(allSessions.map(s => s.day_number));
         const totalDaysPracticed = distinctDays.size;
-        const scores = allSessions.map(s => Number(s.composite_score) || 0);
-        const latestScore = scores[scores.length - 1];
-        const firstScore = scores[0];
-        const bestScoreVal = Math.max(...scores);
-        const worstScoreVal = Math.min(...scores);
-        const bestDay = allSessions.find(s => Number(s.composite_score) === bestScoreVal)?.day_number;
-        const worstDay = allSessions.find(s => Number(s.composite_score) === worstScoreVal)?.day_number;
+        const validScores = allSessions.filter(s => s.composite_score != null);
+        const scores = validScores.map(s => Number(s.composite_score));
+        const latestScore = scores.length > 0 ? scores[scores.length - 1] : null;
+        const firstScore = scores.length > 0 ? scores[0] : null;
+        const bestScoreVal = scores.length > 0 ? Math.max(...scores) : null;
+        const worstScoreVal = scores.length > 0 ? Math.min(...scores) : null;
+        const bestDay = bestScoreVal != null ? validScores.find(s => Number(s.composite_score) === bestScoreVal)?.day_number : null;
+        const worstDay = worstScoreVal != null ? validScores.find(s => Number(s.composite_score) === worstScoreVal)?.day_number : null;
         const last5 = scores.slice(-5);
         const first5 = scores.slice(0, 5);
-        const last5Avg = last5.reduce((a, b) => a + b, 0) / last5.length;
-        const first5Avg = first5.reduce((a, b) => a + b, 0) / first5.length;
+        const last5Avg = last5.length > 0 ? last5.reduce((a, b) => a + b, 0) / last5.length : null;
+        const first5Avg = first5.length > 0 ? first5.reduce((a, b) => a + b, 0) / first5.length : null;
 
         let scoreTrend = "insufficient_data";
-        if (totalSessionsCompleted >= 10) {
+        if (scores.length >= 10 && last5Avg != null && first5Avg != null) {
           if (last5Avg > first5Avg + 10) scoreTrend = "rising";
           else if (last5Avg < first5Avg - 10) scoreTrend = "falling";
           else scoreTrend = "steady";
@@ -646,7 +807,7 @@ ${JSON.stringify(progressSummary ?? {})}
           best_score_day: bestDay,
           worst_score_ever: worstScoreVal,
           worst_score_day: worstDay,
-          last_5_avg_score: Math.round(last5Avg * 10) / 10,
+          last_5_avg_score: last5Avg != null ? Math.round(last5Avg * 10) / 10 : null,
           score_trend: scoreTrend,
           top_error_1: sortedErrors[0]?.[0] || null,
           top_error_2: sortedErrors[1]?.[0] || null,
@@ -658,11 +819,11 @@ ${JSON.stringify(progressSummary ?? {})}
 
         if (existing) {
           progressData.longest_streak_ever = Math.max(currentStreakVal, existing.longest_streak_ever || 0);
-          if (!existing.first_session_score) {
+          if (!existing.first_session_score && firstScore != null) {
             progressData.first_session_score = firstScore;
             progressData.first_session_date = allSessions[0].submitted_at;
           }
-          if (!existing.first_5_avg_score && totalSessionsCompleted >= 5) {
+          if (!existing.first_5_avg_score && scores.length >= 5 && first5Avg != null) {
             progressData.first_5_avg_score = Math.round(first5Avg * 10) / 10;
           }
           await supabaseAdmin.from("student_progress").update(progressData).eq("id", existing.id);
@@ -672,7 +833,7 @@ ${JSON.stringify(progressSummary ?? {})}
           progressData.first_session_score = firstScore;
           progressData.first_session_date = allSessions[0].submitted_at;
           progressData.longest_streak_ever = currentStreakVal;
-          if (totalSessionsCompleted >= 5) {
+          if (scores.length >= 5 && first5Avg != null) {
             progressData.first_5_avg_score = Math.round(first5Avg * 10) / 10;
           }
           await supabaseAdmin.from("student_progress").insert(progressData);
@@ -682,7 +843,7 @@ ${JSON.stringify(progressSummary ?? {})}
       console.error("[anubhav-evaluate] student_progress upsert error:", e);
     }
 
-    // 9. Return
+    // 14. Return
     return new Response(
       JSON.stringify({
         wordClarityScore: avgWordClarity,
@@ -695,6 +856,11 @@ ${JSON.stringify(progressSummary ?? {})}
         topErrorSummary: topErrorSummary,
         wordErrors: wordErrors,
         writingChecks: writingChecks,
+        grammar_score: grammarScore,
+        completeness_score: completenessScore,
+        writing_composite_score: writingCompositeScore,
+        ai_summary: aiSummary,
+        coaching_focus: coachingFocus,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

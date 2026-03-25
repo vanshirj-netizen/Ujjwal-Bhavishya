@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      anubhav_ai_log: {
+        Row: {
+          ai_summary: string | null
+          attempt_number: number | null
+          coaching_focus: string | null
+          composite_score: number | null
+          course_id: string | null
+          created_at: string | null
+          day_number: number | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          attempt_number?: number | null
+          coaching_focus?: string | null
+          composite_score?: number | null
+          course_id?: string | null
+          created_at?: string | null
+          day_number?: number | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          ai_summary?: string | null
+          attempt_number?: number | null
+          coaching_focus?: string | null
+          composite_score?: number | null
+          course_id?: string | null
+          created_at?: string | null
+          day_number?: number | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           badges_earned: string[] | null
@@ -435,9 +471,12 @@ export type Database = {
           goal_2: string | null
           goal_3: string | null
           grammar_hint: string | null
+          grammar_topics_summary: string | null
           gyani_timestamps: string | null
+          gyani_transcript: string | null
           gyani_youtube_url: string | null
           gyanu_timestamps: string | null
+          gyanu_transcript: string | null
           gyanu_youtube_url: string | null
           id: string
           manthan_question: string | null
@@ -470,9 +509,12 @@ export type Database = {
           goal_2?: string | null
           goal_3?: string | null
           grammar_hint?: string | null
+          grammar_topics_summary?: string | null
           gyani_timestamps?: string | null
+          gyani_transcript?: string | null
           gyani_youtube_url?: string | null
           gyanu_timestamps?: string | null
+          gyanu_transcript?: string | null
           gyanu_youtube_url?: string | null
           id?: string
           manthan_question?: string | null
@@ -505,9 +547,12 @@ export type Database = {
           goal_2?: string | null
           goal_3?: string | null
           grammar_hint?: string | null
+          grammar_topics_summary?: string | null
           gyani_timestamps?: string | null
+          gyani_transcript?: string | null
           gyani_youtube_url?: string | null
           gyanu_timestamps?: string | null
+          gyanu_transcript?: string | null
           gyanu_youtube_url?: string | null
           id?: string
           manthan_question?: string | null
@@ -650,10 +695,12 @@ export type Database = {
       practice_sessions: {
         Row: {
           attempt_number: number | null
+          completeness_score: number | null
           composite_score: number | null
           course_id: string
           created_at: string | null
           day_number: number
+          grammar_score: number | null
           id: string
           is_best_attempt: boolean | null
           lesson_topic: string | null
@@ -674,15 +721,18 @@ export type Database = {
           word_errors: Json | null
           world_recordings: Json | null
           writing_checks: Json | null
+          writing_composite_score: number | null
           writing_id: string | null
           writing_recordings: Json | null
         }
         Insert: {
           attempt_number?: number | null
+          completeness_score?: number | null
           composite_score?: number | null
           course_id?: string
           created_at?: string | null
           day_number: number
+          grammar_score?: number | null
           id?: string
           is_best_attempt?: boolean | null
           lesson_topic?: string | null
@@ -703,15 +753,18 @@ export type Database = {
           word_errors?: Json | null
           world_recordings?: Json | null
           writing_checks?: Json | null
+          writing_composite_score?: number | null
           writing_id?: string | null
           writing_recordings?: Json | null
         }
         Update: {
           attempt_number?: number | null
+          completeness_score?: number | null
           composite_score?: number | null
           course_id?: string
           created_at?: string | null
           day_number?: number
+          grammar_score?: number | null
           id?: string
           is_best_attempt?: boolean | null
           lesson_topic?: string | null
@@ -732,6 +785,7 @@ export type Database = {
           word_errors?: Json | null
           world_recordings?: Json | null
           writing_checks?: Json | null
+          writing_composite_score?: number | null
           writing_id?: string | null
           writing_recordings?: Json | null
         }
