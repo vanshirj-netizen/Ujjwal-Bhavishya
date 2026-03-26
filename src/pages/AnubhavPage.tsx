@@ -961,10 +961,10 @@ const AnubhavPage = () => {
               {/* 1. Score Cards */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Word Clarity", score: results.wordClarityScore ?? results.word_clarity_score ?? 50 },
-                  { label: "Smoothness", score: results.smoothnessScore ?? results.smoothness_score ?? 50 },
-                  { label: "Natural Sound", score: results.naturalSoundScore ?? results.natural_sound_score ?? 50 },
-                ].map(card => (
+                  { label: "Word Clarity", score: results.wordClarityScore ?? results.word_clarity_score },
+                  { label: "Smoothness", score: results.smoothnessScore ?? results.smoothness_score },
+                  { label: "Natural Sound", score: results.naturalSoundScore ?? results.natural_sound_score },
+                ].filter(card => card.score != null).map(card => (
                   <GoldCard key={card.label} padding="16px">
                     <div className="text-center">
                       {isStarMode ? (
@@ -983,6 +983,36 @@ const AnubhavPage = () => {
                   </GoldCard>
                 ))}
               </div>
+
+              {/* Writing Score Card */}
+              {(results.writingCompositeScore ?? results.writing_composite_score) != null && (
+                <div className="mt-3">
+                  <div
+                    style={{
+                      padding: "1.5px",
+                      borderRadius: 20,
+                      background: "linear-gradient(135deg, #FFFCEF, #F5F0D0, #FFFCEF)",
+                    }}
+                  >
+                    <div style={{ borderRadius: 18.5, background: "var(--card-bg, rgba(0, 26, 16, 0.97))", padding: "16px" }}>
+                      <div className="text-center">
+                        {isStarMode ? (
+                          <p style={{ fontFamily: "var(--fd)", fontSize: "1.1rem", color: "#FFFCEF", fontWeight: 700 }}>
+                            {"⭐".repeat(toStars(results.writingCompositeScore ?? results.writing_composite_score))}
+                          </p>
+                        ) : (
+                          <p style={{ fontFamily: "var(--fd)", fontSize: "1.1rem", color: "#FFFCEF", fontWeight: 700 }}>
+                            {results.writingCompositeScore ?? results.writing_composite_score}/100
+                          </p>
+                        )}
+                        <p className="mt-1" style={{ fontFamily: "var(--fa)", fontSize: "0.58rem", color: "rgba(255,252,239,0.65)", textTransform: "uppercase", letterSpacing: "2px" }}>
+                          Writing
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 2. GYANU SAYS — Master's Message */}
               {(results.mastermessage || results.ai_feedback) && (
