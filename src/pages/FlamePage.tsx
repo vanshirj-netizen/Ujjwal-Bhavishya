@@ -459,34 +459,23 @@ const FlamePage = () => {
               <p className="text-xs text-center mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.3)" }}>Confidence Rating</p>
 
               <div className="mt-6 space-y-4">
-                {[
-                  { label: "What I spoke about", value: existingFlame.spoke_about },
-                  { label: "My biggest challenge", value: existingFlame.biggest_challenge },
-                  { label: "Tomorrow I will practice", value: existingFlame.tomorrows_intention },
-                ].map(item => item.value && (
-                  <GoldCard key={item.label} padding="16px">
-                    <p className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>{item.label}</p>
-                    <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>{item.value}</p>
+                {lesson?.manthan_question ? (
+                  <GoldCard padding="16px">
+                    <p className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>{lesson.manthan_question}</p>
+                    <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>{existingFlame.manthan_answer || existingFlame.spoke_about}</p>
                   </GoldCard>
-                ))}
-              </div>
-
-              {practiceSession && (
-                <div className="grid grid-cols-3 gap-3 mt-6">
-                  {[
-                    { label: "Word Clarity", score: practiceSession.word_clarity_score },
-                    { label: "Smoothness", score: practiceSession.smoothness_score },
-                    { label: "Natural Sound", score: practiceSession.natural_sound_score },
-                  ].map(s => (
-                    <GoldCard key={s.label} padding="12px">
-                      <div className="text-center">
-                        <p className="text-xl font-bold" style={{ fontFamily: "var(--fd)", color: "#fffcef" }}>{Math.round(Number(s.score) || 0)}</p>
-                        <p className="text-[10px] mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.4)" }}>{s.label}</p>
-                      </div>
+                ) : (
+                  [{label: "What I spoke about", value: existingFlame.spoke_about},
+                    {label: "My biggest challenge", value: existingFlame.biggest_challenge},
+                    {label: "Tomorrow I will practice", value: existingFlame.tomorrows_intention},
+                  ].map(item => item.value && (
+                    <GoldCard key={item.label} padding="16px">
+                      <p className="text-[10px] uppercase tracking-wider" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.3)" }}>{item.label}</p>
+                      <p className="text-sm mt-1" style={{ fontFamily: "var(--fb)", color: "rgba(255,252,239,0.7)" }}>{item.value}</p>
                     </GoldCard>
-                  ))}
-                </div>
-              )}
+                  ))
+                )}
+              </div>
 
               {aiResponse && (
                 <div className="mt-6">

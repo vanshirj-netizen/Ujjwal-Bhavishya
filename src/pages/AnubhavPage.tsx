@@ -1088,22 +1088,26 @@ const AnubhavPage = () => {
                 </div>
               )}
 
-              {/* 4. WRITING CHECKS */}
+              {/* 4. WRITING CHECK */}
               {results.writingChecks?.length > 0 && (
                 <div className="mt-6">
-                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">YOUR WRITING</p>
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">WRITING CHECK</p>
                   <div className="flex flex-col gap-2">
                     {results.writingChecks.map((wc: any, i: number) => (
                       <GoldCard key={i} padding="16px">
                         <div className="flex items-start gap-2">
-                          <span className="mt-0.5">{!wc.issue ? "✅" : "❌"}</span>
+                          <span className="mt-0.5">{wc.isCorrect ? "✅" : "❌"}</span>
                           <div className="flex-1">
-                            <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))" }}>{wc.sentence}</p>
-                            {wc.issue && (
-                              <p className="mt-1.5" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "rgba(255,252,239,0.68)" }}>Issue: {wc.issue}</p>
+                            <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))" }}>"{wc.sentence}"</p>
+                            {!wc.isCorrect && wc.issue && (
+                              <p className="mt-1.5" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "rgba(255,252,239,0.55)", textTransform: "uppercase", letterSpacing: "2px" }}>
+                                ISSUE <span style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "rgba(255,252,239,0.68)", textTransform: "none", letterSpacing: "normal" }}>{wc.issue}</span>
+                              </p>
                             )}
-                            {wc.fix && (
-                              <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--primary) / 0.8)" }}>→ {wc.fix}</p>
+                            {!wc.isCorrect && wc.correctedVersion && (
+                              <p className="mt-1" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "rgba(255,252,239,0.55)", textTransform: "uppercase", letterSpacing: "2px" }}>
+                                FIX <span style={{ fontFamily: "var(--fd)", fontSize: "0.88rem", color: "#FFFCEF", textTransform: "none", letterSpacing: "normal", fontWeight: 700 }}>{wc.correctedVersion}</span>
+                              </p>
                             )}
                           </div>
                         </div>

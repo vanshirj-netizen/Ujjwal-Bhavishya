@@ -216,19 +216,35 @@ const AnubhavHub = () => {
           <GoldCard padding="20px">
             <p className="text-[10px] uppercase tracking-wider mb-4" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.60)", letterSpacing: "3px" }}>Your Score Journey</p>
             {scoreChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={scoreChartData}>
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[(() => { const scores = scoreChartData.map(d => d.score); return Math.max(0, Math.min(...scores) - 10); })(), (() => { const scores = scoreChartData.map(d => d.score); return Math.min(100, Math.max(...scores) + 10); })()]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
-                    labelStyle={{ color: "#fffcef" }}
-                    itemStyle={{ color: "#fed141" }}
-                    formatter={(value: number) => [`${value}/100`, "Score"]}
-                  />
-                  <Line type="monotone" dataKey="score" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={scoreChartData}>
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[(() => { const allScores = [...scoreChartData.map(d => d.score), ...scoreChartData.map(d => d.writingScore).filter((v): v is number => v != null)]; return Math.max(0, Math.min(...allScores) - 10); })(), (() => { const allScores = [...scoreChartData.map(d => d.score), ...scoreChartData.map(d => d.writingScore).filter((v): v is number => v != null)]; return Math.min(100, Math.max(...allScores) + 10); })()]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
+                      labelStyle={{ color: "#fffcef" }}
+                      formatter={(value: number, name: string) => [`${value}/100`, name === "writingScore" ? "Writing" : "Speaking"]}
+                    />
+                    <Line type="monotone" dataKey="score" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} name="Speaking" />
+                    {scoreChartData.some(d => d.writingScore != null) && (
+                      <Line type="monotone" dataKey="writingScore" stroke="#FFFCEF" strokeWidth={2} dot={{ fill: "#FFFCEF", r: 4 }} activeDot={{ r: 6 }} connectNulls={false} name="Writing" />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+                {scoreChartData.some(d => d.writingScore != null) && (
+                  <div className="flex items-center justify-center gap-4 mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-[2px] rounded" style={{ background: "#fed141" }} />
+                      <span className="text-[10px]" style={{ color: "rgba(255,252,239,0.55)" }}>🎤 Speaking</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-[2px] rounded" style={{ background: "#FFFCEF" }} />
+                      <span className="text-[10px]" style={{ color: "rgba(255,252,239,0.55)" }}>✍️ Writing</span>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="h-40 flex items-center justify-center text-sm" style={{ color: "rgba(255,252,239,0.55)" }}>
                 Complete your first Anubhav to see your score chart 📈
