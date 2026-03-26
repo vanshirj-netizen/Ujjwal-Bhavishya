@@ -47,7 +47,7 @@ const AnubhavHub = () => {
         const [profileRes, enrollRes, sessionsRes, flameRes, weeksRes, bestAttemptsRes, lessonProgressRes] = await Promise.all([
           supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
           supabase.from("enrollments").select("current_day, payment_status").eq("user_id", user.id).eq("is_active", true).eq("course_id", courseId).maybeSingle(),
-          supabase.from("practice_sessions").select("day_number, composite_score, is_best_attempt, master_message").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete"),
+          supabase.from("practice_sessions").select("day_number, composite_score, is_best_attempt, master_message, writing_composite_score").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete"),
           supabase.from("reflection_sessions").select("day_number").eq("user_id", user.id).eq("course_id", courseId),
           supabase.from("course_weeks").select("week_number, theme_name").eq("course_id", courseId).order("week_number", { ascending: true }),
           supabase.from("practice_sessions").select("composite_score, writing_composite_score").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete").eq("is_best_attempt", true),
