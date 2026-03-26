@@ -28,13 +28,15 @@ const AnubhavHub = () => {
   const [practiceMap, setPracticeMap] = useState<Record<number, PracticeInfo>>({});
   const [flameMap, setFlameMap] = useState<Record<number, boolean>>({});
   const [weekData, setWeekData] = useState<Record<number, string>>({});
-  const [scoreChartData, setScoreChartData] = useState<{ name: string; score: number }[]>([]);
+  const [scoreChartData, setScoreChartData] = useState<{ name: string; score: number; writingScore?: number }[]>([]);
   const [lessonMap, setLessonMap] = useState<Record<number, boolean>>({});
 
   // Stats
   const [daysPracticed, setDaysPracticed] = useState(0);
   const [totalSessions, setTotalSessions] = useState(0);
-  const [avgScore, setAvgScore] = useState("–");
+  const [avgSpeaking, setAvgSpeaking] = useState("–");
+  const [avgWriting, setAvgWriting] = useState("–");
+  const [hasWritingScores, setHasWritingScores] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -45,10 +47,10 @@ const AnubhavHub = () => {
         const [profileRes, enrollRes, sessionsRes, flameRes, weeksRes, bestAttemptsRes, lessonProgressRes] = await Promise.all([
           supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
           supabase.from("enrollments").select("current_day, payment_status").eq("user_id", user.id).eq("is_active", true).eq("course_id", courseId).maybeSingle(),
-          supabase.from("practice_sessions").select("day_number, composite_score, is_best_attempt, master_message").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete"),
+          supabase.from("practice_sessions").select("day_number, composite_score, is_best_attempt, master_message, writing_composite_score").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete"),
           supabase.from("reflection_sessions").select("day_number").eq("user_id", user.id).eq("course_id", courseId),
           supabase.from("course_weeks").select("week_number, theme_name").eq("course_id", courseId).order("week_number", { ascending: true }),
-          supabase.from("practice_sessions").select("composite_score").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete").eq("is_best_attempt", true),
+          supabase.from("practice_sessions").select("composite_score, writing_composite_score").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete").eq("is_best_attempt", true),
           supabase.from("progress").select("day_number, lesson_complete").eq("user_id", user.id),
         ]);
 
@@ -82,23 +84,47 @@ const AnubhavHub = () => {
         setDaysPracticed(daySet.size);
         setTotalSessions(sessions.length);
 
-        // Compute chart data from practiceMap
+        // Compute chart data from practiceMap + writing scores
+        const writingByDay: Record<number, number> = {};
+        sessions.forEach(s => {
+          const ws = Number(s.writing_composite_score);
+          if (s.writing_composite_score != null && !isNaN(ws) && ws > 0) {
+            if (!writingByDay[s.day_number] || ws > writingByDay[s.day_number]) {
+              writingByDay[s.day_number] = ws;
+            }
+          }
+        });
+
         const cData = Object.entries(pMap)
           .sort(([a], [b]) => Number(a) - Number(b))
           .map(([day, data]) => ({
             name: `Day ${day}`,
             score: data.bestScore ?? 0,
+            writingScore: writingByDay[Number(day)] ?? undefined,
           }));
         setScoreChartData(cData);
         setTotalSessions(sessions.length);
 
-        // Avg score from best attempts
+        const hasAnyWriting = Object.keys(writingByDay).length > 0;
+
+        // Avg scores from best attempts
         const bestAttempts = bestAttemptsRes.data ?? [];
         if (bestAttempts.length > 0) {
-          const scores = bestAttempts.map(s => Number(s.composite_score) || 0).filter(s => s > 0);
-          if (scores.length > 0) {
-            const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-            setAvgScore(`${avg}/100`);
+          const speakScores = bestAttempts.map(s => Number(s.composite_score) || 0).filter(s => s > 0);
+          if (speakScores.length > 0) {
+            const avg = Math.round(speakScores.reduce((a, b) => a + b, 0) / speakScores.length);
+            setAvgSpeaking(`${avg}/100`);
+          }
+          const writeScores = bestAttempts
+            .filter(s => s.writing_composite_score != null)
+            .map(s => Number(s.writing_composite_score))
+            .filter(s => s > 0);
+          if (writeScores.length > 0) {
+            const avg = Math.round(writeScores.reduce((a, b) => a + b, 0) / writeScores.length);
+            setAvgWriting(`${avg}/100`);
+            setHasWritingScores(true);
+          } else {
+            setHasWritingScores(hasAnyWriting);
           }
         }
 
@@ -166,11 +192,12 @@ const AnubhavHub = () => {
         <PageHeader title={<><span className="text-gradient-gold">{firstName}</span> Anubhav</>} />
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mt-5">
+        <div className={`grid gap-3 mt-5 ${hasWritingScores ? "grid-cols-2" : "grid-cols-3"}`}>
           {[
             { icon: "🎙️", value: String(daysPracticed), label: "Days Practiced" },
             { icon: "🔁", value: String(totalSessions), label: "Total Sessions" },
-            { icon: "⭐", value: avgScore, label: "Avg Score" },
+            { icon: "🎤", value: avgSpeaking, label: hasWritingScores ? "Avg Speaking" : "Avg Score" },
+            ...(hasWritingScores ? [{ icon: "✍️", value: avgWriting, label: "Avg Writing" }] : []),
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
               <GoldCard padding="14px 10px">
@@ -189,19 +216,35 @@ const AnubhavHub = () => {
           <GoldCard padding="20px">
             <p className="text-[10px] uppercase tracking-wider mb-4" style={{ fontFamily: "var(--fa)", color: "rgba(255,252,239,0.60)", letterSpacing: "3px" }}>Your Score Journey</p>
             {scoreChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={scoreChartData}>
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[(() => { const scores = scoreChartData.map(d => d.score); return Math.max(0, Math.min(...scores) - 10); })(), (() => { const scores = scoreChartData.map(d => d.score); return Math.min(100, Math.max(...scores) + 10); })()]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
-                    labelStyle={{ color: "#fffcef" }}
-                    itemStyle={{ color: "#fed141" }}
-                    formatter={(value: number) => [`${value}/100`, "Score"]}
-                  />
-                  <Line type="monotone" dataKey="score" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={scoreChartData}>
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[(() => { const allScores = [...scoreChartData.map(d => d.score), ...scoreChartData.map(d => d.writingScore).filter((v): v is number => v != null)]; return Math.max(0, Math.min(...allScores) - 10); })(), (() => { const allScores = [...scoreChartData.map(d => d.score), ...scoreChartData.map(d => d.writingScore).filter((v): v is number => v != null)]; return Math.min(100, Math.max(...allScores) + 10); })()]} tick={{ fontSize: 10, fill: "rgba(255,252,239,0.55)" }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
+                      labelStyle={{ color: "#fffcef" }}
+                      formatter={(value: number, name: string) => [`${value}/100`, name === "writingScore" ? "Writing" : "Speaking"]}
+                    />
+                    <Line type="monotone" dataKey="score" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} name="Speaking" />
+                    {scoreChartData.some(d => d.writingScore != null) && (
+                      <Line type="monotone" dataKey="writingScore" stroke="#FFFCEF" strokeWidth={2} dot={{ fill: "#FFFCEF", r: 4 }} activeDot={{ r: 6 }} connectNulls={false} name="Writing" />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+                {scoreChartData.some(d => d.writingScore != null) && (
+                  <div className="flex items-center justify-center gap-4 mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-[2px] rounded" style={{ background: "#fed141" }} />
+                      <span className="text-[10px]" style={{ color: "rgba(255,252,239,0.55)" }}>🎤 Speaking</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-[2px] rounded" style={{ background: "#FFFCEF" }} />
+                      <span className="text-[10px]" style={{ color: "rgba(255,252,239,0.55)" }}>✍️ Writing</span>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="h-40 flex items-center justify-center text-sm" style={{ color: "rgba(255,252,239,0.55)" }}>
                 Complete your first Anubhav to see your score chart 📈

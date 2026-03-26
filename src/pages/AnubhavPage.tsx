@@ -160,6 +160,7 @@ const AnubhavPage = () => {
           smoothnessScore: bestAttempt.smoothness_score,
           naturalSoundScore: bestAttempt.natural_sound_score,
           compositeScore: bestAttempt.composite_score,
+          writingCompositeScore: bestAttempt.writing_composite_score,
           mastermessage: bestAttempt.master_message,
           mastermessagevoice: bestAttempt.master_message_voice,
           mastermessageaudiourl: bestAttempt.master_message_audio_url,
@@ -960,10 +961,10 @@ const AnubhavPage = () => {
               {/* 1. Score Cards */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Word Clarity", score: results.wordClarityScore ?? results.word_clarity_score ?? 50 },
-                  { label: "Smoothness", score: results.smoothnessScore ?? results.smoothness_score ?? 50 },
-                  { label: "Natural Sound", score: results.naturalSoundScore ?? results.natural_sound_score ?? 50 },
-                ].map(card => (
+                  { label: "Word Clarity", score: results.wordClarityScore ?? results.word_clarity_score },
+                  { label: "Smoothness", score: results.smoothnessScore ?? results.smoothness_score },
+                  { label: "Natural Sound", score: results.naturalSoundScore ?? results.natural_sound_score },
+                ].filter(card => card.score != null).map(card => (
                   <GoldCard key={card.label} padding="16px">
                     <div className="text-center">
                       {isStarMode ? (
@@ -982,6 +983,36 @@ const AnubhavPage = () => {
                   </GoldCard>
                 ))}
               </div>
+
+              {/* Writing Score Card */}
+              {(results.writingCompositeScore ?? results.writing_composite_score) != null && (
+                <div className="mt-3">
+                  <div
+                    style={{
+                      padding: "1.5px",
+                      borderRadius: 20,
+                      background: "linear-gradient(135deg, #FFFCEF, #F5F0D0, #FFFCEF)",
+                    }}
+                  >
+                    <div style={{ borderRadius: 18.5, background: "var(--card-bg, rgba(0, 26, 16, 0.97))", padding: "16px" }}>
+                      <div className="text-center">
+                        {isStarMode ? (
+                          <p style={{ fontFamily: "var(--fd)", fontSize: "1.1rem", color: "#FFFCEF", fontWeight: 700 }}>
+                            {"⭐".repeat(toStars(results.writingCompositeScore ?? results.writing_composite_score))}
+                          </p>
+                        ) : (
+                          <p style={{ fontFamily: "var(--fd)", fontSize: "1.1rem", color: "#FFFCEF", fontWeight: 700 }}>
+                            {results.writingCompositeScore ?? results.writing_composite_score}/100
+                          </p>
+                        )}
+                        <p className="mt-1" style={{ fontFamily: "var(--fa)", fontSize: "0.58rem", color: "rgba(255,252,239,0.65)", textTransform: "uppercase", letterSpacing: "2px" }}>
+                          Writing
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 2. GYANU SAYS — Master's Message */}
               {(results.mastermessage || results.ai_feedback) && (
@@ -1057,22 +1088,26 @@ const AnubhavPage = () => {
                 </div>
               )}
 
-              {/* 4. WRITING CHECKS */}
+              {/* 4. WRITING CHECK */}
               {results.writingChecks?.length > 0 && (
                 <div className="mt-6">
-                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">YOUR WRITING</p>
+                  <p style={{ fontFamily: "var(--fa)", fontSize: "0.6rem", color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "3px" }} className="mb-3">WRITING CHECK</p>
                   <div className="flex flex-col gap-2">
                     {results.writingChecks.map((wc: any, i: number) => (
                       <GoldCard key={i} padding="16px">
                         <div className="flex items-start gap-2">
-                          <span className="mt-0.5">{!wc.issue ? "✅" : "❌"}</span>
+                          <span className="mt-0.5">{wc.isCorrect ? "✅" : "❌"}</span>
                           <div className="flex-1">
-                            <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))" }}>{wc.sentence}</p>
-                            {wc.issue && (
-                              <p className="mt-1.5" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "rgba(255,252,239,0.68)" }}>Issue: {wc.issue}</p>
+                            <p style={{ fontFamily: "var(--fb)", fontSize: "0.88rem", color: "hsl(var(--foreground))" }}>"{wc.sentence}"</p>
+                            {!wc.isCorrect && wc.issue && (
+                              <p className="mt-1.5" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "rgba(255,252,239,0.55)", textTransform: "uppercase", letterSpacing: "2px" }}>
+                                ISSUE <span style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "rgba(255,252,239,0.68)", textTransform: "none", letterSpacing: "normal" }}>{wc.issue}</span>
+                              </p>
                             )}
-                            {wc.fix && (
-                              <p className="mt-1" style={{ fontFamily: "var(--fb)", fontSize: "0.82rem", color: "hsl(var(--primary) / 0.8)" }}>→ {wc.fix}</p>
+                            {!wc.isCorrect && wc.correctedVersion && (
+                              <p className="mt-1" style={{ fontFamily: "var(--fa)", fontSize: "0.55rem", color: "rgba(255,252,239,0.55)", textTransform: "uppercase", letterSpacing: "2px" }}>
+                                FIX <span style={{ fontFamily: "var(--fd)", fontSize: "0.88rem", color: "#FFFCEF", textTransform: "none", letterSpacing: "normal", fontWeight: 700 }}>{wc.correctedVersion}</span>
+                              </p>
                             )}
                           </div>
                         </div>
