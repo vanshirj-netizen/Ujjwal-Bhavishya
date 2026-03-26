@@ -160,6 +160,7 @@ const AnubhavPage = () => {
           smoothnessScore: bestAttempt.smoothness_score,
           naturalSoundScore: bestAttempt.natural_sound_score,
           compositeScore: bestAttempt.composite_score,
+          writingCompositeScore: bestAttempt.writing_composite_score,
           mastermessage: bestAttempt.master_message,
           mastermessagevoice: bestAttempt.master_message_voice,
           mastermessageaudiourl: bestAttempt.master_message_audio_url,
