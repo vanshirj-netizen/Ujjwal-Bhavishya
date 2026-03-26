@@ -84,23 +84,47 @@ const AnubhavHub = () => {
         setDaysPracticed(daySet.size);
         setTotalSessions(sessions.length);
 
-        // Compute chart data from practiceMap
+        // Compute chart data from practiceMap + writing scores
+        const writingByDay: Record<number, number> = {};
+        sessions.forEach(s => {
+          const ws = Number(s.writing_composite_score);
+          if (s.writing_composite_score != null && !isNaN(ws) && ws > 0) {
+            if (!writingByDay[s.day_number] || ws > writingByDay[s.day_number]) {
+              writingByDay[s.day_number] = ws;
+            }
+          }
+        });
+
         const cData = Object.entries(pMap)
           .sort(([a], [b]) => Number(a) - Number(b))
           .map(([day, data]) => ({
             name: `Day ${day}`,
             score: data.bestScore ?? 0,
+            writingScore: writingByDay[Number(day)] ?? undefined,
           }));
         setScoreChartData(cData);
         setTotalSessions(sessions.length);
 
-        // Avg score from best attempts
+        const hasAnyWriting = Object.keys(writingByDay).length > 0;
+
+        // Avg scores from best attempts
         const bestAttempts = bestAttemptsRes.data ?? [];
         if (bestAttempts.length > 0) {
-          const scores = bestAttempts.map(s => Number(s.composite_score) || 0).filter(s => s > 0);
-          if (scores.length > 0) {
-            const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-            setAvgScore(`${avg}/100`);
+          const speakScores = bestAttempts.map(s => Number(s.composite_score) || 0).filter(s => s > 0);
+          if (speakScores.length > 0) {
+            const avg = Math.round(speakScores.reduce((a, b) => a + b, 0) / speakScores.length);
+            setAvgSpeaking(`${avg}/100`);
+          }
+          const writeScores = bestAttempts
+            .filter(s => s.writing_composite_score != null)
+            .map(s => Number(s.writing_composite_score))
+            .filter(s => s > 0);
+          if (writeScores.length > 0) {
+            const avg = Math.round(writeScores.reduce((a, b) => a + b, 0) / writeScores.length);
+            setAvgWriting(`${avg}/100`);
+            setHasWritingScores(true);
+          } else {
+            setHasWritingScores(hasAnyWriting);
           }
         }
 
