@@ -192,11 +192,12 @@ const AnubhavHub = () => {
         <PageHeader title={<><span className="text-gradient-gold">{firstName}</span> Anubhav</>} />
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mt-5">
+        <div className={`grid gap-3 mt-5 ${hasWritingScores ? "grid-cols-2" : "grid-cols-3"}`}>
           {[
             { icon: "🎙️", value: String(daysPracticed), label: "Days Practiced" },
             { icon: "🔁", value: String(totalSessions), label: "Total Sessions" },
-            { icon: "⭐", value: avgScore, label: "Avg Score" },
+            { icon: "🎤", value: avgSpeaking, label: hasWritingScores ? "Avg Speaking" : "Avg Score" },
+            ...(hasWritingScores ? [{ icon: "✍️", value: avgWriting, label: "Avg Writing" }] : []),
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
               <GoldCard padding="14px 10px">
