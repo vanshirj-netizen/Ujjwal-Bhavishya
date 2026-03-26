@@ -50,7 +50,7 @@ const AnubhavHub = () => {
           supabase.from("practice_sessions").select("day_number, composite_score, is_best_attempt, master_message").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete"),
           supabase.from("reflection_sessions").select("day_number").eq("user_id", user.id).eq("course_id", courseId),
           supabase.from("course_weeks").select("week_number, theme_name").eq("course_id", courseId).order("week_number", { ascending: true }),
-          supabase.from("practice_sessions").select("composite_score").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete").eq("is_best_attempt", true),
+          supabase.from("practice_sessions").select("composite_score, writing_composite_score").eq("user_id", user.id).eq("course_id", courseId).eq("status", "complete").eq("is_best_attempt", true),
           supabase.from("progress").select("day_number, lesson_complete").eq("user_id", user.id),
         ]);
 
