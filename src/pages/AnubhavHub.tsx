@@ -34,7 +34,9 @@ const AnubhavHub = () => {
   // Stats
   const [daysPracticed, setDaysPracticed] = useState(0);
   const [totalSessions, setTotalSessions] = useState(0);
-  const [avgScore, setAvgScore] = useState("–");
+  const [avgSpeaking, setAvgSpeaking] = useState("–");
+  const [avgWriting, setAvgWriting] = useState("–");
+  const [hasWritingScores, setHasWritingScores] = useState(false);
 
   useEffect(() => {
     const load = async () => {
