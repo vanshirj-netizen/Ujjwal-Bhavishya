@@ -168,6 +168,7 @@ const Splash = () => {
             src={LOGO_URL}
             alt="Ujjwal Bhavishya"
             className="w-[180px] h-[180px] object-contain"
+            fetchPriority="high"
             animate={{ scale: [1, 1.05, 1] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{ boxShadow: "0 0 40px rgba(254,209,65,0.4)" }}
