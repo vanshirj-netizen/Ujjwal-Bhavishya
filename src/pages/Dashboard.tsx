@@ -313,9 +313,9 @@ const Dashboard = () => {
             <p className="mt-3" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "0.62rem", letterSpacing: 2, textTransform: "uppercase", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>— {quoteAuthor}</p>
             <div className="flex items-center gap-2.5 mt-4">
               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0" style={{ border: "1.5px solid #ffc300" }}>
-                <img src={masterImg} alt={masterName} className="w-full h-full object-cover" />
+                <img src={GYANI_IMG} alt="Gyani" className="w-full h-full object-cover" />
               </div>
-              <span style={{ color: "#FFFCEF", fontSize: "0.8rem" }}>🔥 Shared by {masterName}</span>
+              <span style={{ color: "#FFFCEF", fontSize: "0.8rem" }}>🔥 Shared by Gyani</span>
               <span style={{ background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "0.7rem", fontFamily: "'Space Grotesk', sans-serif" }}>Your Master</span>
             </div>
             <div className="mt-4">
@@ -323,13 +323,29 @@ const Dashboard = () => {
                 {quoteAudioState === "loading" && "⏳ Loading..."}
                 {quoteAudioState === "playing" && "🔊 Playing..."}
                 {quoteAudioState === "played" && "✓ Played today"}
-                {quoteAudioState === "idle" && `▶ Hear it from ${masterName}`}
+                {quoteAudioState === "idle" && "▶ Hear it from Gyani"}
               </GoldButton>
             </div>
           </GoldCard>
         </motion.div>
       </div>
       <BottomNav />
+
+      {/* QOD Overlay */}
+      {showQod && (
+        <QodOverlay
+          lines={qodLines}
+          quoteText={qodQuote.text || quoteText}
+          quoteAuthor={qodQuote.author || quoteAuthor}
+          onDismiss={() => {
+            const now = new Date();
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const istDate = new Date(now.getTime() + istOffset).toISOString().slice(0, 10);
+            sessionStorage.setItem("qod_shown_date", istDate);
+            setShowQod(false);
+          }}
+        />
+      )}
     </div>
   );
 };
