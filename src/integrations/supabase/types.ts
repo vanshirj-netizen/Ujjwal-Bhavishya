@@ -239,6 +239,30 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_quotes: {
+        Row: {
+          created_at: string | null
+          day_number: number
+          id: string
+          quote_author: string
+          quote_text: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_number: number
+          id?: string
+          quote_author: string
+          quote_text: string
+        }
+        Update: {
+          created_at?: string | null
+          day_number?: number
+          id?: string
+          quote_author?: string
+          quote_text?: string
+        }
+        Relationships: []
+      }
       enrollments: {
         Row: {
           completion_date: string | null
@@ -979,6 +1003,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      qod_responses: {
+        Row: {
+          created_at: string | null
+          day_number: number
+          id: string
+          line_1: string | null
+          line_2: string | null
+          line_3: string | null
+          quote_author: string | null
+          quote_text: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_number: number
+          id?: string
+          line_1?: string | null
+          line_2?: string | null
+          line_3?: string | null
+          quote_author?: string | null
+          quote_text?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          day_number?: number
+          id?: string
+          line_1?: string | null
+          line_2?: string | null
+          line_3?: string | null
+          quote_author?: string | null
+          quote_text?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       reflection_sessions: {
         Row: {
