@@ -10,6 +10,7 @@ import PageHeader from "@/components/PageHeader";
 import GoldCard from "@/components/ui/GoldCard";
 import GoldButton from "@/components/ui/GoldButton";
 import SectionLabel from "@/components/ui/SectionLabel";
+import QodOverlay from "@/components/QodOverlay";
 
 const GYANI_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyani.webp";
 const GYANU_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyanu.webp";
@@ -48,6 +49,11 @@ const Dashboard = () => {
 
   const [quoteAudioState, setQuoteAudioState] = useState<"idle" | "loading" | "playing" | "played">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // QOD overlay state
+  const [showQod, setShowQod] = useState(false);
+  const [qodLines, setQodLines] = useState<string[] | null>(null);
+  const [qodQuote, setQodQuote] = useState({ text: "", author: "" });
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -89,8 +95,17 @@ const Dashboard = () => {
 
       const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number, quote_text, quote_author").eq("day_number", day).eq("course_id", courseId).maybeSingle();
       setTodayLesson(lessonData);
-      if (lessonData?.quote_text) setQuoteText(lessonData.quote_text);
-      if (lessonData?.quote_author) setQuoteAuthor(lessonData.quote_author);
+
+      // Fetch quote from daily_quotes table instead of lessons
+      const { data: dailyQuote } = await supabase.from("daily_quotes").select("quote_text, quote_author").eq("day_number", day).maybeSingle();
+      if (dailyQuote?.quote_text) {
+        setQuoteText(dailyQuote.quote_text);
+        setQuoteAuthor(dailyQuote.quote_author);
+      } else if (lessonData?.quote_text) {
+        // Fallback to lessons table if no daily_quotes row
+        setQuoteText(lessonData.quote_text);
+        if (lessonData?.quote_author) setQuoteAuthor(lessonData.quote_author);
+      }
 
       // Flames lit from reflection_sessions
       const { count: flameCount } = await supabase.from("reflection_sessions").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("course_id", courseId);
@@ -102,6 +117,82 @@ const Dashboard = () => {
     };
     fetchUserData();
   }, [location.key, courseId]);
+
+  // QOD overlay trigger - once per calendar day (IST)
+  useEffect(() => {
+    if (!displayDay || !quoteText) return;
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffset).toISOString().slice(0, 10);
+    const shownDate = sessionStorage.getItem("qod_shown_date");
+    if (shownDate === istDate) return;
+
+    const loadQod = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Check cache first
+      const { data: cached } = await supabase
+        .from("qod_responses")
+        .select("line_1, line_2, line_3, quote_text, quote_author")
+        .eq("user_id", session.user.id)
+        .eq("day_number", displayDay)
+        .maybeSingle();
+
+      if (cached?.line_1) {
+        setQodLines([cached.line_1, cached.line_2!, cached.line_3!]);
+        setQodQuote({ text: cached.quote_text || quoteText, author: cached.quote_author || quoteAuthor });
+        setShowQod(true);
+        return;
+      }
+
+      // Call edge function with 3s timeout for fallback
+      setQodQuote({ text: quoteText, author: quoteAuthor });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-qod-message`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ firstName: firstName || "Friend", quote_text: quoteText, quote_author: quoteAuthor }),
+            signal: controller.signal,
+          }
+        );
+        clearTimeout(timeout);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.line_1 && data.line_2 && data.line_3) {
+            setQodLines([data.line_1, data.line_2, data.line_3]);
+            // Cache the response
+            await supabase.from("qod_responses").insert({
+              user_id: session.user.id,
+              day_number: displayDay,
+              line_1: data.line_1,
+              line_2: data.line_2,
+              line_3: data.line_3,
+              quote_text: quoteText,
+              quote_author: quoteAuthor,
+            });
+          }
+        }
+      } catch {
+        clearTimeout(timeout);
+        // Fallback: show raw quote (qodLines stays null)
+      }
+
+      setShowQod(true);
+    };
+
+    loadQod();
+  }, [displayDay, quoteText, quoteAuthor, firstName]);
 
   const masterName = selectedMaster === "gyanu" ? "Gyanu" : "Gyani";
   const masterImg = selectedMaster === "gyanu" ? GYANU_IMG : GYANI_IMG;
@@ -222,9 +313,9 @@ const Dashboard = () => {
             <p className="mt-3" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "0.62rem", letterSpacing: 2, textTransform: "uppercase", background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>— {quoteAuthor}</p>
             <div className="flex items-center gap-2.5 mt-4">
               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0" style={{ border: "1.5px solid #ffc300" }}>
-                <img src={masterImg} alt={masterName} className="w-full h-full object-cover" />
+                <img src={GYANI_IMG} alt="Gyani" className="w-full h-full object-cover" />
               </div>
-              <span style={{ color: "#FFFCEF", fontSize: "0.8rem" }}>🔥 Shared by {masterName}</span>
+              <span style={{ color: "#FFFCEF", fontSize: "0.8rem" }}>🔥 Shared by Gyani</span>
               <span style={{ background: "var(--gg)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "0.7rem", fontFamily: "'Space Grotesk', sans-serif" }}>Your Master</span>
             </div>
             <div className="mt-4">
@@ -232,13 +323,29 @@ const Dashboard = () => {
                 {quoteAudioState === "loading" && "⏳ Loading..."}
                 {quoteAudioState === "playing" && "🔊 Playing..."}
                 {quoteAudioState === "played" && "✓ Played today"}
-                {quoteAudioState === "idle" && `▶ Hear it from ${masterName}`}
+                {quoteAudioState === "idle" && "▶ Hear it from Gyani"}
               </GoldButton>
             </div>
           </GoldCard>
         </motion.div>
       </div>
       <BottomNav />
+
+      {/* QOD Overlay */}
+      {showQod && (
+        <QodOverlay
+          lines={qodLines}
+          quoteText={qodQuote.text || quoteText}
+          quoteAuthor={qodQuote.author || quoteAuthor}
+          onDismiss={() => {
+            const now = new Date();
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const istDate = new Date(now.getTime() + istOffset).toISOString().slice(0, 10);
+            sessionStorage.setItem("qod_shown_date", istDate);
+            setShowQod(false);
+          }}
+        />
+      )}
     </div>
   );
 };
