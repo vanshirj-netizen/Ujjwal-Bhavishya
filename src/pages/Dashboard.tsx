@@ -50,6 +50,11 @@ const Dashboard = () => {
   const [quoteAudioState, setQuoteAudioState] = useState<"idle" | "loading" | "playing" | "played">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // QOD overlay state
+  const [showQod, setShowQod] = useState(false);
+  const [qodLines, setQodLines] = useState<string[] | null>(null);
+  const [qodQuote, setQodQuote] = useState({ text: "", author: "" });
+
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
