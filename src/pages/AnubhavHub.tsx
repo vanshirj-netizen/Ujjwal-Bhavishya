@@ -84,12 +84,12 @@ const AnubhavHub = () => {
         setDaysPracticed(daySet.size);
         setTotalSessions(sessions.length);
 
-        // Compute chart data from practiceMap + writing scores
+        // Compute chart data from practiceMap + writing scores (from best attempts only)
         const writingByDay: Record<number, number> = {};
         sessions.forEach(s => {
-          const ws = Number(s.writing_composite_score);
-          if (s.writing_composite_score != null && !isNaN(ws) && ws > 0) {
-            if (!writingByDay[s.day_number] || ws > writingByDay[s.day_number]) {
+          if (s.is_best_attempt && s.writing_composite_score != null) {
+            const ws = Number(s.writing_composite_score);
+            if (!isNaN(ws)) {
               writingByDay[s.day_number] = ws;
             }
           }
