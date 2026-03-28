@@ -84,12 +84,12 @@ const AnubhavHub = () => {
         setDaysPracticed(daySet.size);
         setTotalSessions(sessions.length);
 
-        // Compute chart data from practiceMap + writing scores
+        // Compute chart data from practiceMap + writing scores (from best attempts only)
         const writingByDay: Record<number, number> = {};
         sessions.forEach(s => {
-          const ws = Number(s.writing_composite_score);
-          if (s.writing_composite_score != null && !isNaN(ws) && ws > 0) {
-            if (!writingByDay[s.day_number] || ws > writingByDay[s.day_number]) {
+          if (s.is_best_attempt && s.writing_composite_score != null) {
+            const ws = Number(s.writing_composite_score);
+            if (!isNaN(ws)) {
               writingByDay[s.day_number] = ws;
             }
           }
@@ -224,7 +224,7 @@ const AnubhavHub = () => {
                     <Tooltip
                       contentStyle={{ background: "hsl(161 96% 8%)", border: "1px solid rgba(253,193,65,0.2)", borderRadius: 8, fontSize: 12 }}
                       labelStyle={{ color: "#fffcef" }}
-                      formatter={(value: number, name: string) => [`${value}/100`, name === "writingScore" ? "Writing" : "Speaking"]}
+                      formatter={(value: number, name: string) => [`${value}/100`, name === "Writing" ? "Writing" : "Speaking"]}
                     />
                     <Line type="monotone" dataKey="score" stroke="#fed141" strokeWidth={2} dot={{ fill: "#fed141", r: 4 }} activeDot={{ r: 6 }} name="Speaking" />
                     {scoreChartData.some(d => d.writingScore != null) && (
