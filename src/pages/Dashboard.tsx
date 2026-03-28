@@ -10,6 +10,7 @@ import PageHeader from "@/components/PageHeader";
 import GoldCard from "@/components/ui/GoldCard";
 import GoldButton from "@/components/ui/GoldButton";
 import SectionLabel from "@/components/ui/SectionLabel";
+import QodOverlay from "@/components/QodOverlay";
 
 const GYANI_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyani.webp";
 const GYANU_IMG = "https://kuhqmnfsxlqcgnakbywe.supabase.co/storage/v1/object/public/media/Gyanu.webp";
