@@ -95,8 +95,17 @@ const Dashboard = () => {
 
       const { data: lessonData } = await supabase.from("lessons").select("title, week_number, day_number, quote_text, quote_author").eq("day_number", day).eq("course_id", courseId).maybeSingle();
       setTodayLesson(lessonData);
-      if (lessonData?.quote_text) setQuoteText(lessonData.quote_text);
-      if (lessonData?.quote_author) setQuoteAuthor(lessonData.quote_author);
+
+      // Fetch quote from daily_quotes table instead of lessons
+      const { data: dailyQuote } = await supabase.from("daily_quotes").select("quote_text, quote_author").eq("day_number", day).maybeSingle();
+      if (dailyQuote?.quote_text) {
+        setQuoteText(dailyQuote.quote_text);
+        setQuoteAuthor(dailyQuote.quote_author);
+      } else if (lessonData?.quote_text) {
+        // Fallback to lessons table if no daily_quotes row
+        setQuoteText(lessonData.quote_text);
+        if (lessonData?.quote_author) setQuoteAuthor(lessonData.quote_author);
+      }
 
       // Flames lit from reflection_sessions
       const { count: flameCount } = await supabase.from("reflection_sessions").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("course_id", courseId);
@@ -108,6 +117,82 @@ const Dashboard = () => {
     };
     fetchUserData();
   }, [location.key, courseId]);
+
+  // QOD overlay trigger - once per calendar day (IST)
+  useEffect(() => {
+    if (!displayDay || !quoteText) return;
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffset).toISOString().slice(0, 10);
+    const shownDate = sessionStorage.getItem("qod_shown_date");
+    if (shownDate === istDate) return;
+
+    const loadQod = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Check cache first
+      const { data: cached } = await supabase
+        .from("qod_responses")
+        .select("line_1, line_2, line_3, quote_text, quote_author")
+        .eq("user_id", session.user.id)
+        .eq("day_number", displayDay)
+        .maybeSingle();
+
+      if (cached?.line_1) {
+        setQodLines([cached.line_1, cached.line_2!, cached.line_3!]);
+        setQodQuote({ text: cached.quote_text || quoteText, author: cached.quote_author || quoteAuthor });
+        setShowQod(true);
+        return;
+      }
+
+      // Call edge function with 3s timeout for fallback
+      setQodQuote({ text: quoteText, author: quoteAuthor });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-qod-message`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ firstName: firstName || "Friend", quote_text: quoteText, quote_author: quoteAuthor }),
+            signal: controller.signal,
+          }
+        );
+        clearTimeout(timeout);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.line_1 && data.line_2 && data.line_3) {
+            setQodLines([data.line_1, data.line_2, data.line_3]);
+            // Cache the response
+            await supabase.from("qod_responses").insert({
+              user_id: session.user.id,
+              day_number: displayDay,
+              line_1: data.line_1,
+              line_2: data.line_2,
+              line_3: data.line_3,
+              quote_text: quoteText,
+              quote_author: quoteAuthor,
+            });
+          }
+        }
+      } catch {
+        clearTimeout(timeout);
+        // Fallback: show raw quote (qodLines stays null)
+      }
+
+      setShowQod(true);
+    };
+
+    loadQod();
+  }, [displayDay, quoteText, quoteAuthor, firstName]);
 
   const masterName = selectedMaster === "gyanu" ? "Gyanu" : "Gyani";
   const masterImg = selectedMaster === "gyanu" ? GYANU_IMG : GYANI_IMG;
